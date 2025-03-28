@@ -1,205 +1,209 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle2, ChevronRight, HelpCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
-const Pricing = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [annualBilling, setAnnualBilling] = useState(false);
-  const monthlyPrice = 29;
-  const annualPrice = Math.round(monthlyPrice * 12 * 0.8); // 20% discount for annual
+const PricingPage = () => {
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
-  const handleFreePlanSelect = () => {
-    navigate("/signup");
-    toast({
-      title: "Free plan selected",
-      description: "Sign up to get started with the free plan.",
-    });
-  };
-
-  const handleProPlanSelect = () => {
-    navigate("/signup?plan=pro");
-    toast({
-      title: "Pro plan selected",
-      description: "Sign up to start your 30-day free trial.",
-    });
-  };
+  const plans = [
+    {
+      name: "Free",
+      description: "For individuals getting started with content research",
+      price: {
+        monthly: 0,
+        yearly: 0,
+      },
+      features: [
+        "5 keyword searches per month",
+        "3 content briefs per month",
+        "Basic search insights",
+        "Limited competitor analysis",
+        "Standard content score",
+      ],
+      limitations: [
+        "No AI optimization suggestions",
+        "No advanced SERP analysis",
+        "Limited keyword metrics",
+        "No topic clustering",
+        "No team collaboration",
+      ],
+      cta: "Get Started",
+      popular: false,
+    },
+    {
+      name: "Pro",
+      description: "For content creators and marketing professionals",
+      price: {
+        monthly: 29,
+        yearly: 290,
+      },
+      features: [
+        "Unlimited keyword searches",
+        "Unlimited content briefs",
+        "Advanced search insights",
+        "Full competitor analysis",
+        "AI content optimization",
+        "Topic clustering",
+        "Content score prediction",
+        "AI search engine optimization",
+        "Export to PDF/Word/Google Docs",
+        "Priority support",
+      ],
+      limitations: [],
+      cta: "Start Free Trial",
+      popular: true,
+      trial: "30-day free trial",
+    },
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      <main className="flex-grow">
-        <section className="py-16 sm:py-24 bg-gradient-to-b from-white to-gray-50">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
-                Simple, transparent pricing
-              </h1>
-              <p className="text-xl text-gray-600 mb-8">
-                Choose the plan that's right for you and start creating content that ranks
+      <main className="flex-1">
+        <section className="py-12 md:py-24 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">Simple, Transparent Pricing</h1>
+              <p className="text-xl text-muted-foreground">
+                Choose the plan that's right for your content strategy
               </p>
-              
-              <div className="flex items-center justify-center space-x-3 mb-8">
-                <span className={`text-sm ${!annualBilling ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
-                  Monthly
-                </span>
-                <div className="flex items-center">
-                  <Switch
-                    id="billing-toggle"
-                    checked={annualBilling}
-                    onCheckedChange={setAnnualBilling}
-                  />
-                </div>
-                <span className={`text-sm ${annualBilling ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
-                  Annual <span className="text-emerald-600 font-medium">Save 20%</span>
-                </span>
-              </div>
             </div>
-            
-            <div className="grid md:grid-cols-2 gap-8">
-              {/* Free Plan */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md">
-                <div className="p-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Free</h3>
-                  <div className="flex items-baseline mt-4 mb-6">
-                    <span className="text-4xl font-extrabold text-gray-900">$0</span>
-                    <span className="text-gray-500 ml-1">/month</span>
-                  </div>
-                  <p className="text-gray-600 mb-6">Perfect for getting started with content optimization</p>
-                  <Button 
-                    onClick={handleFreePlanSelect}
-                    variant="outline" 
-                    className="w-full mb-6"
-                  >
-                    Get started for free
-                  </Button>
-                  
-                  <ul className="space-y-4">
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
-                      <span className="text-gray-600">5 content briefs per month</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
-                      <span className="text-gray-600">Basic keyword research</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
-                      <span className="text-gray-600">Content scoring</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-emerald-500 mr-3 flex-shrink-0" />
-                      <span className="text-gray-600">SEO recommendations</span>
-                    </li>
-                    <li className="flex">
-                      <X className="h-5 w-5 text-gray-300 mr-3 flex-shrink-0" />
-                      <span className="text-gray-400">AI content optimization</span>
-                    </li>
-                    <li className="flex">
-                      <X className="h-5 w-5 text-gray-300 mr-3 flex-shrink-0" />
-                      <span className="text-gray-400">Competitor analysis</span>
-                    </li>
-                    <li className="flex">
-                      <X className="h-5 w-5 text-gray-300 mr-3 flex-shrink-0" />
-                      <span className="text-gray-400">Advanced analytics</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              
-              {/* Pro Plan */}
-              <div className="bg-brand-600 text-white rounded-xl shadow-lg overflow-hidden relative">
-                <div className="absolute top-0 right-0 bg-brand-800 text-white py-1 px-3 text-xs uppercase font-semibold tracking-wider rounded-bl-lg">
-                  Popular
-                </div>
-                <div className="p-8">
-                  <h3 className="text-lg font-medium mb-2">Pro</h3>
-                  <div className="flex items-baseline mt-4 mb-6">
-                    <span className="text-4xl font-extrabold">${annualBilling ? Math.round(monthlyPrice * 0.8) : monthlyPrice}</span>
-                    <span className="opacity-80 ml-1">/month</span>
-                  </div>
-                  <p className="opacity-90 mb-2">Full access to all features</p>
-                  <p className="text-brand-200 text-sm mb-6">First 30 days free, cancel anytime</p>
-                  <Button 
-                    onClick={handleProPlanSelect}
-                    className="w-full mb-6 bg-white text-brand-600 hover:bg-brand-50"
-                  >
-                    Start 30-day free trial
-                  </Button>
-                  
-                  <ul className="space-y-4">
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-brand-200 mr-3 flex-shrink-0" />
-                      <span className="opacity-90">Unlimited content briefs</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-brand-200 mr-3 flex-shrink-0" />
-                      <span className="opacity-90">Advanced keyword research</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-brand-200 mr-3 flex-shrink-0" />
-                      <span className="opacity-90">In-depth content scoring</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-brand-200 mr-3 flex-shrink-0" />
-                      <span className="opacity-90">AI content optimization</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-brand-200 mr-3 flex-shrink-0" />
-                      <span className="opacity-90">Competitor analysis</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-brand-200 mr-3 flex-shrink-0" />
-                      <span className="opacity-90">Advanced analytics & reporting</span>
-                    </li>
-                    <li className="flex">
-                      <Check className="h-5 w-5 text-brand-200 mr-3 flex-shrink-0" />
-                      <span className="opacity-90">Priority support</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+
+            <div className="flex justify-center mb-8">
+              <Tabs
+                defaultValue="monthly"
+                value={billingCycle}
+                onValueChange={(v) => setBillingCycle(v as "monthly" | "yearly")}
+                className="w-full max-w-md"
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                  <TabsTrigger value="yearly">Yearly (20% off)</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-            
-            <div className="mt-16 bg-gray-50 border border-gray-200 rounded-xl p-8">
-              <h3 className="text-xl font-medium text-gray-900 mb-4">Frequently asked questions</h3>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">What happens after my free trial?</h4>
-                  <p className="text-gray-600">
-                    After your 30-day free trial, you'll be automatically billed at our standard rate. 
-                    You can cancel anytime before the trial ends to avoid charges.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Can I switch plans later?</h4>
-                  <p className="text-gray-600">
-                    Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected immediately
-                    in your account access and on your next billing cycle.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">What payment methods do you accept?</h4>
-                  <p className="text-gray-600">
-                    We accept all major credit cards and debit cards. For annual plans, we also offer 
-                    invoicing options for businesses.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Is there a refund policy?</h4>
-                  <p className="text-gray-600">
-                    We offer a 14-day money-back guarantee if you're not satisfied with our Pro plan after
-                    the free trial period.
-                  </p>
-                </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              {plans.map((plan) => (
+                <Card
+                  key={plan.name}
+                  className={`relative flex flex-col ${
+                    plan.popular
+                      ? "shadow-xl border-brand-500 border-2"
+                      : "border"
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                      <span className="bg-brand-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase">
+                        Most Popular
+                      </span>
+                    </div>
+                  )}
+                  <CardHeader className="p-6">
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0 flex-1">
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold">
+                        ${billingCycle === "monthly" ? plan.price.monthly : plan.price.yearly}
+                      </span>
+                      {billingCycle === "monthly" ? (
+                        <span className="text-muted-foreground ml-1">/month</span>
+                      ) : (
+                        <span className="text-muted-foreground ml-1">/year</span>
+                      )}
+
+                      {plan.trial && (
+                        <div className="mt-2 text-sm text-green-600 font-medium">
+                          {plan.trial}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="font-medium">What's included:</h4>
+                      <ul className="space-y-3">
+                        {plan.features.map((feature) => (
+                          <li key={feature} className="flex items-start gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {plan.limitations.length > 0 && (
+                        <>
+                          <h4 className="font-medium mt-6">Limitations:</h4>
+                          <ul className="space-y-2">
+                            {plan.limitations.map((limitation) => (
+                              <li key={limitation} className="flex items-center gap-3">
+                                <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-muted-foreground text-sm">{limitation}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-6 pt-0">
+                    <Button
+                      className={`w-full ${
+                        plan.popular ? "gradient-button" : ""
+                      }`}
+                      variant={plan.popular ? "default" : "outline"}
+                      asChild
+                    >
+                      <Link to={plan.popular ? "/signup" : "/signup"}>
+                        {plan.cta}
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+
+            <div className="mt-16 max-w-3xl mx-auto text-center">
+              <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                {[
+                  {
+                    q: "How does the 30-day free trial work?",
+                    a: "You can try all Pro features for 30 days with no commitment. We'll send a reminder before the trial ends, and you can cancel anytime."
+                  },
+                  {
+                    q: "Can I upgrade or downgrade my plan?",
+                    a: "Yes, you can upgrade to Pro at any time. You can also downgrade to the Free plan if your needs change."
+                  },
+                  {
+                    q: "Do you offer refunds?",
+                    a: "We offer a 7-day refund policy for yearly subscriptions if you're not satisfied with our service."
+                  },
+                  {
+                    q: "What payment methods do you accept?",
+                    a: "We accept all major credit cards, including Visa, Mastercard, and American Express."
+                  }
+                ].map((faq, i) => (
+                  <Card key={i} className="text-left">
+                    <CardHeader>
+                      <CardTitle className="text-base">{faq.q}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">{faq.a}</p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           </div>
@@ -211,4 +215,4 @@ const Pricing = () => {
   );
 };
 
-export default Pricing;
+export default PricingPage;

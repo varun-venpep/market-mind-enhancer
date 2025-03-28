@@ -1,230 +1,150 @@
-
-import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search, TrendingUp, FileText, BookOpen, Filter } from "lucide-react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { BarChart, FileText, ArrowUp, Users, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ContentBriefCard } from "@/components/Dashboard/ContentBriefCard";
+import { DashboardStats } from "@/components/Dashboard/DashboardStats";
+import { ContentBriefSkeleton } from "@/components/Dashboard/ContentBriefSkeleton";
+import { CreateBriefDialog } from "@/components/Dashboard/CreateBriefDialog";
+
+const mockBriefs = [
+  {
+    id: "1",
+    title: "How to optimize content for AI search engines",
+    status: "completed",
+    keywords: ["AI search engines", "content optimization", "SEO for AI"],
+    createdAt: "2023-10-15T14:00:00Z",
+    updatedAt: "2023-10-18T09:30:00Z",
+    score: 92,
+    wordCount: 1850,
+    searchVolume: 2800,
+    difficulty: 45
+  },
+  {
+    id: "2",
+    title: "The future of voice search and SEO strategies",
+    status: "in-progress",
+    keywords: ["voice search", "SEO strategies", "future of search"],
+    createdAt: "2023-10-12T10:00:00Z",
+    updatedAt: "2023-10-14T16:20:00Z",
+    score: 78,
+    wordCount: 1200,
+    searchVolume: 3500,
+    difficulty: 62
+  },
+  {
+    id: "3",
+    title: "E-commerce SEO best practices for 2023",
+    status: "draft",
+    keywords: ["e-commerce SEO", "best practices", "online store optimization"],
+    createdAt: "2023-10-10T08:15:00Z",
+    updatedAt: "2023-10-10T08:15:00Z",
+    searchVolume: 5200,
+    difficulty: 68
+  }
+] as const;
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  
+  const handleCreateBrief = (title: string, keywords: string[]) => {
+    console.log("Creating brief:", title, keywords);
+    setIsCreateDialogOpen(false);
+  };
+
   return (
     <DashboardLayout>
-      <div className="py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-          <div className="py-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <FileText className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Content Briefs
-                        </dt>
-                        <dd>
-                          <div className="text-lg font-medium text-gray-900">
-                            3 / 5
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-3">
-                  <div className="text-sm">
-                    <a href="#" className="font-medium text-brand-600 hover:text-brand-500">
-                      View all
-                    </a>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <BarChart className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Average Content Score
-                        </dt>
-                        <dd>
-                          <div className="text-lg font-medium text-gray-900">
-                            84 / 100
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-3">
-                  <div className="text-sm">
-                    <a href="#" className="font-medium text-brand-600 hover:text-brand-500">
-                      View details
-                    </a>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <Users className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Search Intent Topics
-                        </dt>
-                        <dd>
-                          <div className="text-lg font-medium text-gray-900">
-                            15
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-3">
-                  <div className="text-sm">
-                    <a href="#" className="font-medium text-brand-600 hover:text-brand-500">
-                      View all
-                    </a>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <Zap className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          AI Suggestions
-                        </dt>
-                        <dd>
-                          <div className="text-lg font-medium text-gray-900">
-                            24
-                          </div>
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-5 py-3">
-                  <div className="text-sm">
-                    <a href="#" className="font-medium text-brand-600 hover:text-brand-500">
-                      View all
-                    </a>
-                  </div>
-                </div>
-              </Card>
+      <div className="p-6 max-w-7xl mx-auto w-full">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome back</h1>
+              <p className="text-muted-foreground">Here's an overview of your content strategy</p>
             </div>
-
-            <div className="mt-8">
-              <h2 className="text-lg leading-6 font-medium text-gray-900">Recent Content Briefs</h2>
-              <div className="mt-2 overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                        Title
-                      </th>
-                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Keywords
-                      </th>
-                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Score
-                      </th>
-                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                        Created
-                      </th>
-                      <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                        <span className="sr-only">Edit</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    <tr>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        How to Optimize Content for AI Search Engines
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        ai search, content optimization
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <ArrowUp className="mr-1 h-3 w-3" />
-                          92
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        2 days ago
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a href="#" className="text-brand-600 hover:text-brand-900">
-                          Edit
-                        </a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        The Ultimate Guide to SEO in 2023
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        seo guide, seo 2023
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          82
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        1 week ago
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a href="#" className="text-brand-600 hover:text-brand-900">
-                          Edit
-                        </a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        10 Ways to Improve Your Content Strategy
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        content strategy, content marketing
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <ArrowUp className="mr-1 h-3 w-3" />
-                          88
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        2 weeks ago
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a href="#" className="text-brand-600 hover:text-brand-900">
-                          Edit
-                        </a>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+            <div className="flex gap-2 w-full md:w-auto">
+              <Button 
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="gradient-button w-full md:w-auto"
+              >
+                <Plus className="mr-2 h-4 w-4" /> New Brief
+              </Button>
             </div>
           </div>
+
+          <DashboardStats />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search briefs..." 
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2 justify-end">
+              <Button variant="outline" size="sm" className="h-9">
+                <Filter className="mr-2 h-4 w-4" />
+                Filter
+              </Button>
+              <Button variant="outline" size="sm" className="h-9">
+                Latest
+              </Button>
+            </div>
+          </div>
+
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="w-full md:w-auto justify-start">
+              <TabsTrigger value="all">All Briefs</TabsTrigger>
+              <TabsTrigger value="drafts">Drafts</TabsTrigger>
+              <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+            </TabsList>
+            <TabsContent value="all" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {isLoading ? (
+                  Array(6).fill(0).map((_, i) => <ContentBriefSkeleton key={i} />)
+                ) : mockBriefs.length > 0 ? (
+                  mockBriefs.map((brief) => (
+                    <ContentBriefCard 
+                      key={brief.id} 
+                      brief={brief} 
+                      onClick={() => navigate(`/dashboard/briefs/${brief.id}`)}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium">No briefs found</h3>
+                    <p className="text-muted-foreground mt-2 mb-4">
+                      Get started by creating your first content brief
+                    </p>
+                    <Button 
+                      onClick={() => setIsCreateDialogOpen(true)}
+                      className="gradient-button"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Create Brief
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
+
+        <CreateBriefDialog 
+          open={isCreateDialogOpen} 
+          onOpenChange={setIsCreateDialogOpen}
+          onSubmit={handleCreateBrief}
+        />
       </div>
     </DashboardLayout>
   );
