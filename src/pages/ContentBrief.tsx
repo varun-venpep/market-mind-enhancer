@@ -17,6 +17,7 @@ import {
   OptimizationTips,
   ContentEditor
 } from "@/components/ContentBrief";
+import { OutlineItem } from "@/types";
 
 const ContentBrief = () => {
   const { id } = useParams();
@@ -38,25 +39,25 @@ const ContentBrief = () => {
     outline: [
       {
         id: "h1",
-        type: "h1",
+        type: "h1" as const,
         text: "Optimizing Content for AI Search Engines in 2023",
         score: 95
       },
       {
         id: "h2-1",
-        type: "h2",
+        type: "h2" as const,
         text: "Understanding How AI Search Engines Work",
         score: 85,
         children: [
           {
             id: "h3-1",
-            type: "h3",
+            type: "h3" as const,
             text: "Key Differences Between Traditional and AI Search",
             score: 90
           },
           {
             id: "h3-2",
-            type: "h3",
+            type: "h3" as const,
             text: "How AI Evaluates Content Quality and Relevance",
             score: 88
           }
@@ -64,19 +65,19 @@ const ContentBrief = () => {
       },
       {
         id: "h2-2",
-        type: "h2",
+        type: "h2" as const,
         text: "Essential Optimization Strategies for AI Search",
         score: 92,
         children: [
           {
             id: "h3-3",
-            type: "h3",
+            type: "h3" as const,
             text: "Creating Comprehensive, In-depth Content",
             score: 95
           },
           {
             id: "h3-4",
-            type: "h3",
+            type: "h3" as const,
             text: "Focusing on User Intent and Conversational Queries",
             score: 96
           }
@@ -84,23 +85,23 @@ const ContentBrief = () => {
       },
       {
         id: "h2-3",
-        type: "h2",
+        type: "h2" as const,
         text: "Tools and Techniques for AI-First Content Creation",
         score: 89
       },
       {
         id: "h2-4",
-        type: "h2",
+        type: "h2" as const,
         text: "Measuring Success in AI Search Environments",
         score: 86
       },
       {
         id: "h2-5",
-        type: "h2",
+        type: "h2" as const,
         text: "Future Trends in AI Search Optimization",
         score: 82
       }
-    ],
+    ] as OutlineItem[],
     recommendedWordCount: {
       min: 1800,
       max: 2400,

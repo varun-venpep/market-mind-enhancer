@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -421,12 +420,11 @@ export const Analytics = () => {
                           </div>
                           <Progress 
                             value={content.score} 
-                            className="h-1.5" 
-                            indicatorClassName={
-                              content.score >= 90 ? "bg-green-500" :
-                              content.score >= 80 ? "bg-green-400" :
-                              content.score >= 70 ? "bg-amber-500" :
-                              "bg-red-500"
+                            className={
+                              content.score >= 90 ? "h-1.5 bg-secondary [&>div]:bg-green-500" :
+                              content.score >= 80 ? "h-1.5 bg-secondary [&>div]:bg-green-400" :
+                              content.score >= 70 ? "h-1.5 bg-secondary [&>div]:bg-amber-500" :
+                              "h-1.5 bg-secondary [&>div]:bg-red-500"
                             }
                           />
                           <div className="flex justify-between text-xs text-muted-foreground">
