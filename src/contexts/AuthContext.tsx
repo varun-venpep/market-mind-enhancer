@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -27,53 +28,95 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event);
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+
+        // Toast notification for sign in/out events (optional)
+        if (event === 'SIGNED_IN') {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully signed in.",
+          });
+        } else if (event === 'SIGNED_OUT') {
+          toast({
+            title: "Signed out",
+            description: "You have successfully signed out.",
+          });
+        }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session ? "Logged in" : "Not logged in");
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) console.error("Sign in error:", error);
+      return { error };
+    } catch (err) {
+      console.error("Unexpected sign in error:", err);
+      return { error: err };
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) console.error("Sign up error:", error);
+      return { data, error };
+    } catch (err) {
+      console.error("Unexpected sign up error:", err);
+      return { data: null, error: err };
+    }
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-        queryParams: {
-          client_id: '625723856846-40a3a31voun4vj0quets52h7bq937iai.apps.googleusercontent.com',
-        }
-      },
-    });
-    return { error };
+    try {
+      // The redirectTo is crucial to avoid localhost:3000 redirect errors
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: {
+            prompt: 'select_account',
+          }
+        },
+      });
+      
+      if (error) console.error("Google sign in error:", error);
+      return { error };
+    } catch (err) {
+      console.error("Unexpected Google sign in error:", err);
+      return { error: err };
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error("Sign out error:", error);
+      return { error };
+    } catch (err) {
+      console.error("Unexpected sign out error:", err);
+      return { error: err };
+    }
   };
 
   return (
