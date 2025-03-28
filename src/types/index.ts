@@ -47,3 +47,11 @@ export interface User {
   plan: 'free' | 'pro';
   trialEndsAt?: string;
 }
+
+export interface OutlineItem {
+  id: string;
+  type: 'h1' | 'h2' | 'h3' | 'h4';
+  text: string;
+  score: number;
+  children?: OutlineItem[];
+}

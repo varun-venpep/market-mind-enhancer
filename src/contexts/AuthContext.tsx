@@ -63,6 +63,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
+        queryParams: {
+          client_id: '625723856846-40a3a31voun4vj0quets52h7bq937iai.apps.googleusercontent.com',
+        }
       },
     });
     return { error };

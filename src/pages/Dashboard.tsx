@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, TrendingUp, FileText, BookOpen, Filter } from "lucide-react";
@@ -10,8 +11,9 @@ import { ContentBriefCard } from "@/components/Dashboard/ContentBriefCard";
 import { DashboardStats } from "@/components/Dashboard/DashboardStats";
 import { ContentBriefSkeleton } from "@/components/Dashboard/ContentBriefSkeleton";
 import { CreateBriefDialog } from "@/components/Dashboard/CreateBriefDialog";
+import { ContentBrief } from "@/types";
 
-const mockBriefs = [
+const mockBriefs: ContentBrief[] = [
   {
     id: "1",
     title: "How to optimize content for AI search engines",
@@ -46,7 +48,7 @@ const mockBriefs = [
     searchVolume: 5200,
     difficulty: 68
   }
-] as const;
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();

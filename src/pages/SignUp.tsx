@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ const signUpSchema = z
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUp = () => {
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +46,13 @@ const SignUp = () => {
       terms: false,
     },
   });
+
+  // If the user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const onSubmit = async (data: SignUpFormValues) => {
     setIsLoading(true);
@@ -98,24 +105,24 @@ const SignUp = () => {
   };
 
   return (
-    <Card className="w-full shadow-lg border-2">
+    <Card className="w-full shadow-xl border-2 bg-white/90 backdrop-blur-sm">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+        <CardTitle className="text-2xl font-bold text-center gradient-text">Join MarketMind</CardTitle>
         <CardDescription className="text-center">
-          Enter your details to create your MarketMind account
+          Create your account and start optimizing your content strategy
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Button 
-          className="w-full" 
+          className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300 bg-white text-gray-800 hover:bg-gray-50 transition-all font-medium shadow-sm" 
           variant="outline" 
           onClick={handleGoogleSignIn} 
           disabled={isGoogleLoading || isLoading}
         >
           {isGoogleLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <FaGoogle className="mr-2 h-4 w-4" />
+            <FaGoogle className="h-4 w-4 text-red-500" />
           )}
           Sign up with Google
         </Button>
@@ -126,7 +133,7 @@ const SignUp = () => {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
+              Or continue with email
             </span>
           </div>
         </div>
@@ -140,7 +147,11 @@ const SignUp = () => {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input 
+                      placeholder="name@example.com" 
+                      {...field} 
+                      className="bg-white/50 border-2 focus-visible:ring-brand-600"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,7 +164,12 @@ const SignUp = () => {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Create a strong password" {...field} />
+                    <Input 
+                      type="password" 
+                      placeholder="Create a strong password" 
+                      {...field}
+                      className="bg-white/50 border-2 focus-visible:ring-brand-600"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -166,7 +182,12 @@ const SignUp = () => {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Confirm your password" {...field} />
+                    <Input 
+                      type="password" 
+                      placeholder="Confirm your password" 
+                      {...field}
+                      className="bg-white/50 border-2 focus-visible:ring-brand-600"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -186,11 +207,11 @@ const SignUp = () => {
                   <div className="space-y-1 leading-none">
                     <FormLabel className="text-sm">
                       I agree to the{" "}
-                      <Link to="/terms" className="text-primary underline">
+                      <Link to="/terms" className="text-brand-600 underline hover:text-brand-700">
                         terms of service
                       </Link>{" "}
                       and{" "}
-                      <Link to="/privacy" className="text-primary underline">
+                      <Link to="/privacy" className="text-brand-600 underline hover:text-brand-700">
                         privacy policy
                       </Link>
                     </FormLabel>
@@ -201,7 +222,7 @@ const SignUp = () => {
             />
             <Button 
               type="submit" 
-              className="w-full gradient-button" 
+              className="w-full gradient-button shadow-md hover:shadow-lg transition-all" 
               disabled={isLoading || isGoogleLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -210,10 +231,10 @@ const SignUp = () => {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-4">
+      <CardFooter className="flex flex-col space-y-4 pt-0">
         <div className="text-center text-sm">
           Already have an account?{" "}
-          <Link to="/login" className="underline text-primary">
+          <Link to="/login" className="underline text-brand-600 hover:text-brand-700 transition-colors">
             Sign in
           </Link>
         </div>

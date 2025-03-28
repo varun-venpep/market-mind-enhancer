@@ -1,11 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -13,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { FaGoogle } from 'react-icons/fa';
+import AuthLayout from "@/components/Auth/AuthLayout";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -22,7 +22,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +35,13 @@ const Login = () => {
       password: "",
     },
   });
+
+  // If the user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -83,24 +90,24 @@ const Login = () => {
   };
 
   return (
-    <Card className="w-full shadow-lg border-2">
+    <Card className="w-full shadow-xl border-2 bg-white/90 backdrop-blur-sm">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
+        <CardTitle className="text-2xl font-bold text-center gradient-text">Welcome back to MarketMind</CardTitle>
         <CardDescription className="text-center">
           Enter your credentials to sign in to your account
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Button 
-          className="w-full" 
+          className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300 bg-white text-gray-800 hover:bg-gray-50 transition-all font-medium shadow-sm" 
           variant="outline" 
           onClick={handleGoogleSignIn} 
           disabled={isGoogleLoading || isLoading}
         >
           {isGoogleLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <FaGoogle className="mr-2 h-4 w-4" />
+            <FaGoogle className="h-4 w-4 text-red-500" />
           )}
           Sign in with Google
         </Button>
@@ -111,7 +118,7 @@ const Login = () => {
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
+              Or continue with email
             </span>
           </div>
         </div>
@@ -125,7 +132,11 @@ const Login = () => {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input 
+                      placeholder="name@example.com" 
+                      {...field} 
+                      className="bg-white/50 border-2 focus-visible:ring-brand-600"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -140,13 +151,17 @@ const Login = () => {
                     <FormLabel>Password</FormLabel>
                     <Link
                       to="/forgot-password"
-                      className="text-sm text-primary underline-offset-4 hover:underline"
+                      className="text-sm text-brand-600 underline-offset-4 hover:underline"
                     >
                       Forgot password?
                     </Link>
                   </div>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input 
+                      type="password" 
+                      {...field}
+                      className="bg-white/50 border-2 focus-visible:ring-brand-600"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -154,7 +169,7 @@ const Login = () => {
             />
             <Button 
               type="submit" 
-              className="w-full gradient-button" 
+              className="w-full gradient-button shadow-md hover:shadow-lg transition-all" 
               disabled={isLoading || isGoogleLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -163,10 +178,10 @@ const Login = () => {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-4">
+      <CardFooter className="flex flex-col space-y-4 pt-0">
         <div className="text-center text-sm">
           Don't have an account?{" "}
-          <Link to="/signup" className="underline text-primary">
+          <Link to="/signup" className="underline text-brand-600 hover:text-brand-700 transition-colors">
             Sign up
           </Link>
         </div>
