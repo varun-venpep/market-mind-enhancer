@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { bulkOptimizeSEO, fetchShopifyProducts, ShopifyProductsResponse } from '@/services/api';
-import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
+import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore, SEOIssue, SEOOptimization } from '@/types/shopify';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/Shopify/LoadingState';
 import { StoreHeader } from '@/components/Shopify/StoreHeader';
@@ -52,14 +53,14 @@ export default function ShopifyStore() {
         if (!analysesError && analyses) {
           // Create a lookup table by product ID
           const analysisMap = analyses.reduce((acc, analysis) => {
-            // Ensure analysis conforms to SEOAnalysisResult type
+            // Ensure analysis conforms to SEOAnalysisResult type and properly cast the JSON fields
             const typedAnalysis: SEOAnalysisResult = {
               product_id: analysis.product_id, // This will be a string
               title: analysis.title,
               handle: analysis.handle,
-              issues: analysis.issues,
+              issues: analysis.issues as unknown as SEOIssue[],
               score: analysis.score,
-              optimizations: analysis.optimizations
+              optimizations: analysis.optimizations as unknown as SEOOptimization[]
             };
             
             acc[analysis.product_id] = typedAnalysis;
@@ -117,14 +118,14 @@ export default function ShopifyStore() {
           
         if (analyses) {
           const analysisMap = analyses.reduce((acc, analysis) => {
-            // Ensure analysis conforms to SEOAnalysisResult type
+            // Ensure analysis conforms to SEOAnalysisResult type and properly cast the JSON fields
             const typedAnalysis: SEOAnalysisResult = {
               product_id: analysis.product_id, // This will be a string
               title: analysis.title,
               handle: analysis.handle,
-              issues: analysis.issues,
+              issues: analysis.issues as unknown as SEOIssue[],
               score: analysis.score,
-              optimizations: analysis.optimizations
+              optimizations: analysis.optimizations as unknown as SEOOptimization[]
             };
             
             acc[analysis.product_id] = typedAnalysis;
