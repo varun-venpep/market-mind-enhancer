@@ -20,6 +20,9 @@ import { Briefs } from "./pages/Briefs";
 import { Settings } from "./pages/Settings";
 import { Analytics } from "./pages/Analytics";
 import { Profile } from "./pages/Profile";
+import ShopifyStores from "./pages/ShopifyStores";
+import ShopifyCallback from "./pages/ShopifyCallback";
+import ShopifyStore from "./pages/ShopifyStore";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +46,9 @@ const App = () => (
               <Route path="/dashboard/analytics" element={<Analytics />} />
               <Route path="/dashboard/settings" element={<Settings />} />
               <Route path="/dashboard/profile" element={<Profile />} />
+              <Route path="/dashboard/shopify" element={<ShopifyStores />} />
+              <Route path="/dashboard/shopify/:storeId" element={<ShopifyStore />} />
+              <Route path="/shopify-callback" element={<ShopifyCallback />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

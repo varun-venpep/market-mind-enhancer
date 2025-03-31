@@ -89,11 +89,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
-      // Make sure to include the correct redirectTo to avoid localhost:3000 redirect errors
+      const origin = window.location.origin;
+      const redirectTo = `${origin}/dashboard`;
+      
+      console.log("Google sign-in redirect URL:", redirectTo);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/login`,
+          redirectTo: redirectTo,
           queryParams: {
             prompt: 'select_account',
             access_type: 'offline',
@@ -101,7 +105,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         },
       });
       
-      if (error) console.error("Google sign in error:", error);
+      if (error) {
+        console.error("Google sign in error:", error);
+        toast({
+          title: "Sign In Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
       return { error };
     } catch (err) {
       console.error("Unexpected Google sign in error:", err);

@@ -31,10 +31,16 @@ serve(async (req) => {
     url.searchParams.append("hl", "en");
     url.searchParams.append("api_key", SERP_API_KEY);
 
+    // Add additional parameters for more comprehensive results
+    url.searchParams.append("num", "20"); // Get more results
+    url.searchParams.append("include_html", "false"); // No need for HTML
+
     const response = await fetch(url.toString());
     
     if (!response.ok) {
-      throw new Error(`SERP API returned status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`SERP API error (${response.status}): ${errorText}`);
+      throw new Error(`SERP API returned status: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
