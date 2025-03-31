@@ -1,8 +1,12 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
 
 const SERP_API_KEY = "3c72d7e11aed80bff312ca7cbcd61ea8676b9fd3b4697350f9e9426601091cf0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 serve(async (req) => {
   // Handle CORS preflight request
@@ -11,7 +15,19 @@ serve(async (req) => {
   }
 
   try {
-    const { keyword, location = "us" } = await req.json();
+    // Handle both GET and POST requests
+    let keyword;
+    let location = "us";
+    
+    if (req.method === "POST") {
+      const body = await req.json();
+      keyword = body.keyword;
+      location = body.location || location;
+    } else {
+      const url = new URL(req.url);
+      keyword = url.searchParams.get("keyword");
+      location = url.searchParams.get("location") || location;
+    }
 
     if (!keyword) {
       return new Response(
@@ -30,10 +46,8 @@ serve(async (req) => {
     url.searchParams.append("gl", "us");
     url.searchParams.append("hl", "en");
     url.searchParams.append("api_key", SERP_API_KEY);
-
-    // Add additional parameters for more comprehensive results
-    url.searchParams.append("num", "20"); // Get more results
-    url.searchParams.append("include_html", "false"); // No need for HTML
+    url.searchParams.append("num", "20");
+    url.searchParams.append("include_html", "false");
 
     const response = await fetch(url.toString());
     

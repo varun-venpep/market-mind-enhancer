@@ -27,7 +27,7 @@ export default function ShopifyStore() {
       try {
         setIsLoading(true);
         
-        // Fetch store details
+        // Fetch store details from the new shopify_stores table
         const { data: storeData, error: storeError } = await supabase
           .from('shopify_stores')
           .select('*')
@@ -36,7 +36,8 @@ export default function ShopifyStore() {
           
         if (storeError) throw storeError;
         
-        setStore(storeData);
+        // Type assertion to match ShopifyStore interface
+        setStore(storeData as ShopifyStore);
         
         // Fetch products
         const productsData = await fetchShopifyProducts(storeId);

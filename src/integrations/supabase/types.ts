@@ -48,6 +48,86 @@ export type Database = {
         }
         Relationships: []
       }
+      shopify_seo_analyses: {
+        Row: {
+          created_at: string
+          handle: string
+          id: string
+          issues: Json
+          optimizations: Json
+          product_id: string
+          score: number
+          store_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          handle: string
+          id?: string
+          issues?: Json
+          optimizations?: Json
+          product_id: string
+          score: number
+          store_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          handle?: string
+          id?: string
+          issues?: Json
+          optimizations?: Json
+          product_id?: string
+          score?: number
+          store_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopify_seo_analyses_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "shopify_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopify_stores: {
+        Row: {
+          access_token: string
+          created_at: string
+          email: string | null
+          id: string
+          store_name: string | null
+          store_owner: string | null
+          store_url: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          store_name?: string | null
+          store_owner?: string | null
+          store_url: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          store_name?: string | null
+          store_owner?: string | null
+          store_url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       "test Data P": {
         Row: {
           _id: string | null
