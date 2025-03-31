@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, TrendingUp, ArrowUpRight, Star, BarChart, DollarSign, Filter } from "lucide-react";
 import { useState } from "react";
+import { Keyword } from "@/types";
 
 interface RelatedKeywordsProps {
   mainKeyword: string;
+  keywords?: Keyword[]; // Add keywords prop to interface
 }
 
-export const RelatedKeywords = ({ mainKeyword }: RelatedKeywordsProps) => {
+export const RelatedKeywords = ({ mainKeyword, keywords }: RelatedKeywordsProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Mock data
+  // Use provided keywords or fall back to mock data
   const mockKeywords = [
     {
       keyword: "AI search engine optimization",
@@ -74,7 +76,9 @@ export const RelatedKeywords = ({ mainKeyword }: RelatedKeywordsProps) => {
     }
   ];
 
-  const filteredKeywords = mockKeywords.filter(k => 
+  const keywordsToUse = keywords || mockKeywords;
+  
+  const filteredKeywords = keywordsToUse.filter(k => 
     k.keyword.toLowerCase().includes(searchTerm.toLowerCase())
   );
   

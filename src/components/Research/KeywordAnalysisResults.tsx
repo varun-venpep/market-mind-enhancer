@@ -1,19 +1,19 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Globe, Heading1, List, Star, Zap } from "lucide-react";
+import { SerpResult } from "@/types";
 
 interface KeywordAnalysisResultsProps {
   keyword: string;
+  results?: SerpResult[];
 }
 
-export const KeywordAnalysisResults = ({ keyword }: KeywordAnalysisResultsProps) => {
+export const KeywordAnalysisResults = ({ keyword, results }: KeywordAnalysisResultsProps) => {
   const [currentTab, setCurrentTab] = useState("overview");
   
-  // Mock data
   const mockResults = [
     {
       id: 1,
@@ -68,6 +68,8 @@ export const KeywordAnalysisResults = ({ keyword }: KeywordAnalysisResultsProps)
     }
   ];
 
+  const resultsToDisplay = results || mockResults;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -86,7 +88,7 @@ export const KeywordAnalysisResults = ({ keyword }: KeywordAnalysisResultsProps)
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
-              {mockResults.map((result) => (
+              {resultsToDisplay.map((result) => (
                 <div key={result.id} className="border rounded-lg p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex justify-between items-start mb-2">
                     <Badge variant="outline" className="mb-2">{result.position}</Badge>
@@ -111,7 +113,7 @@ export const KeywordAnalysisResults = ({ keyword }: KeywordAnalysisResultsProps)
             
             <TabsContent value="headings" className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {mockResults.map((result) => (
+                {resultsToDisplay.map((result) => (
                   <Card key={result.id} className="overflow-hidden">
                     <CardHeader className="pb-3 bg-muted/30">
                       <Badge className="w-fit mb-2">{result.position}</Badge>

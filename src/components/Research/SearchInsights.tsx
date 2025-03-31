@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Lightbulb, Search, Target, TrendingUp, Clock, Calendar, Users, Map } from "lucide-react";
@@ -7,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 
 interface SearchInsightsProps {
   keyword: string;
+  data?: any;
 }
 
-export const SearchInsights = ({ keyword }: SearchInsightsProps) => {
+export const SearchInsights = ({ keyword, data }: SearchInsightsProps) => {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

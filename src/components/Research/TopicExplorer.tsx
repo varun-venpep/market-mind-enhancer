@@ -8,9 +8,10 @@ import { List, Lightbulb, ArrowRight, HelpCircle, Bookmark, Plus } from "lucide-
 
 interface TopicExplorerProps {
   keyword: string;
+  questions?: string[]; // Add questions prop to interface
 }
 
-export const TopicExplorer = ({ keyword }: TopicExplorerProps) => {
+export const TopicExplorer = ({ keyword, questions }: TopicExplorerProps) => {
   const [activeTab, setActiveTab] = useState("topics");
   
   // Mock data
@@ -85,6 +86,9 @@ export const TopicExplorer = ({ keyword }: TopicExplorerProps) => {
     "What metrics should I track for AI search optimization?"
   ];
 
+  // Use provided questions or fall back to mock data
+  const questionsToDisplay = questions || mockQuestions;
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -151,7 +155,7 @@ export const TopicExplorer = ({ keyword }: TopicExplorerProps) => {
             </CardHeader>
             <CardContent>
               <ul className="grid gap-2 sm:grid-cols-2">
-                {mockQuestions.map((question, i) => (
+                {questionsToDisplay.map((question, i) => (
                   <li key={i} className="flex items-start gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
                     <div className="rounded-full bg-primary/10 p-1 mt-0.5">
                       <HelpCircle className="h-4 w-4 text-primary" />
