@@ -33,15 +33,35 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get store credentials
+    // Authenticate the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    // Get store credentials and verify ownership
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')
       .select('*')
       .eq('id', storeId)
+      .eq('user_id', user.id)  // Ensure the user owns this store
       .single();
       
     if (storeError || !store) {
-      return new Response(JSON.stringify({ error: 'Store not found' }), {
+      return new Response(JSON.stringify({ error: 'Store not found or access denied' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
       });
@@ -142,6 +162,37 @@ serve(async (req) => {
       }
     }
     
+    // Update the analysis in the database with applied optimizations
+    const { data: analysis, error: analysisError } = await supabase
+      .from('shopify_seo_analyses')
+      .select('*')
+      .eq('store_id', storeId)
+      .eq('product_id', productId)
+      .single();
+      
+    if (!analysisError && analysis) {
+      const updatedOptimizations = analysis.optimizations.map(opt => {
+        // Check if this optimization was part of the ones we just applied
+        const wasApplied = optimizations.some(applied => 
+          applied.type === opt.type && applied.field === opt.field
+        );
+        
+        if (wasApplied) {
+          return { ...opt, applied: true };
+        }
+        
+        return opt;
+      });
+      
+      await supabase.from('shopify_seo_analyses')
+        .update({
+          optimizations: updatedOptimizations,
+          updated_at: new Date().toISOString()
+        })
+        .eq('store_id', storeId)
+        .eq('product_id', productId);
+    }
+    
     return new Response(JSON.stringify({ 
       success: true,
       message: 'SEO optimizations applied successfully'
@@ -149,6 +200,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error('Error applying optimizations:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Failed to apply SEO optimizations' 
     }), {

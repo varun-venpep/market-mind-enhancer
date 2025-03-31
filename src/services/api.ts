@@ -19,21 +19,30 @@ export interface ShopifyCredentials {
   storeUrl: string;
 }
 
-const api = axios.create({
-  baseURL: BACKEND_URL,
-});
-
-// Add auth token to all requests
-api.interceptors.request.use(async (config) => {
+// Get the current session token
+const getAuthToken = async () => {
   const { data } = await supabase.auth.getSession();
-  const session = data.session;
+  return data.session?.access_token;
+};
+
+// Create a function to invoke edge functions with proper authentication
+const invokeFunction = async (functionName: string, payload: any) => {
+  const token = await getAuthToken();
   
-  if (session) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
+  if (!token) {
+    throw new Error('Authentication required');
   }
   
-  return config;
-});
+  const { data, error } = await supabase.functions.invoke(functionName, {
+    body: payload,
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  
+  if (error) throw error;
+  return data;
+};
 
 export async function getConnectedShopifyStores(): Promise<ShopifyStore[]> {
   try {
@@ -66,29 +75,13 @@ export async function disconnectShopifyStore(storeId: string): Promise<void> {
 export async function connectShopifyStore(credentials: ShopifyCredentials): Promise<ShopifyStore> {
   try {
     // Call the Supabase Edge Function to connect to Shopify
-    const { data, error } = await supabase.functions.invoke('shopify-connect', {
-      body: credentials
-    });
+    const data = await invokeFunction('shopify-connect', credentials);
     
-    if (error) throw error;
+    if (!data.store) {
+      throw new Error('Failed to connect to Shopify store');
+    }
     
-    // Store the connection in the database
-    const { data: storeData, error: storeError } = await supabase
-      .from('shopify_stores')
-      .insert({
-        store_url: credentials.storeUrl,
-        store_name: data.shop.name,
-        store_owner: data.shop.shop_owner,
-        email: data.shop.email,
-        access_token: data.access_token,
-        user_id: (await supabase.auth.getUser()).data.user?.id
-      })
-      .select()
-      .single();
-      
-    if (storeError) throw storeError;
-    
-    return storeData as ShopifyStore;
+    return data.store as ShopifyStore;
   } catch (error) {
     console.error('Error connecting Shopify store:', error);
     throw error;
@@ -98,11 +91,7 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
 export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20): Promise<ShopifyProductsResponse> {
   try {
     // Call the Supabase Edge Function to fetch products
-    const { data, error } = await supabase.functions.invoke('shopify-products', {
-      body: { storeId, page, limit }
-    });
-    
-    if (error) throw error;
+    const data = await invokeFunction('shopify-products', { storeId, page, limit });
     return data as ShopifyProductsResponse;
   } catch (error) {
     console.error('Error fetching Shopify products:', error);
@@ -113,24 +102,7 @@ export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20
 export async function analyzeSEO(storeId: string, productId: string): Promise<SEOAnalysisResult> {
   try {
     // Call our Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke('shopify-seo', {
-      body: { storeId, productId }
-    });
-    
-    if (error) throw error;
-    
-    // Store the analysis in the database
-    await supabase.from('shopify_seo_analyses').upsert({
-      store_id: storeId,
-      product_id: productId,
-      title: data.title,
-      handle: data.handle,
-      issues: data.issues,
-      score: data.score,
-      optimizations: data.optimizations,
-      updated_at: new Date().toISOString()
-    });
-    
+    const data = await invokeFunction('shopify-seo', { storeId, productId });
     return data as SEOAnalysisResult;
   } catch (error) {
     console.error('Error analyzing SEO:', error);
@@ -141,21 +113,7 @@ export async function analyzeSEO(storeId: string, productId: string): Promise<SE
 export async function optimizeSEO(storeId: string, productId: string, optimizations: any[]) {
   try {
     // Call our Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke('shopify-optimize', {
-      body: { storeId, productId, optimizations }
-    });
-    
-    if (error) throw error;
-    
-    // Update the analysis in the database
-    await supabase.from('shopify_seo_analyses')
-      .update({
-        optimizations: optimizations.map(opt => ({ ...opt, applied: true })),
-        updated_at: new Date().toISOString()
-      })
-      .eq('store_id', storeId)
-      .eq('product_id', productId);
-    
+    const data = await invokeFunction('shopify-optimize', { storeId, productId, optimizations });
     return data;
   } catch (error) {
     console.error('Error optimizing SEO:', error);
@@ -166,11 +124,7 @@ export async function optimizeSEO(storeId: string, productId: string, optimizati
 export async function bulkOptimizeSEO(storeId: string) {
   try {
     // Call our Supabase Edge Function for bulk optimization
-    const { data, error } = await supabase.functions.invoke('shopify-bulk-optimize', {
-      body: { storeId }
-    });
-    
-    if (error) throw error;
+    const data = await invokeFunction('shopify-bulk-optimize', { storeId });
     return data;
   } catch (error) {
     console.error('Error running bulk SEO optimization:', error);
@@ -178,4 +132,12 @@ export async function bulkOptimizeSEO(storeId: string) {
   }
 }
 
-export default api;
+export default {
+  getConnectedShopifyStores,
+  disconnectShopifyStore,
+  connectShopifyStore,
+  fetchShopifyProducts,
+  analyzeSEO,
+  optimizeSEO,
+  bulkOptimizeSEO
+};

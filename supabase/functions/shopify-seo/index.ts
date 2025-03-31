@@ -202,7 +202,7 @@ function generateSuggestions(product, analysisResults) {
       optimizations.push({
         type: 'description',
         field: 'metafields',
-        original: product.metafields.description || '',
+        original: product.metafields?.description || '',
         suggestion: optimizedDescription,
         applied: false
       });
@@ -210,7 +210,7 @@ function generateSuggestions(product, analysisResults) {
       optimizations.push({
         type: 'description',
         field: 'metafields',
-        original: product.metafields.description || '',
+        original: product.metafields?.description || '',
         suggestion: strippedContent,
         applied: false
       });
@@ -269,15 +269,35 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get store credentials
+    // Authenticate the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    // Get store credentials and verify ownership
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')
       .select('*')
       .eq('id', storeId)
+      .eq('user_id', user.id)  // Ensure the user owns this store
       .single();
       
     if (storeError || !store) {
-      return new Response(JSON.stringify({ error: 'Store not found' }), {
+      return new Response(JSON.stringify({ error: 'Store not found or access denied' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
       });
@@ -338,10 +358,27 @@ serve(async (req) => {
       optimizations
     };
     
+    // Store the analysis in the database
+    const { error: insertError } = await supabase.from('shopify_seo_analyses').upsert({
+      store_id: storeId,
+      product_id: product.id.toString(),
+      title: product.title,
+      handle: product.handle,
+      issues: allIssues,
+      score: overallScore,
+      optimizations: optimizations,
+      updated_at: new Date().toISOString()
+    });
+    
+    if (insertError) {
+      console.error('Error storing SEO analysis:', insertError);
+    }
+    
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error('Error analyzing SEO:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Failed to analyze SEO' 
     }), {

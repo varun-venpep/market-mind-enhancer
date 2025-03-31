@@ -31,15 +31,35 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get store credentials
+    // Authenticate the user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    // Get store credentials and verify ownership
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')
       .select('*')
       .eq('id', storeId)
+      .eq('user_id', user.id)  // Ensure the user owns this store
       .single();
       
     if (storeError || !store) {
-      return new Response(JSON.stringify({ error: 'Store not found' }), {
+      return new Response(JSON.stringify({ error: 'Store not found or access denied' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
       });
@@ -66,10 +86,11 @@ serve(async (req) => {
     for (const analysis of analysesWithOptimizations) {
       try {
         // Call the optimization endpoint for each product
-        const optimizeResponse = await fetch(new URL('/shopify-optimize', req.url).href, {
+        const optimizeResponse = await fetch(`${req.url.replace('/shopify-bulk-optimize', '/shopify-optimize')}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': authHeader
           },
           body: JSON.stringify({
             storeId,
@@ -88,6 +109,7 @@ serve(async (req) => {
           success: true
         });
       } catch (error) {
+        console.error(`Error optimizing product ${analysis.product_id}:`, error);
         results.push({
           product_id: analysis.product_id,
           title: analysis.title,
@@ -105,6 +127,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error('Error running bulk SEO optimization:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Failed to run bulk SEO optimization' 
     }), {
