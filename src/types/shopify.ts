@@ -85,7 +85,7 @@ export interface ShopifyMetafield {
 }
 
 export interface SEOAnalysisResult {
-  product_id: number;
+  product_id: string | number; // Updated to accept both string and number
   title: string;
   handle: string;
   issues: SEOIssue[];

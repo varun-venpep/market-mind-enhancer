@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
   const { toast } = useToast();
   
   const handleAnalyzeSEO = async () => {
-    const productId = String(product.id);
+    const productId = String(product.id); // Ensure productId is always a string
     
     setIsAnalyzing(true);
     
@@ -50,7 +49,7 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
   const handleOptimizeSEO = async () => {
     if (!analysis) return;
     
-    const productId = String(product.id);
+    const productId = String(product.id); // Ensure productId is always a string
     
     try {
       setIsAnalyzing(true);

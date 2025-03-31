@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +52,17 @@ export default function ShopifyStore() {
         if (!analysesError && analyses) {
           // Create a lookup table by product ID
           const analysisMap = analyses.reduce((acc, analysis) => {
-            acc[analysis.product_id] = analysis;
+            // Ensure analysis conforms to SEOAnalysisResult type
+            const typedAnalysis: SEOAnalysisResult = {
+              product_id: analysis.product_id, // This will be a string
+              title: analysis.title,
+              handle: analysis.handle,
+              issues: analysis.issues,
+              score: analysis.score,
+              optimizations: analysis.optimizations
+            };
+            
+            acc[analysis.product_id] = typedAnalysis;
             return acc;
           }, {} as Record<string, SEOAnalysisResult>);
           
@@ -108,7 +117,17 @@ export default function ShopifyStore() {
           
         if (analyses) {
           const analysisMap = analyses.reduce((acc, analysis) => {
-            acc[analysis.product_id] = analysis;
+            // Ensure analysis conforms to SEOAnalysisResult type
+            const typedAnalysis: SEOAnalysisResult = {
+              product_id: analysis.product_id, // This will be a string
+              title: analysis.title,
+              handle: analysis.handle,
+              issues: analysis.issues,
+              score: analysis.score,
+              optimizations: analysis.optimizations
+            };
+            
+            acc[analysis.product_id] = typedAnalysis;
             return acc;
           }, {} as Record<string, SEOAnalysisResult>);
           

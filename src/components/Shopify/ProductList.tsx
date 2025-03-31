@@ -27,7 +27,7 @@ export function ProductList({ products, storeId, analysisResults, onAnalysisComp
   return (
     <div className="grid grid-cols-1 gap-6">
       {products.map(product => {
-        const productId = String(product.id);
+        const productId = String(product.id); // Always convert to string for consistency
         const analysis = analysisResults[productId] || null;
         
         return (
