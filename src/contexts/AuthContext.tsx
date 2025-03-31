@@ -89,13 +89,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
-      // The redirectTo is crucial to avoid localhost:3000 redirect errors
+      // Make sure to include the correct redirectTo to avoid localhost:3000 redirect errors
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/login`,
           queryParams: {
             prompt: 'select_account',
+            access_type: 'offline',
           }
         },
       });

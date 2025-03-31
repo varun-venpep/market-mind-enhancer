@@ -12,7 +12,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { FaGoogle } from 'react-icons/fa';
-import AuthLayout from "@/components/Auth/AuthLayout";
 import { motion } from "framer-motion";
 
 const loginSchema = z.object({
@@ -104,10 +103,11 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button 
-            className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300 bg-white text-gray-800 hover:bg-gray-50 transition-all font-medium shadow-sm" 
-            variant="outline" 
-            onClick={handleGoogleSignIn} 
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300 bg-white text-gray-800 hover:bg-gray-50 transition-all font-medium shadow-sm px-4 py-2 rounded-md"
+            onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isLoading}
           >
             {isGoogleLoading ? (
@@ -116,7 +116,7 @@ const Login = () => {
               <FaGoogle className="h-4 w-4 text-red-500" />
             )}
             Sign in with Google
-          </Button>
+          </motion.button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

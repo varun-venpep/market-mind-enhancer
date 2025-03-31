@@ -29,6 +29,8 @@ export interface SerpApiResponse {
 
 export async function fetchSerpResults(keyword: string, location: string = "us"): Promise<SerpApiResponse> {
   try {
+    console.log(`Fetching SERP results for keyword: ${keyword}, location: ${location}`);
+    
     const { data, error } = await supabase.functions.invoke("serpapi", {
       body: { keyword, location },
     });
@@ -38,6 +40,12 @@ export async function fetchSerpResults(keyword: string, location: string = "us")
       throw new Error(error.message || "Failed to fetch SERP results");
     }
 
+    if (!data || !data.data) {
+      console.error("SERP API returned unexpected data structure:", data);
+      throw new Error("Received invalid data format from SERP API");
+    }
+
+    console.log(`Successfully retrieved SERP data for: ${keyword}`);
     return data.data;
   } catch (error) {
     console.error("SERP API Client Error:", error);

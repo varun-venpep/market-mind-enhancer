@@ -20,6 +20,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Fetching SERP data for keyword: ${keyword}, location: ${location}`);
+
     // Construct SERP API URL with parameters
     const url = new URL("https://serpapi.com/search");
     url.searchParams.append("engine", "google");
@@ -30,7 +32,13 @@ serve(async (req) => {
     url.searchParams.append("api_key", SERP_API_KEY);
 
     const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      throw new Error(`SERP API returned status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log(`Successfully retrieved SERP data for: ${keyword}`);
 
     return new Response(
       JSON.stringify({
@@ -43,6 +51,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error(`SERP API Error: ${error.message}`);
     return new Response(
       JSON.stringify({
         success: false,
