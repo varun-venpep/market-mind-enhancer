@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, Search, Settings, ShoppingBag, Store, Zap } from "lucide-react";
-import { analyzeSEO, bulkOptimizeSEO, fetchShopifyProducts, optimizeSEO } from '@/services/api';
+import { analyzeSEO, bulkOptimizeSEO, fetchShopifyProducts, optimizeSEO, ShopifyProductsResponse } from '@/services/api';
 import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,7 +27,7 @@ export default function ShopifyStore() {
       try {
         setIsLoading(true);
         
-        // Fetch store details from the new shopify_stores table
+        // Fetch store details from the shopify_stores table
         const { data: storeData, error: storeError } = await supabase
           .from('shopify_stores')
           .select('*')
@@ -39,8 +39,8 @@ export default function ShopifyStore() {
         // Type assertion to match ShopifyStore interface
         setStore(storeData as ShopifyStore);
         
-        // Fetch products
-        const productsData = await fetchShopifyProducts(storeId);
+        // Fetch products with proper typing
+        const productsData: ShopifyProductsResponse = await fetchShopifyProducts(storeId);
         setProducts(productsData.products);
       } catch (error) {
         console.error('Error fetching store data:', error);

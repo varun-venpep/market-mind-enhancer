@@ -1,9 +1,16 @@
-
 import axios from 'axios';
 import { supabase } from '@/integrations/supabase/client';
-import type { SEOAnalysisResult, ShopifyStore } from '@/types/shopify';
+import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
+// Define the interface for the response from fetchShopifyProducts
+export interface ShopifyProductsResponse {
+  products: ShopifyProduct[];
+  page: number;
+  limit: number;
+  total: number;
+}
 
 const api = axios.create({
   baseURL: BACKEND_URL,
@@ -49,7 +56,7 @@ export async function disconnectShopifyStore(storeId: string): Promise<void> {
   }
 }
 
-export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20) {
+export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20): Promise<ShopifyProductsResponse> {
   try {
     // This is a placeholder for backend API - in a real app, you would call your backend here
     // For now, let's return mock data with a delay to simulate an API call
