@@ -1,138 +1,159 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // Handle CORS preflight request
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    });
   }
 
   try {
     const { storeId, productId, optimizations } = await req.json();
     
+    if (!storeId || !productId || !optimizations) {
+      return new Response(JSON.stringify({ 
+        error: 'Store ID, Product ID, and optimizations are required' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get store data
+    // Get store credentials
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')
       .select('*')
       .eq('id', storeId)
       .single();
-    
+      
     if (storeError || !store) {
-      return new Response(
-        JSON.stringify({ error: "Store not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: 'Store not found' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      });
     }
+
+    // Prepare product update object
+    const productUpdate = {};
+    const metafieldsToUpdate = [];
+    const imagesToUpdate = [];
     
-    // Fetch product data from Shopify API
-    const getResponse = await fetch(
-      `https://${store.store_url}/admin/api/2023-10/products/${productId}.json`,
-      {
-        headers: {
-          "X-Shopify-Access-Token": store.access_token,
-          "Content-Type": "application/json"
+    // Process optimizations
+    optimizations.forEach(opt => {
+      if (opt.type === 'title' && opt.field === 'title') {
+        productUpdate.title = opt.suggestion;
+      } else if (opt.type === 'description' && opt.field === 'metafields') {
+        metafieldsToUpdate.push({
+          namespace: 'global',
+          key: 'description_tag',
+          value: opt.suggestion,
+          type: 'single_line_text_field'
+        });
+      } else if (opt.type === 'image' && opt.field.startsWith('images[')) {
+        const match = opt.field.match(/images\[(\d+)\]\.alt/);
+        if (match && match[1]) {
+          const imageIndex = parseInt(match[1], 10);
+          imagesToUpdate.push({ id: imageIndex, alt: opt.suggestion });
         }
       }
-    );
+    });
     
-    if (!getResponse.ok) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch product from Shopify" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Update product on Shopify
+    if (Object.keys(productUpdate).length > 0) {
+      const productResponse = await fetch(`https://${store.store_url}/admin/api/2023-01/products/${productId}.json`, {
+        method: 'PUT',
+        headers: {
+          'X-Shopify-Access-Token': store.access_token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ product: productUpdate }),
+      });
+      
+      if (!productResponse.ok) {
+        throw new Error(`Failed to update product: ${productResponse.statusText}`);
+      }
     }
     
-    const productData = await getResponse.json();
-    const product = productData.product;
+    // Update metafields
+    if (metafieldsToUpdate.length > 0) {
+      for (const metafield of metafieldsToUpdate) {
+        const metafieldResponse = await fetch(`https://${store.store_url}/admin/api/2023-01/products/${productId}/metafields.json`, {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': store.access_token,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ metafield }),
+        });
+        
+        if (!metafieldResponse.ok) {
+          console.warn(`Failed to update metafield: ${metafieldResponse.statusText}`);
+        }
+      }
+    }
     
-    // Apply optimizations
-    const updatedProduct = { ...product };
-    
-    for (const opt of optimizations) {
-      if (opt.type === 'title') {
-        updatedProduct.title = opt.suggestion;
-      } else if (opt.type === 'description') {
-        updatedProduct.body_html = opt.suggestion;
-      } else if (opt.type === 'image' && opt.field.startsWith('images[')) {
-        // Extract image ID from the field string (e.g., "images[123].alt")
-        const matches = opt.field.match(/images\[(\d+)\]\.alt/);
-        if (matches && matches[1]) {
-          const imageId = parseInt(matches[1]);
-          // Find the image by ID
-          const imageIndex = updatedProduct.images.findIndex(img => img.id === imageId);
-          if (imageIndex >= 0) {
-            updatedProduct.images[imageIndex].alt = opt.suggestion;
+    // Update images
+    if (imagesToUpdate.length > 0) {
+      // First, get the current images
+      const imagesResponse = await fetch(`https://${store.store_url}/admin/api/2023-01/products/${productId}/images.json`, {
+        headers: {
+          'X-Shopify-Access-Token': store.access_token,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!imagesResponse.ok) {
+        throw new Error(`Failed to fetch images: ${imagesResponse.statusText}`);
+      }
+      
+      const { images } = await imagesResponse.json();
+      
+      // Update each image
+      for (const imageUpdate of imagesToUpdate) {
+        const image = images[imageUpdate.id];
+        if (image) {
+          const updateResponse = await fetch(`https://${store.store_url}/admin/api/2023-01/products/${productId}/images/${image.id}.json`, {
+            method: 'PUT',
+            headers: {
+              'X-Shopify-Access-Token': store.access_token,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image: { id: image.id, alt: imageUpdate.alt } }),
+          });
+          
+          if (!updateResponse.ok) {
+            console.warn(`Failed to update image: ${updateResponse.statusText}`);
           }
         }
       }
     }
     
-    // Update product in Shopify
-    const updateResponse = await fetch(
-      `https://${store.store_url}/admin/api/2023-10/products/${productId}.json`,
-      {
-        method: 'PUT',
-        headers: {
-          "X-Shopify-Access-Token": store.access_token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ product: updatedProduct })
-      }
-    );
-    
-    if (!updateResponse.ok) {
-      return new Response(
-        JSON.stringify({ error: "Failed to update product in Shopify" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Update analysis in database
-    const { data: analysis, error: analysisError } = await supabase
-      .from('shopify_seo_analyses')
-      .select('*')
-      .eq('store_id', storeId)
-      .eq('product_id', productId)
-      .single();
-    
-    if (!analysisError && analysis) {
-      // Mark optimizations as applied
-      const updatedOptimizations = analysis.optimizations.map(opt => {
-        const wasApplied = optimizations.some(
-          appliedOpt => appliedOpt.type === opt.type && appliedOpt.field === opt.field
-        );
-        return wasApplied ? { ...opt, applied: true } : opt;
-      });
-      
-      await supabase
-        .from('shopify_seo_analyses')
-        .update({
-          optimizations: updatedOptimizations,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', analysis.id);
-    }
-    
-    return new Response(
-      JSON.stringify({ success: true, message: "SEO optimizations applied successfully" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'SEO optimizations applied successfully'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error("Error:", error.message);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Failed to apply SEO optimizations' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 });

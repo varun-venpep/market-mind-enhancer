@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowRight, ShoppingBag } from "lucide-react";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+import { ArrowRight, Key, ShoppingBag, Store } from "lucide-react";
+import { connectShopifyStore } from '@/services/api';
 
 export default function ShopifyConnect() {
-  const [shopUrl, setShopUrl] = useState('');
+  const [storeUrl, setStoreUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [apiSecretKey, setApiSecretKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -28,7 +29,7 @@ export default function ShopifyConnect() {
       return;
     }
 
-    let formattedUrl = shopUrl.trim();
+    let formattedUrl = storeUrl.trim();
     
     // Remove protocol if present
     if (formattedUrl.startsWith('http://') || formattedUrl.startsWith('https://')) {
@@ -48,27 +49,24 @@ export default function ShopifyConnect() {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${BACKEND_URL}/shopify-auth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.id}`
-        },
-        body: JSON.stringify({
-          shop: formattedUrl,
-          userId: user.id
-        })
+      await connectShopifyStore({
+        storeUrl: formattedUrl,
+        apiKey,
+        apiSecretKey
       });
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to connect to Shopify');
-      }
+      toast({
+        title: "Store Connected",
+        description: "Your Shopify store was successfully connected",
+        variant: "default"
+      });
       
-      const { authUrl } = await response.json();
+      // Reset form
+      setStoreUrl('');
+      setApiKey('');
+      setApiSecretKey('');
       
-      // Redirect to Shopify OAuth
-      window.location.href = authUrl;
+      // Trigger a reload or navigation (parent component should handle this)
     } catch (error) {
       console.error('Shopify connection error:', error);
       toast({
@@ -82,41 +80,79 @@ export default function ShopifyConnect() {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ShoppingBag className="h-5 w-5 text-primary" />
-          Connect Your Shopify Store
+    <Card className="w-full shadow-lg hover-card bg-card border-muted/40">
+      <CardHeader className="space-y-1">
+        <CardTitle className="flex items-center gap-2 text-2xl">
+          <ShoppingBag className="h-6 w-6 text-primary" />
+          Connect Shopify Store
         </CardTitle>
-        <CardDescription>
-          Connect your Shopify store to start optimizing your product SEO automatically
+        <CardDescription className="text-base">
+          Connect your Shopify store to start optimizing product SEO automatically
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleConnect}>
-          <div className="grid w-full items-center gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="shopUrl">Shopify Store URL</Label>
-              <Input
-                id="shopUrl"
-                placeholder="your-store.myshopify.com"
-                value={shopUrl}
-                onChange={(e) => setShopUrl(e.target.value)}
-                required
-              />
-            </div>
+        <form onSubmit={handleConnect} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="storeUrl" className="text-sm font-medium">
+              <Store className="h-4 w-4 inline mr-1" />
+              Shopify Store URL
+            </Label>
+            <Input
+              id="storeUrl"
+              placeholder="your-store.myshopify.com"
+              value={storeUrl}
+              onChange={(e) => setStoreUrl(e.target.value)}
+              className="bg-background/50"
+              required
+            />
           </div>
-          <div className="flex justify-end mt-6">
-            <Button type="submit" disabled={isLoading} className="gap-2">
+          
+          <div className="space-y-2">
+            <Label htmlFor="apiKey" className="text-sm font-medium">
+              <Key className="h-4 w-4 inline mr-1" />
+              API Key
+            </Label>
+            <Input
+              id="apiKey"
+              placeholder="Enter your Shopify API key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="bg-background/50"
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="apiSecretKey" className="text-sm font-medium">
+              <Key className="h-4 w-4 inline mr-1" />
+              API Secret Key
+            </Label>
+            <Input
+              id="apiSecretKey"
+              type="password"
+              placeholder="Enter your Shopify API secret key"
+              value={apiSecretKey}
+              onChange={(e) => setApiSecretKey(e.target.value)}
+              className="bg-background/50"
+              required
+            />
+          </div>
+          
+          <div className="pt-2">
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="w-full gap-2 hover:shadow-md transition-all"
+            >
               {isLoading ? "Connecting..." : "Connect Store"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </form>
       </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          Your data will be securely stored and used only for SEO optimization
+      <CardFooter className="flex justify-center border-t px-6 py-4 bg-muted/5">
+        <p className="text-xs text-muted-foreground">
+          Your credentials are securely stored and used only for SEO optimization. <a href="https://shopify.dev/docs/admin-api/access-token" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Learn how to get your API keys</a>
         </p>
       </CardFooter>
     </Card>

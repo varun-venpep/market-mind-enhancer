@@ -67,14 +67,14 @@ export default function ShopifyStores() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Shopify Stores</h1>
+          <h1 className="text-3xl font-bold gradient-text">Shopify SEO Automation</h1>
           <p className="text-muted-foreground mt-1">
-            Connect and manage your Shopify stores for SEO optimization
+            Connect and manage your Shopify stores for automated SEO optimization
           </p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 shadow-sm hover:shadow-md transition-all">
               <Plus className="h-4 w-4" />
               Connect New Store
             </Button>
@@ -83,7 +83,7 @@ export default function ShopifyStores() {
             <DialogHeader>
               <DialogTitle>Connect Shopify Store</DialogTitle>
               <DialogDescription>
-                Enter your Shopify store URL to connect it to the SEO platform
+                Enter your Shopify store credentials to connect it to the SEO platform
               </DialogDescription>
             </DialogHeader>
             <ShopifyConnect />
@@ -106,8 +106,8 @@ export default function ShopifyStores() {
       ) : stores.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {stores.map(store => (
-            <Card key={store.id}>
-              <CardHeader>
+            <Card key={store.id} className="hover-card transition-all duration-200 border-muted/40">
+              <CardHeader className="bg-muted/5">
                 <CardTitle className="flex items-center gap-2">
                   <Store className="h-5 w-5 text-primary" />
                   {store.store_name || store.store_url}
@@ -115,15 +115,24 @@ export default function ShopifyStores() {
                 <CardDescription>{store.store_url}</CardDescription>
               </CardHeader>
               <CardContent>
-                {store.store_owner && <p>Owner: {store.store_owner}</p>}
-                <p className="text-sm text-muted-foreground">Connected on {new Date(store.created_at).toLocaleDateString()}</p>
+                {store.store_owner && <p className="text-sm">Owner: {store.store_owner}</p>}
+                <p className="text-sm text-muted-foreground mt-2">Connected on {new Date(store.created_at).toLocaleDateString()}</p>
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" size="sm" onClick={() => handleDisconnect(store.id)}>
-                  <Trash2 className="h-4 w-4 mr-2" />
+              <CardFooter className="flex justify-between bg-muted/5 border-t">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleDisconnect(store.id)}
+                  className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 dark:text-red-500"
+                >
+                  <Trash2 className="h-4 w-4" />
                   Disconnect
                 </Button>
-                <Button size="sm" onClick={() => handleViewStore(store.id)}>
+                <Button 
+                  size="sm" 
+                  onClick={() => handleViewStore(store.id)}
+                  className="gap-2 shadow-sm hover:shadow-md transition-all"
+                >
                   Manage Store
                 </Button>
               </CardFooter>
@@ -131,7 +140,7 @@ export default function ShopifyStores() {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="hover-card shadow-md">
           <CardHeader>
             <CardTitle>No Stores Connected</CardTitle>
             <CardDescription>

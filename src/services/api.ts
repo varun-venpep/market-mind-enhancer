@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { supabase } from '@/integrations/supabase/client';
 import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
@@ -10,6 +11,12 @@ export interface ShopifyProductsResponse {
   page: number;
   limit: number;
   total: number;
+}
+
+export interface ShopifyCredentials {
+  apiKey: string;
+  apiSecretKey: string;
+  storeUrl: string;
 }
 
 const api = axios.create({
@@ -56,86 +63,54 @@ export async function disconnectShopifyStore(storeId: string): Promise<void> {
   }
 }
 
+export async function connectShopifyStore(credentials: ShopifyCredentials): Promise<ShopifyStore> {
+  try {
+    // Call the Supabase Edge Function to connect to Shopify
+    const { data, error } = await supabase.functions.invoke('shopify-connect', {
+      body: credentials
+    });
+    
+    if (error) throw error;
+    
+    // Store the connection in the database
+    const { data: storeData, error: storeError } = await supabase
+      .from('shopify_stores')
+      .insert({
+        store_url: credentials.storeUrl,
+        store_name: data.shop.name,
+        store_owner: data.shop.shop_owner,
+        email: data.shop.email,
+        access_token: data.access_token,
+        user_id: (await supabase.auth.getUser()).data.user?.id
+      })
+      .select()
+      .single();
+      
+    if (storeError) throw storeError;
+    
+    return storeData as ShopifyStore;
+  } catch (error) {
+    console.error('Error connecting Shopify store:', error);
+    throw error;
+  }
+}
+
 export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20): Promise<ShopifyProductsResponse> {
   try {
-    // This is a placeholder for backend API - in a real app, you would call your backend here
-    // For now, let's return mock data with a delay to simulate an API call
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          products: [
-            {
-              id: 1,
-              title: "Sample Product 1",
-              handle: "sample-product-1",
-              body_html: "<p>This is a sample product description.</p>",
-              vendor: "Sample Vendor",
-              product_type: "Sample Type",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              published_at: new Date().toISOString(),
-              tags: "sample, product, test",
-              variants: [],
-              images: [
-                {
-                  id: 101,
-                  product_id: 1,
-                  position: 1,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                  alt: null,
-                  width: 800,
-                  height: 600,
-                  src: "https://placehold.co/800x600?text=Sample+Product+1",
-                  variant_ids: []
-                }
-              ],
-              options: [],
-              metafields: []
-            },
-            {
-              id: 2,
-              title: "Sample Product 2",
-              handle: "sample-product-2",
-              body_html: "<p>Another sample product with more details.</p>",
-              vendor: "Sample Vendor",
-              product_type: "Premium Type",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              published_at: new Date().toISOString(),
-              tags: "premium, sample, product",
-              variants: [],
-              images: [
-                {
-                  id: 201,
-                  product_id: 2,
-                  position: 1,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                  alt: "Sample Product 2 - Main Image",
-                  width: 800,
-                  height: 600,
-                  src: "https://placehold.co/800x600?text=Sample+Product+2",
-                  variant_ids: []
-                }
-              ],
-              options: [],
-              metafields: []
-            }
-          ],
-          page,
-          limit,
-          total: 2
-        });
-      }, 500);
+    // Call the Supabase Edge Function to fetch products
+    const { data, error } = await supabase.functions.invoke('shopify-products', {
+      body: { storeId, page, limit }
     });
+    
+    if (error) throw error;
+    return data as ShopifyProductsResponse;
   } catch (error) {
     console.error('Error fetching Shopify products:', error);
     throw error;
   }
 }
 
-export async function analyzeSEO(storeId: string, productId: string) {
+export async function analyzeSEO(storeId: string, productId: string): Promise<SEOAnalysisResult> {
   try {
     // Call our Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('shopify-seo', {
@@ -143,6 +118,19 @@ export async function analyzeSEO(storeId: string, productId: string) {
     });
     
     if (error) throw error;
+    
+    // Store the analysis in the database
+    await supabase.from('shopify_seo_analyses').upsert({
+      store_id: storeId,
+      product_id: productId,
+      title: data.title,
+      handle: data.handle,
+      issues: data.issues,
+      score: data.score,
+      optimizations: data.optimizations,
+      updated_at: new Date().toISOString()
+    });
+    
     return data as SEOAnalysisResult;
   } catch (error) {
     console.error('Error analyzing SEO:', error);
@@ -158,6 +146,16 @@ export async function optimizeSEO(storeId: string, productId: string, optimizati
     });
     
     if (error) throw error;
+    
+    // Update the analysis in the database
+    await supabase.from('shopify_seo_analyses')
+      .update({
+        optimizations: optimizations.map(opt => ({ ...opt, applied: true })),
+        updated_at: new Date().toISOString()
+      })
+      .eq('store_id', storeId)
+      .eq('product_id', productId);
+    
     return data;
   } catch (error) {
     console.error('Error optimizing SEO:', error);
@@ -167,9 +165,13 @@ export async function optimizeSEO(storeId: string, productId: string, optimizati
 
 export async function bulkOptimizeSEO(storeId: string) {
   try {
-    // This would typically be a backend job
-    // For now, we'll simulate success
-    return { success: true, message: "Bulk optimization started" };
+    // Call our Supabase Edge Function for bulk optimization
+    const { data, error } = await supabase.functions.invoke('shopify-bulk-optimize', {
+      body: { storeId }
+    });
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Error running bulk SEO optimization:', error);
     throw error;
