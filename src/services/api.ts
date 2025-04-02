@@ -1,9 +1,6 @@
 
-import axios from 'axios';
 import { supabase } from '@/integrations/supabase/client';
 import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 // Define the interface for the response from fetchShopifyProducts
 export interface ShopifyProductsResponse {
@@ -41,7 +38,10 @@ const invokeFunction = async (functionName: string, payload: any) => {
     }
   });
   
-  if (error) throw error;
+  if (error) {
+    console.error(`Error invoking function ${functionName}:`, error);
+    throw error;
+  }
   return data;
 };
 
@@ -51,7 +51,12 @@ export async function getConnectedShopifyStores(): Promise<ShopifyStore[]> {
       .from('shopify_stores')
       .select('*');
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching Shopify stores:', error);
+      throw error;
+    }
+    
+    console.log('Fetched stores:', data);
     return data as ShopifyStore[];
   } catch (error) {
     console.error('Error fetching Shopify stores:', error);
@@ -75,6 +80,12 @@ export async function disconnectShopifyStore(storeId: string): Promise<void> {
 
 export async function connectShopifyStore(credentials: ShopifyCredentials): Promise<ShopifyStore> {
   try {
+    console.log('Connecting with credentials:', {
+      ...credentials,
+      apiSecretKey: credentials.apiSecretKey ? '***' : undefined,
+      accessToken: credentials.accessToken ? '***' : undefined
+    });
+    
     // Call the Supabase Edge Function to connect to Shopify
     const data = await invokeFunction('shopify-connect', credentials);
     
@@ -133,7 +144,7 @@ export async function bulkOptimizeSEO(storeId: string) {
   }
 }
 
-export async function searchKeywords(keyword: string, location: string = "us") {
+export async function searchKeywords(keyword: string, options = {}) {
   try {
     const token = await getAuthToken();
     
@@ -142,7 +153,7 @@ export async function searchKeywords(keyword: string, location: string = "us") {
     }
     
     const { data, error } = await supabase.functions.invoke('serpapi', {
-      body: { keyword, location },
+      body: { keyword, ...options },
       headers: {
         Authorization: `Bearer ${token}`
       }

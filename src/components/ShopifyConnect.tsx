@@ -155,7 +155,7 @@ export default function ShopifyConnect() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="api" className="w-full">
+        <Tabs defaultValue="token" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="api">API Key Method</TabsTrigger>
             <TabsTrigger value="token">Access Token Method</TabsTrigger>
@@ -253,6 +253,9 @@ export default function ShopifyConnect() {
                   className="bg-background/50"
                   required
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  You can find your access token in your Shopify admin under Apps ➝ Develop apps ➝ Private apps
+                </p>
               </div>
               
               <div className="pt-2">

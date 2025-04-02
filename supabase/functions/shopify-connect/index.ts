@@ -66,7 +66,7 @@ serve(async (req) => {
       formattedUrl = formattedUrl.slice(0, -1);
     }
     
-    // Use token that was either directly provided or the one from API secret
+    // Use token that was provided
     const token_to_use = accessToken || apiSecretKey;
     
     // Connect to Shopify Admin API
@@ -88,32 +88,70 @@ serve(async (req) => {
     const { shop } = await response.json();
     console.log(`Successfully connected to shop: ${shop.name}`);
     
-    // Store the connection in the database
-    const { data: store, error: storeError } = await supabase
+    // Check if store already exists
+    const { data: existingStore } = await supabase
       .from('shopify_stores')
-      .insert({
-        store_url: formattedUrl,
-        store_name: shop.name,
-        store_owner: shop.shop_owner,
-        email: shop.email,
-        access_token: token_to_use,
-        user_id: user.id
-      })
-      .select()
-      .single();
-    
-    if (storeError) {
-      console.error('Error storing Shopify connection:', storeError);
-      throw new Error('Failed to store Shopify connection');
+      .select('*')
+      .eq('store_url', formattedUrl)
+      .eq('user_id', user.id)
+      .maybeSingle();
+      
+    if (existingStore) {
+      // Update existing store
+      const { data: updatedStore, error: updateError } = await supabase
+        .from('shopify_stores')
+        .update({
+          store_name: shop.name,
+          store_owner: shop.shop_owner,
+          email: shop.email,
+          access_token: token_to_use
+        })
+        .eq('id', existingStore.id)
+        .select()
+        .single();
+        
+      if (updateError) {
+        console.error('Error updating Shopify connection:', updateError);
+        throw new Error('Failed to update Shopify connection');
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: true,
+        store: updatedStore,
+        shop,
+        updated: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } else {
+      // Store the connection in the database
+      const { data: store, error: storeError } = await supabase
+        .from('shopify_stores')
+        .insert({
+          store_url: formattedUrl,
+          store_name: shop.name,
+          store_owner: shop.shop_owner,
+          email: shop.email,
+          access_token: token_to_use,
+          user_id: user.id
+        })
+        .select()
+        .single();
+      
+      if (storeError) {
+        console.error('Error storing Shopify connection:', storeError);
+        throw new Error('Failed to store Shopify connection');
+      }
+      
+      return new Response(JSON.stringify({ 
+        success: true,
+        store,
+        shop,
+        updated: false
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-    
-    return new Response(JSON.stringify({ 
-      success: true,
-      store,
-      shop
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error connecting to Shopify:', error);
     return new Response(JSON.stringify({ 

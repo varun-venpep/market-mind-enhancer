@@ -27,6 +27,7 @@ export default function ShopifyStores() {
         const data = await getConnectedShopifyStores();
         setStores(data);
       } catch (error) {
+        console.error("Error fetching stores:", error);
         toast({
           title: "Error",
           description: "Failed to load connected Shopify stores",
@@ -50,6 +51,7 @@ export default function ShopifyStores() {
           description: "Your Shopify store has been disconnected successfully"
         });
       } catch (error) {
+        console.error("Error disconnecting store:", error);
         toast({
           title: "Error",
           description: "Failed to disconnect store",

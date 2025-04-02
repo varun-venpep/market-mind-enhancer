@@ -14,15 +14,21 @@ serve(async (req) => {
     // Handle both GET and POST requests
     let keyword;
     let location = "us";
+    let engine = "google";
+    let type = "search"; // can be "search", "autocomplete", "related", or "organic"
     
     if (req.method === "POST") {
       const body = await req.json();
       keyword = body.keyword;
       location = body.location || location;
+      engine = body.engine || engine;
+      type = body.type || type;
     } else {
       const url = new URL(req.url);
       keyword = url.searchParams.get("keyword");
       location = url.searchParams.get("location") || location;
+      engine = url.searchParams.get("engine") || engine;
+      type = url.searchParams.get("type") || type;
     }
 
     if (!keyword) {
@@ -32,18 +38,56 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Fetching SERP data for keyword: ${keyword}, location: ${location}`);
+    console.log(`Fetching SERP data: keyword=${keyword}, location=${location}, engine=${engine}, type=${type}`);
 
     // Construct SERP API URL with parameters
-    const url = new URL("https://serpapi.com/search");
-    url.searchParams.append("engine", "google");
-    url.searchParams.append("q", keyword);
-    url.searchParams.append("location", location);
-    url.searchParams.append("gl", "us");
-    url.searchParams.append("hl", "en");
-    url.searchParams.append("api_key", SERP_API_KEY);
-    url.searchParams.append("num", "20");
-    url.searchParams.append("include_html", "false");
+    let url;
+    
+    switch(type) {
+      case "autocomplete":
+        url = new URL("https://serpapi.com/search.json");
+        url.searchParams.append("engine", "google_autocomplete");
+        url.searchParams.append("q", keyword);
+        url.searchParams.append("api_key", SERP_API_KEY);
+        break;
+        
+      case "related":
+        url = new URL("https://serpapi.com/search.json");
+        url.searchParams.append("engine", engine);
+        url.searchParams.append("q", keyword);
+        url.searchParams.append("location", location);
+        url.searchParams.append("gl", "us");
+        url.searchParams.append("hl", "en");
+        url.searchParams.append("api_key", SERP_API_KEY);
+        // Only fetch related searches and questions
+        url.searchParams.append("num", "0");
+        break;
+        
+      case "organic":
+        url = new URL("https://serpapi.com/search.json");
+        url.searchParams.append("engine", engine);
+        url.searchParams.append("q", keyword);
+        url.searchParams.append("location", location);
+        url.searchParams.append("gl", "us");
+        url.searchParams.append("hl", "en");
+        url.searchParams.append("api_key", SERP_API_KEY);
+        url.searchParams.append("num", "20");
+        url.searchParams.append("include_html", "false");
+        // Only fetch organic results
+        url.searchParams.append("no_cache", "true");
+        break;
+        
+      default: // standard search
+        url = new URL("https://serpapi.com/search.json");
+        url.searchParams.append("engine", engine);
+        url.searchParams.append("q", keyword);
+        url.searchParams.append("location", location);
+        url.searchParams.append("gl", "us");
+        url.searchParams.append("hl", "en");
+        url.searchParams.append("api_key", SERP_API_KEY);
+        url.searchParams.append("num", "20");
+        url.searchParams.append("include_html", "false");
+    }
 
     console.log(`Calling SerpAPI with URL: ${url.toString()}`);
     

@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SerpApiResponse {
-  organic_results: Array<{
+  organic_results?: Array<{
     position: number;
     title: string;
     link: string;
@@ -25,11 +25,22 @@ export interface SerpApiResponse {
     type: string;
     description: string;
   };
+  autocomplete?: Array<{
+    value: string;
+  }>;
 }
 
-export async function fetchSerpResults(keyword: string, location: string = "us"): Promise<SerpApiResponse> {
+export async function fetchSerpResults(
+  keyword: string, 
+  options: { 
+    location?: string; 
+    engine?: string;
+    type?: "search" | "autocomplete" | "related" | "organic";
+  } = {}
+): Promise<SerpApiResponse> {
   try {
-    console.log(`Fetching SERP results for keyword: ${keyword}, location: ${location}`);
+    const { location = "us", engine = "google", type = "search" } = options;
+    console.log(`Fetching SERP results for keyword: ${keyword}, location: ${location}, type: ${type}`);
     
     // Get auth token
     const { data: sessionData } = await supabase.auth.getSession();
@@ -40,7 +51,7 @@ export async function fetchSerpResults(keyword: string, location: string = "us")
     }
     
     const { data, error } = await supabase.functions.invoke("serpapi", {
-      body: { keyword, location },
+      body: { keyword, location, engine, type },
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -94,6 +105,33 @@ export function extractSerpData(data: SerpApiResponse) {
   };
 }
 
+export async function getKeywordSuggestions(keyword: string): Promise<string[]> {
+  try {
+    const response = await fetchSerpResults(keyword, { type: "autocomplete" });
+    return (response.autocomplete || []).map(item => item.value);
+  } catch (error) {
+    console.error("Error fetching keyword suggestions:", error);
+    return [];
+  }
+}
+
+export async function getRelatedKeywords(keyword: string): Promise<string[]> {
+  try {
+    const response = await fetchSerpResults(keyword, { type: "related" });
+    return (response.related_searches || []).map(item => item.query);
+  } catch (error) {
+    console.error("Error fetching related keywords:", error);
+    return [];
+  }
+}
+
 function estimateWordCount(text: string): number {
   return text ? text.split(/\s+/).length : 0;
 }
+
+export default {
+  fetchSerpResults,
+  extractSerpData,
+  getKeywordSuggestions,
+  getRelatedKeywords
+};
