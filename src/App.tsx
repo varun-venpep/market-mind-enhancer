@@ -22,6 +22,7 @@ import { Profile } from "./pages/Profile";
 import ShopifyStores from "./pages/ShopifyStores";
 import ShopifyCallback from "./pages/ShopifyCallback";
 import ShopifyStore from "./pages/ShopifyStore";
+import Integrations from "./pages/Integrations";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -40,8 +41,9 @@ const App = () => (
               <Route path="/signup" element={<AuthLayout><SignUp /></AuthLayout>} />
               <Route path="/pricing" element={<Pricing />} />
               
-              {/* Redirect from /shopify to /dashboard/shopify */}
+              {/* Redirects */}
               <Route path="/shopify" element={<Navigate to="/dashboard/shopify" replace />} />
+              <Route path="/integrations" element={<Navigate to="/dashboard/integrations" replace />} />
               
               {/* Protected Routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -49,6 +51,7 @@ const App = () => (
               <Route path="/dashboard/briefs" element={<ProtectedRoute><Briefs /></ProtectedRoute>} />
               <Route path="/dashboard/briefs/:id" element={<ProtectedRoute><ContentBrief /></ProtectedRoute>} />
               <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+              <Route path="/dashboard/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/dashboard/shopify" element={<ProtectedRoute><ShopifyStores /></ProtectedRoute>} />

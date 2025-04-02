@@ -10,7 +10,9 @@ import {
   User, 
   Plus,
   Menu,
-  X
+  X,
+  PackageOpen,
+  ShoppingBag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,6 +30,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { name: "Research", href: "/dashboard/research", icon: Search },
     { name: "Content Briefs", href: "/dashboard/briefs", icon: FileText },
     { name: "Analytics", href: "/dashboard/analytics", icon: BarChart },
+    { 
+      name: "Integrations", 
+      href: "/dashboard/integrations", 
+      icon: PackageOpen,
+      children: [
+        { name: "Shopify", href: "/dashboard/shopify", icon: ShoppingBag }
+      ]
+    },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
@@ -43,26 +53,55 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div className="mt-6 flex-1 flex flex-col">
               <nav className="flex-1 px-2 space-y-1">
                 {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      location.pathname === item.href
-                        ? "bg-brand-50 text-brand-600 border-r-4 border-brand-600"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                      "group flex items-center px-2 py-2 text-sm font-medium rounded-md"
-                    )}
-                  >
-                    <item.icon
+                  <div key={item.name}>
+                    <Link
+                      to={item.href}
                       className={cn(
-                        location.pathname === item.href 
-                          ? "text-brand-600" 
-                          : "text-gray-400 group-hover:text-gray-500",
-                        "mr-3 flex-shrink-0 h-6 w-6"
+                        location.pathname === item.href
+                          ? "bg-brand-50 text-brand-600 border-r-4 border-brand-600"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                        "group flex items-center px-2 py-2 text-sm font-medium rounded-md"
                       )}
-                    />
-                    {item.name}
-                  </Link>
+                    >
+                      <item.icon
+                        className={cn(
+                          location.pathname === item.href 
+                            ? "text-brand-600" 
+                            : "text-gray-400 group-hover:text-gray-500",
+                          "mr-3 flex-shrink-0 h-6 w-6"
+                        )}
+                      />
+                      {item.name}
+                    </Link>
+                    
+                    {/* Display children if there are any */}
+                    {item.children && (
+                      <div className="pl-8 mt-1 space-y-1">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.name}
+                            to={child.href}
+                            className={cn(
+                              location.pathname === child.href || location.pathname.startsWith(`${child.href}/`)
+                                ? "text-brand-600"
+                                : "text-gray-600 hover:text-gray-900",
+                              "group flex items-center px-2 py-1.5 text-sm font-medium rounded-md"
+                            )}
+                          >
+                            <child.icon
+                              className={cn(
+                                location.pathname === child.href || location.pathname.startsWith(`${child.href}/`)
+                                  ? "text-brand-600" 
+                                  : "text-gray-400 group-hover:text-gray-500",
+                                "mr-3 flex-shrink-0 h-5 w-5"
+                              )}
+                            />
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </nav>
             </div>
@@ -114,27 +153,57 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      location.pathname === item.href
-                        ? "bg-brand-50 text-brand-600"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                      "group flex items-center px-2 py-2 text-base font-medium rounded-md"
-                    )}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <item.icon
+                  <div key={item.name}>
+                    <Link
+                      to={item.href}
                       className={cn(
-                        location.pathname === item.href 
-                          ? "text-brand-600" 
-                          : "text-gray-400 group-hover:text-gray-500",
-                        "mr-4 flex-shrink-0 h-6 w-6"
+                        location.pathname === item.href
+                          ? "bg-brand-50 text-brand-600"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                        "group flex items-center px-2 py-2 text-base font-medium rounded-md"
                       )}
-                    />
-                    {item.name}
-                  </Link>
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <item.icon
+                        className={cn(
+                          location.pathname === item.href 
+                            ? "text-brand-600" 
+                            : "text-gray-400 group-hover:text-gray-500",
+                          "mr-4 flex-shrink-0 h-6 w-6"
+                        )}
+                      />
+                      {item.name}
+                    </Link>
+                    
+                    {/* Display children in mobile menu */}
+                    {item.children && (
+                      <div className="pl-8 mt-1 space-y-1">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.name}
+                            to={child.href}
+                            className={cn(
+                              location.pathname === child.href || location.pathname.startsWith(`${child.href}/`)
+                                ? "text-brand-600"
+                                : "text-gray-600 hover:text-gray-900",
+                              "group flex items-center px-2 py-1.5 text-sm font-medium rounded-md"
+                            )}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            <child.icon
+                              className={cn(
+                                location.pathname === child.href || location.pathname.startsWith(`${child.href}/`)
+                                  ? "text-brand-600" 
+                                  : "text-gray-400 group-hover:text-gray-500",
+                                "mr-3 flex-shrink-0 h-5 w-5"
+                              )}
+                            />
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </nav>
             </div>
