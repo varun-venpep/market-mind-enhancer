@@ -14,9 +14,10 @@ export interface ShopifyProductsResponse {
 }
 
 export interface ShopifyCredentials {
-  apiKey: string;
-  apiSecretKey: string;
+  apiKey?: string;
+  apiSecretKey?: string;
   storeUrl: string;
+  accessToken?: string;
 }
 
 // Get the current session token
@@ -132,6 +133,29 @@ export async function bulkOptimizeSEO(storeId: string) {
   }
 }
 
+export async function searchKeywords(keyword: string, location: string = "us") {
+  try {
+    const token = await getAuthToken();
+    
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+    
+    const { data, error } = await supabase.functions.invoke('serpapi', {
+      body: { keyword, location },
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error searching keywords:', error);
+    throw error;
+  }
+}
+
 export default {
   getConnectedShopifyStores,
   disconnectShopifyStore,
@@ -139,5 +163,6 @@ export default {
   fetchShopifyProducts,
   analyzeSEO,
   optimizeSEO,
-  bulkOptimizeSEO
+  bulkOptimizeSEO,
+  searchKeywords
 };

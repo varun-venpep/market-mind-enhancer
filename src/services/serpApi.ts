@@ -31,8 +31,19 @@ export async function fetchSerpResults(keyword: string, location: string = "us")
   try {
     console.log(`Fetching SERP results for keyword: ${keyword}, location: ${location}`);
     
+    // Get auth token
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    
+    if (!token) {
+      throw new Error('Authentication required to use SERP API');
+    }
+    
     const { data, error } = await supabase.functions.invoke("serpapi", {
       body: { keyword, location },
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
     });
 
     if (error) {

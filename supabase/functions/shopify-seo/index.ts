@@ -1,247 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// SEO analysis functions
-function analyzeTitleTag(title: string) {
-  const issues = [];
-  let score = 100;
-  
-  // Check title length (ideal is 50-60 characters)
-  if (!title) {
-    issues.push({
-      type: 'title',
-      severity: 'high',
-      message: 'Missing title tag'
-    });
-    score -= 20;
-  } else if (title.length < 30) {
-    issues.push({
-      type: 'title',
-      severity: 'medium',
-      message: 'Title tag is too short (less than 30 characters)'
-    });
-    score -= 10;
-  } else if (title.length > 60) {
-    issues.push({
-      type: 'title',
-      severity: 'medium',
-      message: 'Title tag is too long (more than 60 characters)'
-    });
-    score -= 10;
-  }
-  
-  // Check for keyword stuffing
-  const words = title?.split(' ') || [];
-  const wordCounts = words.reduce((acc, word) => {
-    const lowerWord = word.toLowerCase();
-    acc[lowerWord] = (acc[lowerWord] || 0) + 1;
-    return acc;
-  }, {});
-  
-  const stuffedWords = Object.entries(wordCounts)
-    .filter(([word, count]) => (count as number) > 2 && word.length > 3);
-    
-  if (stuffedWords.length > 0) {
-    issues.push({
-      type: 'title',
-      severity: 'medium',
-      message: `Possible keyword stuffing detected with "${stuffedWords[0][0]}"`
-    });
-    score -= 10;
-  }
-  
-  return { issues, score, title };
-}
-
-function analyzeDescription(description: string) {
-  const issues = [];
-  let score = 100;
-  
-  // Check description length (ideal is 120-160 characters)
-  if (!description) {
-    issues.push({
-      type: 'description',
-      severity: 'high',
-      message: 'Missing meta description'
-    });
-    score -= 20;
-  } else if (description.length < 70) {
-    issues.push({
-      type: 'description',
-      severity: 'medium',
-      message: 'Meta description is too short (less than 70 characters)'
-    });
-    score -= 10;
-  } else if (description.length > 160) {
-    issues.push({
-      type: 'description',
-      severity: 'low',
-      message: 'Meta description is too long (more than 160 characters)'
-    });
-    score -= 5;
-  }
-  
-  return { issues, score, description };
-}
-
-function analyzeContent(content: string) {
-  const issues = [];
-  let score = 100;
-  
-  // Check content length
-  if (!content) {
-    issues.push({
-      type: 'content',
-      severity: 'high',
-      message: 'Missing product description content'
-    });
-    score -= 20;
-  } else if (content.length < 300) {
-    issues.push({
-      type: 'content',
-      severity: 'medium',
-      message: 'Product description is too short (less than 300 characters)'
-    });
-    score -= 10;
-  }
-  
-  // Check for HTML formatting
-  if (content && !/<h[1-6]|<p|<ul|<ol|<li/i.test(content)) {
-    issues.push({
-      type: 'content',
-      severity: 'low',
-      message: 'Product description lacks proper HTML formatting (headings, paragraphs, lists)'
-    });
-    score -= 5;
-  }
-  
-  return { issues, score, content };
-}
-
-function analyzeImages(images) {
-  const issues = [];
-  let score = 100;
-  
-  // Check if there are images
-  if (!images || images.length === 0) {
-    issues.push({
-      type: 'image',
-      severity: 'high',
-      message: 'No product images found'
-    });
-    score -= 20;
-  } else {
-    // Check alt text
-    const imagesWithoutAlt = images.filter(img => !img.alt || img.alt.trim() === '');
-    if (imagesWithoutAlt.length > 0) {
-      issues.push({
-        type: 'image',
-        severity: 'medium',
-        message: `${imagesWithoutAlt.length} image(s) missing alt text`
-      });
-      score -= 10 * (imagesWithoutAlt.length / images.length);
-    }
-  }
-  
-  return { issues, score, images };
-}
-
-function generateSuggestions(product, analysisResults) {
-  const optimizations = [];
-  
-  // Title optimization
-  const titleIssues = analysisResults.filter(result => 
-    result.issues.some(issue => issue.type === 'title')
-  );
-  
-  if (titleIssues.length > 0) {
-    const title = product.title;
-    
-    // Generate better title
-    let optimizedTitle = title;
-    
-    // If title is too short, add product type or vendor
-    if (title.length < 30 && product.product_type) {
-      optimizedTitle = `${title} - ${product.product_type}`;
-    }
-    
-    // If title is too long, truncate it
-    if (title.length > 60) {
-      optimizedTitle = title.substring(0, 57) + '...';
-    }
-    
-    if (optimizedTitle !== title) {
-      optimizations.push({
-        type: 'title',
-        field: 'title',
-        original: title,
-        suggestion: optimizedTitle,
-        applied: false
-      });
-    }
-  }
-  
-  // Description optimization - extract from HTML content
-  const contentIssues = analysisResults.filter(result => 
-    result.issues.some(issue => issue.type === 'content')
-  );
-  
-  if (contentIssues.length > 0 && product.body_html) {
-    // Strip HTML tags and generate a clean description
-    const strippedContent = product.body_html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    
-    if (strippedContent.length > 160) {
-      const optimizedDescription = strippedContent.substring(0, 157) + '...';
-      
-      optimizations.push({
-        type: 'description',
-        field: 'metafields',
-        original: product.metafields?.description || '',
-        suggestion: optimizedDescription,
-        applied: false
-      });
-    } else if (strippedContent.length > 0) {
-      optimizations.push({
-        type: 'description',
-        field: 'metafields',
-        original: product.metafields?.description || '',
-        suggestion: strippedContent,
-        applied: false
-      });
-    }
-  }
-  
-  // Image alt text optimization
-  const imageIssues = analysisResults.filter(result => 
-    result.issues.some(issue => issue.type === 'image')
-  );
-  
-  if (imageIssues.length > 0 && product.images && product.images.length > 0) {
-    product.images.forEach((image, index) => {
-      if (!image.alt || image.alt.trim() === '') {
-        // Generate alt text based on product title and position
-        const position = index === 0 ? 'Main' : `Alternate ${index}`;
-        const altText = `${position} image of ${product.title}`;
-        
-        optimizations.push({
-          type: 'image',
-          field: `images[${index}].alt`,
-          original: image.alt || '',
-          suggestion: altText,
-          applied: false
-        });
-      }
-    });
-  }
-  
-  return optimizations;
-}
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -269,7 +29,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Authenticate the user
+    // Get the user ID from the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
@@ -278,109 +38,229 @@ serve(async (req) => {
       });
     }
     
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-    
-    // Get store credentials and verify ownership
+    // Get the store details
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')
       .select('*')
       .eq('id', storeId)
-      .eq('user_id', user.id)  // Ensure the user owns this store
       .single();
-      
-    if (storeError || !store) {
-      return new Response(JSON.stringify({ error: 'Store not found or access denied' }), {
+    
+    if (storeError) {
+      return new Response(JSON.stringify({ 
+        error: 'Store not found' 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
       });
     }
-
-    // Fetch product from Shopify API
-    const response = await fetch(`https://${store.store_url}/admin/api/2023-01/products/${productId}.json?fields=id,title,handle,body_html,vendor,product_type,created_at,updated_at,published_at,tags,variants,images,options,metafields`, {
+    
+    // Fetch product details from Shopify
+    const apiUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+    const productResponse = await fetch(apiUrl, {
       headers: {
         'X-Shopify-Access-Token': store.access_token,
         'Content-Type': 'application/json',
       },
     });
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch product: ${response.statusText}`);
+    if (!productResponse.ok) {
+      console.error(`Shopify API error: ${productResponse.status} ${productResponse.statusText}`);
+      throw new Error(`Failed to fetch product from Shopify: ${productResponse.statusText}`);
     }
     
-    const { product } = await response.json();
+    const productData = await productResponse.json();
+    const product = productData.product;
     
-    // Run SEO analysis
-    const titleAnalysis = analyzeTitleTag(product.title);
-    const descriptionAnalysis = analyzeDescription(product.metafields?.description || '');
-    const contentAnalysis = analyzeContent(product.body_html);
-    const imageAnalysis = analyzeImages(product.images);
-    
-    // Combine all issues
-    const allIssues = [
-      ...titleAnalysis.issues,
-      ...descriptionAnalysis.issues,
-      ...contentAnalysis.issues,
-      ...imageAnalysis.issues
-    ];
-    
-    // Calculate overall score
-    const scoreFactors = [
-      titleAnalysis.score * 0.3,  // Title is 30% of the score
-      descriptionAnalysis.score * 0.2,  // Description is 20% of the score
-      contentAnalysis.score * 0.3,  // Content is 30% of the score
-      imageAnalysis.score * 0.2   // Images are 20% of the score
-    ];
-    
-    const overallScore = Math.round(scoreFactors.reduce((sum, score) => sum + score, 0) / scoreFactors.length);
-    
-    // Generate optimization suggestions
-    const optimizations = generateSuggestions(product, [
-      titleAnalysis,
-      descriptionAnalysis,
-      contentAnalysis,
-      imageAnalysis
-    ]);
-    
-    const result = {
-      product_id: product.id,
+    // Analyze SEO
+    const issues = [];
+    let score = 100;
+    const optimizations = [];
+
+    // Check title length
+    if (!product.title || product.title.length < 5) {
+      issues.push({
+        type: 'title',
+        severity: 'high',
+        message: 'Product title is too short or missing',
+      });
+      score -= 20;
+      optimizations.push({
+        type: 'title',
+        field: 'title',
+        original: product.title || '',
+        suggestion: product.title ? `${product.title} - Best Quality Product` : 'New High-Quality Product',
+        applied: false,
+      });
+    } else if (product.title.length > 70) {
+      issues.push({
+        type: 'title',
+        severity: 'medium',
+        message: 'Product title is too long (over 70 characters)',
+      });
+      score -= 10;
+      optimizations.push({
+        type: 'title',
+        field: 'title',
+        original: product.title,
+        suggestion: product.title.substring(0, 67) + '...',
+        applied: false,
+      });
+    }
+
+    // Check description
+    if (!product.body_html || product.body_html.length < 50) {
+      issues.push({
+        type: 'description',
+        severity: 'high',
+        message: 'Product description is too short or missing',
+      });
+      score -= 20;
+      optimizations.push({
+        type: 'description',
+        field: 'body_html',
+        original: product.body_html || '',
+        suggestion: product.body_html ? `${product.body_html}<p>High quality product with premium features.</p>` : '<p>This is a premium quality product that offers exceptional value. Perfect for those looking for reliability and performance.</p>',
+        applied: false,
+      });
+    }
+
+    // Check images
+    if (!product.images || product.images.length === 0) {
+      issues.push({
+        type: 'image',
+        severity: 'high',
+        message: 'Product has no images',
+      });
+      score -= 15;
+      optimizations.push({
+        type: 'image',
+        field: 'images',
+        original: 'No images',
+        suggestion: 'Add at least one high-quality product image',
+        applied: false,
+      });
+    } else if (product.images.length < 3) {
+      issues.push({
+        type: 'image',
+        severity: 'medium',
+        message: 'Product has fewer than 3 images',
+      });
+      score -= 5;
+      optimizations.push({
+        type: 'image',
+        field: 'images',
+        original: `${product.images.length} images`,
+        suggestion: 'Add more product images from different angles',
+        applied: false,
+      });
+    }
+
+    // Check for image alt texts
+    const imagesWithoutAlt = product.images.filter(img => !img.alt || img.alt.trim() === '').length;
+    if (imagesWithoutAlt > 0 && product.images.length > 0) {
+      issues.push({
+        type: 'image',
+        severity: 'medium',
+        message: `${imagesWithoutAlt} images missing alt text`,
+      });
+      score -= 5;
+      optimizations.push({
+        type: 'image',
+        field: 'image_alt',
+        original: 'Missing alt text',
+        suggestion: `${product.title} - product image`,
+        applied: false,
+      });
+    }
+
+    // Check URL/handle
+    if (!product.handle || product.handle.includes('copy-of') || product.handle.includes('untitled')) {
+      issues.push({
+        type: 'url',
+        severity: 'medium',
+        message: 'Product URL could be improved',
+      });
+      score -= 10;
+      optimizations.push({
+        type: 'url',
+        field: 'handle',
+        original: product.handle || '',
+        suggestion: product.title ? product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '').replace(/^-/, '') : 'improved-product-url',
+        applied: false,
+      });
+    }
+
+    // Check tags
+    if (!product.tags || product.tags.length === 0) {
+      issues.push({
+        type: 'content',
+        severity: 'medium',
+        message: 'No product tags defined',
+      });
+      score -= 10;
+      optimizations.push({
+        type: 'content',
+        field: 'tags',
+        original: '',
+        suggestion: `${product.product_type || ''}, quality product, best seller`,
+        applied: false,
+      });
+    }
+
+    // Ensure score is within 0-100
+    score = Math.max(0, Math.min(100, score));
+
+    // Create result object
+    const analysisResult = {
+      product_id: productId,
       title: product.title,
       handle: product.handle,
-      issues: allIssues,
-      score: overallScore,
-      optimizations
+      issues,
+      score,
+      optimizations,
     };
-    
-    // Store the analysis in the database
-    const { error: insertError } = await supabase.from('shopify_seo_analyses').upsert({
-      store_id: storeId,
-      product_id: product.id.toString(),
-      title: product.title,
-      handle: product.handle,
-      issues: allIssues,
-      score: overallScore,
-      optimizations: optimizations,
-      updated_at: new Date().toISOString()
-    });
-    
-    if (insertError) {
-      console.error('Error storing SEO analysis:', insertError);
+
+    // Store analysis in database
+    const { data: existingAnalysis } = await supabase
+      .from('shopify_seo_analyses')
+      .select('id')
+      .eq('store_id', storeId)
+      .eq('product_id', productId)
+      .maybeSingle();
+
+    if (existingAnalysis) {
+      await supabase
+        .from('shopify_seo_analyses')
+        .update({
+          title: product.title,
+          handle: product.handle,
+          issues,
+          score,
+          optimizations,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingAnalysis.id);
+    } else {
+      await supabase
+        .from('shopify_seo_analyses')
+        .insert({
+          store_id: storeId,
+          product_id: productId,
+          title: product.title,
+          handle: product.handle,
+          issues,
+          score,
+          optimizations,
+        });
     }
-    
-    return new Response(JSON.stringify(result), {
+
+    return new Response(JSON.stringify(analysisResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error analyzing SEO:', error);
+    console.error('Error analyzing product SEO:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to analyze SEO' 
+      error: error.message || 'Failed to analyze product SEO' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

@@ -1,12 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
-const SERP_API_KEY = "3c72d7e11aed80bff312ca7cbcd61ea8676b9fd3b4697350f9e9426601091cf0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const SERP_API_KEY = Deno.env.get("SERPAPI_KEY") || "3c72d7e11aed80bff312ca7cbcd61ea8676b9fd3b4697350f9e9426601091cf0";
 
 serve(async (req) => {
   // Handle CORS preflight request
@@ -49,6 +45,8 @@ serve(async (req) => {
     url.searchParams.append("num", "20");
     url.searchParams.append("include_html", "false");
 
+    console.log(`Calling SerpAPI with URL: ${url.toString()}`);
+    
     const response = await fetch(url.toString());
     
     if (!response.ok) {

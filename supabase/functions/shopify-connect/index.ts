@@ -1,11 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -17,11 +13,20 @@ serve(async (req) => {
   }
 
   try {
-    const { apiKey, apiSecretKey, storeUrl } = await req.json();
+    const { apiKey, apiSecretKey, storeUrl, accessToken } = await req.json();
     
-    if (!apiKey || !apiSecretKey || !storeUrl) {
+    if ((!apiKey || !apiSecretKey) && !accessToken) {
       return new Response(JSON.stringify({ 
-        error: 'Missing required Shopify credentials' 
+        error: 'Missing required Shopify credentials. Please provide either API key and secret, or an access token.' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    if (!storeUrl) {
+      return new Response(JSON.stringify({ 
+        error: 'Store URL is required' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
@@ -61,19 +66,27 @@ serve(async (req) => {
       formattedUrl = formattedUrl.slice(0, -1);
     }
     
+    // Use token that was either directly provided or the one from API secret
+    const token_to_use = accessToken || apiSecretKey;
+    
     // Connect to Shopify Admin API
-    const response = await fetch(`https://${formattedUrl}/admin/api/2023-01/shop.json`, {
+    console.log(`Attempting to connect to Shopify store: ${formattedUrl}`);
+    const response = await fetch(`https://${formattedUrl}/admin/api/2023-07/shop.json`, {
       headers: {
-        'X-Shopify-Access-Token': apiSecretKey,
+        'X-Shopify-Access-Token': token_to_use,
         'Content-Type': 'application/json',
       },
     });
     
     if (!response.ok) {
+      console.error(`Failed to connect to Shopify: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`Error response: ${errorText}`);
       throw new Error(`Failed to connect to Shopify: ${response.statusText}`);
     }
     
     const { shop } = await response.json();
+    console.log(`Successfully connected to shop: ${shop.name}`);
     
     // Store the connection in the database
     const { data: store, error: storeError } = await supabase
@@ -83,7 +96,7 @@ serve(async (req) => {
         store_name: shop.name,
         store_owner: shop.shop_owner,
         email: shop.email,
-        access_token: apiSecretKey,
+        access_token: token_to_use,
         user_id: user.id
       })
       .select()

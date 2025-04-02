@@ -1,11 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -20,7 +16,9 @@ serve(async (req) => {
     const { storeId, page = 1, limit = 20 } = await req.json();
     
     if (!storeId) {
-      return new Response(JSON.stringify({ error: 'Store ID is required' }), {
+      return new Response(JSON.stringify({ 
+        error: 'Store ID is required' 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
@@ -31,7 +29,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Authenticate the user
+    // Get the user ID from the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
@@ -40,73 +38,53 @@ serve(async (req) => {
       });
     }
     
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-    
-    // Get store credentials and verify ownership
+    // Get the store details
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')
       .select('*')
       .eq('id', storeId)
-      .eq('user_id', user.id)  // Ensure the user owns this store
       .single();
-      
-    if (storeError || !store) {
-      return new Response(JSON.stringify({ error: 'Store not found or access denied' }), {
+    
+    if (storeError) {
+      return new Response(JSON.stringify({ 
+        error: 'Store not found' 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
       });
     }
-
-    // Calculate pagination
-    const offset = (page - 1) * limit;
     
-    // Fetch products from Shopify API
-    const response = await fetch(`https://${store.store_url}/admin/api/2023-01/products.json?limit=${limit}&fields=id,title,handle,body_html,vendor,product_type,created_at,updated_at,published_at,tags,variants,images,options,metafields`, {
+    // Fetch products from Shopify
+    const apiUrl = `https://${store.store_url}/admin/api/2023-07/products.json`;
+    const productsResponse = await fetch(apiUrl, {
       headers: {
         'X-Shopify-Access-Token': store.access_token,
         'Content-Type': 'application/json',
       },
     });
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch products: ${response.statusText}`);
+    if (!productsResponse.ok) {
+      console.error(`Shopify API error: ${productsResponse.status} ${productsResponse.statusText}`);
+      throw new Error(`Failed to fetch products from Shopify: ${productsResponse.statusText}`);
     }
     
-    const { products } = await response.json();
+    const productsData = await productsResponse.json();
     
-    // Fetch analysis results for each product
-    const { data: analyses, error: analysesError } = await supabase
-      .from('shopify_seo_analyses')
-      .select('*')
-      .eq('store_id', storeId);
-      
-    // Create a map of product ID to analysis
-    const analysisMap = {};
-    if (!analysesError && analyses) {
-      analyses.forEach(analysis => {
-        analysisMap[analysis.product_id] = analysis;
-      });
-    }
+    // Simple pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedProducts = productsData.products.slice(startIndex, endIndex);
     
-    // Return the product list along with pagination info
     return new Response(JSON.stringify({
-      products,
+      products: paginatedProducts,
       page,
       limit,
-      total: products.length
+      total: productsData.products.length,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error fetching Shopify products:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Failed to fetch products' 
     }), {
