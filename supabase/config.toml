@@ -28,17 +28,21 @@ enabled = true
 enabled = true
 site_url = "https://localhost:3000"
 
+# Fix: Properly structured auth.email configuration
 [auth.email]
-enabled = true
+# Email auth configuration
+enable_signup = true
 double_confirm_changes = true
-# double_confirm_changes = true
 # 📚 https://github.com/supabase/gotrue
 
 [realtime]
 enabled = true
 
+# Fix: Properly structured functions configuration
 [functions]
-serve_port = 54323
+# Edge functions configuration
+enabled = true
+port = 54323
 
 # Define edge functions
 [functions.serpapi]
