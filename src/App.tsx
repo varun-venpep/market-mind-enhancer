@@ -9,7 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Research from "./pages/Research";
 import ContentBrief from "./pages/ContentBrief";
 import NotFound from "./pages/NotFound";
-import Login from "./components/Auth/Login";
+import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Pricing from "./pages/Pricing";
 import AuthLayout from "./components/Auth/AuthLayout";

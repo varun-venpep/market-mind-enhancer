@@ -1,13 +1,20 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, AuthError, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from "sonner";
+
+interface AuthResult {
+  error: AuthError | null;
+}
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult>;
   logout: () => Promise<void>;
   isLoading: boolean;
 }
@@ -16,7 +23,9 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   login: async () => {},
-  signUp: async () => {},
+  signIn: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
+  signInWithGoogle: async () => ({ error: null }),
   logout: async () => {},
   isLoading: true,
 });
@@ -53,9 +62,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<AuthResult> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
+  };
+
+  const signUp = async (email: string, password: string): Promise<AuthResult> => {
     const { error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
+    return { error };
+  };
+
+  const signInWithGoogle = async (): Promise<AuthResult> => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      }
+    });
+    return { error };
   };
 
   const logout = async () => {
@@ -67,7 +91,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     user,
     login,
+    signIn,
     signUp,
+    signInWithGoogle,
     logout,
     isLoading,
   };

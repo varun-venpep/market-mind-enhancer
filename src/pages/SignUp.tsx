@@ -58,11 +58,11 @@ const SignUp = () => {
   const onSubmit = async (data: SignUpFormValues) => {
     setIsLoading(true);
     try {
-      const { error } = await signUp(data.email, data.password);
-      if (error) {
+      const result = await signUp(data.email, data.password);
+      if (result.error) {
         toast({
           title: "Sign Up Failed",
-          description: error.message,
+          description: result.error.message,
           variant: "destructive",
         });
       } else {
@@ -86,11 +86,11 @@ const SignUp = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
-      if (error) {
+      const result = await signInWithGoogle();
+      if (result.error) {
         toast({
           title: "Google Sign In Failed",
-          description: error.message,
+          description: result.error.message,
           variant: "destructive",
         });
       }
