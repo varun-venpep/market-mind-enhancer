@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowRight, Key, ShoppingBag, Store } from "lucide-react";
+import { ArrowRight, Key, ShoppingBag, Store, AlertCircle } from "lucide-react";
 import { connectShopifyStore } from '@/services/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function ShopifyConnect() {
   const [storeUrl, setStoreUrl] = useState('');
@@ -16,11 +17,13 @@ export default function ShopifyConnect() {
   const [apiSecretKey, setApiSecretKey] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const handleConnectWithAPI = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!user) {
       toast({
@@ -68,13 +71,17 @@ export default function ShopifyConnect() {
       setApiKey('');
       setApiSecretKey('');
       
-      // Trigger a reload or navigation (parent component should handle this)
+      // Trigger a reload to refresh the list of stores
       window.location.reload();
     } catch (error) {
       console.error('Shopify connection error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : "Failed to connect to Shopify store";
+      setError(errorMessage);
+      
       toast({
         title: "Connection Failed",
-        description: error instanceof Error ? error.message : "Failed to connect to Shopify store",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -84,11 +91,22 @@ export default function ShopifyConnect() {
 
   const handleConnectWithToken = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!user) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to connect your Shopify store",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!accessToken || accessToken.trim() === '') {
+      setError("Access token is required");
+      toast({
+        title: "Missing Information",
+        description: "Access token is required",
         variant: "destructive"
       });
       return;
@@ -114,10 +132,12 @@ export default function ShopifyConnect() {
     setIsLoading(true);
     
     try {
-      await connectShopifyStore({
+      const response = await connectShopifyStore({
         storeUrl: formattedUrl,
         accessToken
       });
+      
+      console.log('Connection successful:', response);
       
       toast({
         title: "Store Connected",
@@ -129,13 +149,29 @@ export default function ShopifyConnect() {
       setStoreUrl('');
       setAccessToken('');
       
-      // Trigger a reload or navigation
+      // Trigger a reload to refresh the list of stores
       window.location.reload();
     } catch (error) {
       console.error('Shopify connection error:', error);
+      
+      let errorMessage = "Failed to connect to Shopify store";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Try to extract more detailed error information
+        if ('message' in error) {
+          errorMessage = error.message as string;
+        } else if ('details' in error) {
+          errorMessage = error.details as string;
+        }
+      }
+      
+      setError(errorMessage);
+      
       toast({
         title: "Connection Failed",
-        description: error instanceof Error ? error.message : "Failed to connect to Shopify store",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -155,6 +191,15 @@ export default function ShopifyConnect() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Tabs defaultValue="token" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="api">API Key Method</TabsTrigger>

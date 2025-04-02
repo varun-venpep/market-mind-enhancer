@@ -31,18 +31,30 @@ const invokeFunction = async (functionName: string, payload: any) => {
     throw new Error('Authentication required');
   }
   
-  const { data, error } = await supabase.functions.invoke(functionName, {
-    body: payload,
-    headers: {
-      Authorization: `Bearer ${token}`
+  try {
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      body: payload,
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    
+    if (error) {
+      console.error(`Error invoking function ${functionName}:`, error);
+      throw error;
     }
-  });
-  
-  if (error) {
+    
+    // Handle non-success response from the edge function
+    if (data && data.error) {
+      console.error(`Function ${functionName} returned an error:`, data.error);
+      throw new Error(data.error);
+    }
+    
+    return data;
+  } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);
     throw error;
   }
-  return data;
 };
 
 export async function getConnectedShopifyStores(): Promise<ShopifyStore[]> {
@@ -82,6 +94,7 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
   try {
     console.log('Connecting with credentials:', {
       ...credentials,
+      storeUrl: credentials.storeUrl,
       apiSecretKey: credentials.apiSecretKey ? '***' : undefined,
       accessToken: credentials.accessToken ? '***' : undefined
     });
@@ -90,7 +103,7 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
     const data = await invokeFunction('shopify-connect', credentials);
     
     if (!data.store) {
-      throw new Error('Failed to connect to Shopify store');
+      throw new Error(data.error || 'Failed to connect to Shopify store');
     }
     
     return data.store as ShopifyStore;
