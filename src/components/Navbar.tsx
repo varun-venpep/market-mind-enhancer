@@ -11,7 +11,8 @@ import {
   Activity, 
   Star, 
   Settings,
-  LogIn
+  LogIn,
+  ShoppingBag
 } from "lucide-react";
 
 const Navbar = () => {
@@ -63,6 +64,11 @@ const Navbar = () => {
             <li>
               <Link to="/dashboard" className="flex items-center py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
                 <Database className="h-4 w-4 mr-2 md:hidden" /> Dashboard
+              </Link>
+            </li>
+            <li>
+              <Link to="/dashboard/shopify" className="flex items-center py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
+                <ShoppingBag className="h-4 w-4 mr-2 md:hidden" /> Shopify
               </Link>
             </li>
             <li>

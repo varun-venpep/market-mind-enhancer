@@ -43,20 +43,26 @@ enabled = true
 port = 54323
 
 # Define edge functions
-[functions.serpapi]
+[[functions.config]]
+name = "serpapi"
 verify_jwt = true
 
-[functions.shopify-connect]
+[[functions.config]]
+name = "shopify-connect"
 verify_jwt = true
 
-[functions.shopify-products]
+[[functions.config]]
+name = "shopify-products"
 verify_jwt = true
 
-[functions.shopify-seo]
+[[functions.config]]
+name = "shopify-seo"
 verify_jwt = true
 
-[functions.shopify-optimize]
+[[functions.config]]
+name = "shopify-optimize"
 verify_jwt = true
 
-[functions.shopify-bulk-optimize]
+[[functions.config]]
+name = "shopify-bulk-optimize"
 verify_jwt = true
