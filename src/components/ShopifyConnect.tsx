@@ -104,6 +104,8 @@ export default function ShopifyConnect() {
           errorMessage = error.message as string;
         } else if ('details' in error) {
           errorMessage = error.details as string;
+        } else if ('error' in error) {
+          errorMessage = error.error as string;
         }
       }
       

@@ -50,30 +50,39 @@ export async function fetchSerpResults(
       throw new Error('Authentication required to use SERP API');
     }
     
-    const { data, error } = await supabase.functions.invoke("serpapi", {
+    const response = await supabase.functions.invoke("serpapi", {
       body: { keyword, location, engine, type },
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
-    if (error) {
-      console.error("SERP API Error:", error);
-      throw new Error(error.message || "Failed to fetch SERP results");
+    console.log("SERP API response:", response);
+
+    if (response.error) {
+      console.error("SERP API Error:", response.error);
+      throw new Error(response.error.message || "Failed to fetch SERP results");
     }
 
-    if (!data || !data.success) {
-      console.error("SERP API returned an error:", data?.error || "Unknown error");
-      throw new Error(data?.error || "Failed to fetch SERP results");
+    if (!response.data) {
+      console.error("SERP API returned unexpected response:", response);
+      throw new Error("Received invalid response from SERP API");
     }
 
-    if (!data.data) {
-      console.error("SERP API returned unexpected data structure:", data);
+    const { success, error, data } = response.data;
+
+    if (!success) {
+      console.error("SERP API returned an error:", error || "Unknown error");
+      throw new Error(error || "Failed to fetch SERP results");
+    }
+
+    if (!data) {
+      console.error("SERP API returned unexpected data structure:", response.data);
       throw new Error("Received invalid data format from SERP API");
     }
 
     console.log(`Successfully retrieved SERP data for: ${keyword}`);
-    return data.data;
+    return data;
   } catch (error) {
     console.error("SERP API Client Error:", error);
     throw error;

@@ -32,33 +32,35 @@ const invokeFunction = async (functionName: string, payload: any) => {
   try {
     console.log(`Invoking function ${functionName} with payload:`, payload);
     
-    const { data, error } = await supabase.functions.invoke(functionName, {
+    const response = await supabase.functions.invoke(functionName, {
       body: payload,
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
     
-    console.log(`Function response:`, data);
+    console.log(`Function response:`, response);
     
-    if (error) {
-      console.error(`Error invoking function ${functionName}:`, error);
-      throw error;
+    if (response.error) {
+      console.error(`Error invoking function ${functionName}:`, response.error);
+      throw response.error;
     }
+    
+    // Make sure we have data
+    if (!response.data) {
+      console.error(`Function ${functionName} returned no data`);
+      throw new Error(`${functionName} returned no data`);
+    }
+    
+    const { success, error } = response.data;
     
     // Handle non-success response from the edge function
-    if (data && data.error) {
-      console.error(`Function ${functionName} returned an error:`, data.error);
-      throw new Error(data.error);
+    if (success === false) {
+      console.error(`Function ${functionName} returned an error:`, error || 'Unknown error');
+      throw new Error(error || `${functionName} operation failed`);
     }
     
-    // Check if the response contains an explicit success field
-    if (data && data.success === false) {
-      console.error(`Function ${functionName} failed:`, data.error || 'Unknown error');
-      throw new Error(data.error || `${functionName} operation failed`);
-    }
-    
-    return data;
+    return response.data;
   } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);
     throw error;
