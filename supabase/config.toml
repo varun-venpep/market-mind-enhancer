@@ -39,10 +39,9 @@ enabled = true
 enabled = true
 site_url = "http://localhost:3000"
 
-# Removing the problematic auth.email structure
-# and replacing with the correct format
-[auth.external.email]
-enabled = true
+# Fix the email configuration structure
+[auth.email]
+enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
 
