@@ -62,7 +62,12 @@ export async function fetchSerpResults(
       throw new Error(error.message || "Failed to fetch SERP results");
     }
 
-    if (!data || !data.data) {
+    if (!data || !data.success) {
+      console.error("SERP API returned an error:", data?.error || "Unknown error");
+      throw new Error(data?.error || "Failed to fetch SERP results");
+    }
+
+    if (!data.data) {
       console.error("SERP API returned unexpected data structure:", data);
       throw new Error("Received invalid data format from SERP API");
     }

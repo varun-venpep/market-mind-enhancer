@@ -41,6 +41,16 @@ export default function ShopifyConnect() {
       return;
     }
 
+    if (!storeUrl || storeUrl.trim() === '') {
+      setError("Store URL is required");
+      toast({
+        title: "Missing Information",
+        description: "Store URL is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
     let formattedUrl = storeUrl.trim();
     
     // Remove protocol if present

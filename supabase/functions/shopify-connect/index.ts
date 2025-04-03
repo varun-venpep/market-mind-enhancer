@@ -21,6 +21,7 @@ serve(async (req) => {
     } catch (error) {
       console.error("Error parsing request JSON:", error);
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'Invalid JSON in request body' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -33,6 +34,7 @@ serve(async (req) => {
     if (!accessToken) {
       console.error("Missing required access token");
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'Missing required Shopify access token. Please provide your access token.' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -43,6 +45,7 @@ serve(async (req) => {
     if (!storeUrl) {
       console.error("Missing store URL");
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'Store URL is required' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -57,6 +60,7 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseKey) {
       console.error("Missing Supabase configuration");
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'Server configuration error: Missing Supabase credentials' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -70,7 +74,10 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error("Missing authorization header");
-      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Not authenticated' 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
@@ -81,7 +88,10 @@ serve(async (req) => {
     
     if (userError || !user) {
       console.error("Authentication error:", userError);
-      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Invalid authentication' 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
@@ -105,7 +115,10 @@ serve(async (req) => {
     
     try {
       // Test the access token by fetching shop data
-      const response = await fetch(`https://${formattedUrl}/admin/api/2023-07/shop.json`, {
+      const shopifyUrl = `https://${formattedUrl}/admin/api/2023-07/shop.json`;
+      console.log(`Making request to Shopify API: ${shopifyUrl}`);
+      
+      const response = await fetch(shopifyUrl, {
         headers: {
           'X-Shopify-Access-Token': accessToken,
           'Content-Type': 'application/json',
@@ -121,6 +134,7 @@ serve(async (req) => {
         console.error(`Error response: ${errorText}`);
         
         return new Response(JSON.stringify({ 
+          success: false,
           error: `Failed to connect to Shopify: ${response.status} ${response.statusText}`,
           details: errorText
         }), {
@@ -134,6 +148,7 @@ serve(async (req) => {
       if (!shopData || !shopData.shop) {
         console.error("Invalid response from Shopify API:", shopData);
         return new Response(JSON.stringify({ 
+          success: false,
           error: 'Invalid response from Shopify API' 
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -155,6 +170,7 @@ serve(async (req) => {
       if (queryError) {
         console.error("Error checking for existing store:", queryError);
         return new Response(JSON.stringify({ 
+          success: false,
           error: 'Database error when checking for existing store' 
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -179,6 +195,7 @@ serve(async (req) => {
         if (updateError) {
           console.error('Error updating Shopify connection:', updateError);
           return new Response(JSON.stringify({ 
+            success: false,
             error: 'Failed to update Shopify connection in database' 
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -212,6 +229,7 @@ serve(async (req) => {
         if (storeError) {
           console.error('Error storing Shopify connection:', storeError);
           return new Response(JSON.stringify({ 
+            success: false,
             error: 'Failed to store Shopify connection in database' 
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -231,6 +249,7 @@ serve(async (req) => {
     } catch (fetchError) {
       console.error('Error making request to Shopify API:', fetchError);
       return new Response(JSON.stringify({ 
+        success: false,
         error: 'Network error when connecting to Shopify',
         details: fetchError.message
       }), {
@@ -241,6 +260,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Unexpected error connecting to Shopify:', error);
     return new Response(JSON.stringify({ 
+      success: false,
       error: 'Unexpected error occurred',
       details: error.message
     }), {

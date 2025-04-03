@@ -18,11 +18,25 @@ serve(async (req) => {
     let type = "search"; // can be "search", "autocomplete", "related", or "organic"
     
     if (req.method === "POST") {
-      const body = await req.json();
-      keyword = body.keyword;
-      location = body.location || location;
-      engine = body.engine || engine;
-      type = body.type || type;
+      try {
+        const body = await req.json();
+        keyword = body.keyword;
+        location = body.location || location;
+        engine = body.engine || engine;
+        type = body.type || type;
+      } catch (error) {
+        console.error("Error parsing request body:", error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "Invalid JSON in request body" 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
     } else {
       const url = new URL(req.url);
       keyword = url.searchParams.get("keyword");
@@ -32,9 +46,16 @@ serve(async (req) => {
     }
 
     if (!keyword) {
+      console.error("Missing required keyword parameter");
       return new Response(
-        JSON.stringify({ error: "Keyword is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          success: false, 
+          error: "Keyword is required" 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
 
@@ -91,33 +112,61 @@ serve(async (req) => {
 
     console.log(`Calling SerpAPI with URL: ${url.toString()}`);
     
-    const response = await fetch(url.toString());
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`SERP API error (${response.status}): ${errorText}`);
-      throw new Error(`SERP API returned status: ${response.status} - ${errorText}`);
-    }
-    
-    const data = await response.json();
-    console.log(`Successfully retrieved SERP data for: ${keyword}`);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: data
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+    try {
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`SERP API error (${response.status}): ${errorText}`);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `SERP API returned status: ${response.status}`,
+            details: errorText
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
       }
-    );
+      
+      const data = await response.json();
+      console.log(`Successfully retrieved SERP data for: ${keyword}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: data
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    } catch (fetchError) {
+      console.error(`Network error when calling SERP API: ${fetchError.message}`);
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Failed to fetch data from SERP API",
+          details: fetchError.message
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
   } catch (error) {
-    console.error(`SERP API Error: ${error.message}`);
+    console.error(`SERP API Edge Function Error: ${error.message}`);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: "Unexpected error in SERP API edge function",
+        details: error.message
       }),
       {
         status: 500,

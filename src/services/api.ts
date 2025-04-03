@@ -52,6 +52,12 @@ const invokeFunction = async (functionName: string, payload: any) => {
       throw new Error(data.error);
     }
     
+    // Check if the response contains an explicit success field
+    if (data && data.success === false) {
+      console.error(`Function ${functionName} failed:`, data.error || 'Unknown error');
+      throw new Error(data.error || `${functionName} operation failed`);
+    }
+    
     return data;
   } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);
@@ -102,7 +108,7 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
     // Call the Supabase Edge Function to connect to Shopify
     const data = await invokeFunction('shopify-connect', credentials);
     
-    if (!data.store) {
+    if (!data.success || !data.store) {
       throw new Error(data.error || 'Failed to connect to Shopify store');
     }
     
