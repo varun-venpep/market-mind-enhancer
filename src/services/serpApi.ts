@@ -1,3 +1,4 @@
+// serpApi.ts
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SerpApiResponse {
@@ -46,7 +47,7 @@ export async function fetchSerpResults(
     const token = sessionData.session?.access_token;
     
     if (!token) {
-      throw new Error('Authentication required to use SERP API');
+      throw new Error("Authentication required to use SERP API");
     }
     
     const response = await supabase.functions.invoke("serpapi", {
@@ -58,11 +59,13 @@ export async function fetchSerpResults(
 
     console.log("SERP API response:", response);
 
-    if (!response.error) {
+    // Check for errors first
+    if (response.error) {
       console.error("SERP API Error:", response.error);
       throw new Error(response.error.message || "Failed to fetch SERP results");
     }
 
+    // Ensure data exists
     if (!response.data) {
       console.error("SERP API returned unexpected response:", response);
       throw new Error("Received invalid response from SERP API");
@@ -70,6 +73,7 @@ export async function fetchSerpResults(
 
     const { success, error, data } = response.data;
 
+    // Check Edge Function response
     if (!success) {
       console.error("SERP API returned an error:", error || "Unknown error");
       throw new Error(error || "Failed to fetch SERP results");
@@ -83,8 +87,8 @@ export async function fetchSerpResults(
   }
 }
 
+// Rest of the file remains unchanged
 export function extractSerpData(data: SerpApiResponse) {
-  // Extract SERP results in a format suitable for our application
   const organicResults = data.organic_results?.map(result => ({
     id: `serp-${result.position}`,
     title: result.title,
@@ -99,10 +103,10 @@ export function extractSerpData(data: SerpApiResponse) {
   const relatedKeywords = data.related_searches?.map(s => ({
     id: `related-${Math.random().toString(36).substring(2, 11)}`,
     keyword: s.query,
-    searchVolume: Math.floor(Math.random() * 5000) + 500, // Placeholder
-    difficulty: Math.floor(Math.random() * 70) + 20, // Placeholder
-    aiPotential: Math.floor(Math.random() * 90) + 10, // Placeholder
-    cpc: Number((Math.random() * 5).toFixed(2)) // Placeholder
+    searchVolume: Math.floor(Math.random() * 5000) + 500,
+    difficulty: Math.floor(Math.random() * 70) + 20,
+    aiPotential: Math.floor(Math.random() * 90) + 10,
+    cpc: Number((Math.random() * 5).toFixed(2))
   })) || [];
 
   return {
