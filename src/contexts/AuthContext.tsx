@@ -38,23 +38,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
+    // Configure Supabase auth for persistence
+    supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log('Auth state changed:', event, !!currentSession);
+      
+      // Only update synchronously in the callback
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      // If user signs in, show a success toast
+      if (event === 'SIGNED_IN') {
+        toast.success("Successfully signed in");
       }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+      
+      // If user signs out, show info toast
+      if (event === 'SIGNED_OUT') {
+        toast.info("You have been signed out");
+      }
     });
 
-    return () => subscription.unsubscribe();
+    // Check for existing session on mount
+    const initializeAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        console.log('Initial session check:', !!data.session);
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -77,14 +94,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       }
     });
     return { error };
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      await supabase.auth.signOut();
+      // We don't need to manually update state here as the onAuthStateChange handler will do it
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
   };
 
   const value = {
