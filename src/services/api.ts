@@ -11,10 +11,8 @@ export interface ShopifyProductsResponse {
 }
 
 export interface ShopifyCredentials {
-  apiKey?: string;
-  apiSecretKey?: string;
   storeUrl: string;
-  accessToken?: string;
+  accessToken: string;
 }
 
 // Get the current session token
@@ -32,12 +30,16 @@ const invokeFunction = async (functionName: string, payload: any) => {
   }
   
   try {
+    console.log(`Invoking function ${functionName} with payload:`, payload);
+    
     const { data, error } = await supabase.functions.invoke(functionName, {
       body: payload,
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
+    
+    console.log(`Function response:`, data);
     
     if (error) {
       console.error(`Error invoking function ${functionName}:`, error);
@@ -93,9 +95,7 @@ export async function disconnectShopifyStore(storeId: string): Promise<void> {
 export async function connectShopifyStore(credentials: ShopifyCredentials): Promise<ShopifyStore> {
   try {
     console.log('Connecting with credentials:', {
-      ...credentials,
       storeUrl: credentials.storeUrl,
-      apiSecretKey: credentials.apiSecretKey ? '***' : undefined,
       accessToken: credentials.accessToken ? '***' : undefined
     });
     

@@ -8,88 +8,17 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowRight, Key, ShoppingBag, Store, AlertCircle } from "lucide-react";
 import { connectShopifyStore } from '@/services/api';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function ShopifyConnect() {
   const [storeUrl, setStoreUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [apiSecretKey, setApiSecretKey] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const handleConnectWithAPI = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to connect your Shopify store",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    let formattedUrl = storeUrl.trim();
-    
-    // Remove protocol if present
-    if (formattedUrl.startsWith('http://') || formattedUrl.startsWith('https://')) {
-      formattedUrl = formattedUrl.replace(/^https?:\/\//, '');
-    }
-    
-    // Remove trailing slash if present
-    if (formattedUrl.endsWith('/')) {
-      formattedUrl = formattedUrl.slice(0, -1);
-    }
-    
-    // Add .myshopify.com if it's not present and doesn't include any dots
-    if (!formattedUrl.includes('.')) {
-      formattedUrl = `${formattedUrl}.myshopify.com`;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      await connectShopifyStore({
-        storeUrl: formattedUrl,
-        apiKey,
-        apiSecretKey
-      });
-      
-      toast({
-        title: "Store Connected",
-        description: "Your Shopify store was successfully connected",
-        variant: "default"
-      });
-      
-      // Reset form
-      setStoreUrl('');
-      setApiKey('');
-      setApiSecretKey('');
-      
-      // Trigger a reload to refresh the list of stores
-      window.location.reload();
-    } catch (error) {
-      console.error('Shopify connection error:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : "Failed to connect to Shopify store";
-      setError(errorMessage);
-      
-      toast({
-        title: "Connection Failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleConnectWithToken = async (e: React.FormEvent) => {
+  const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
@@ -132,6 +61,7 @@ export default function ShopifyConnect() {
     setIsLoading(true);
     
     try {
+      console.log('Connecting to store:', formattedUrl);
       const response = await connectShopifyStore({
         storeUrl: formattedUrl,
         accessToken
@@ -200,126 +130,56 @@ export default function ShopifyConnect() {
           </Alert>
         )}
         
-        <Tabs defaultValue="token" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="api">API Key Method</TabsTrigger>
-            <TabsTrigger value="token">Access Token Method</TabsTrigger>
-          </TabsList>
+        <form onSubmit={handleConnect} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="storeUrl" className="text-sm font-medium">
+              <Store className="h-4 w-4 inline mr-1" />
+              Shopify Store URL
+            </Label>
+            <Input
+              id="storeUrl"
+              placeholder="your-store.myshopify.com"
+              value={storeUrl}
+              onChange={(e) => setStoreUrl(e.target.value)}
+              className="bg-background/50"
+              required
+            />
+          </div>
           
-          <TabsContent value="api">
-            <form onSubmit={handleConnectWithAPI} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="storeUrl" className="text-sm font-medium">
-                  <Store className="h-4 w-4 inline mr-1" />
-                  Shopify Store URL
-                </Label>
-                <Input
-                  id="storeUrl"
-                  placeholder="your-store.myshopify.com"
-                  value={storeUrl}
-                  onChange={(e) => setStoreUrl(e.target.value)}
-                  className="bg-background/50"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="apiKey" className="text-sm font-medium">
-                  <Key className="h-4 w-4 inline mr-1" />
-                  API Key
-                </Label>
-                <Input
-                  id="apiKey"
-                  placeholder="Enter your Shopify API key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="bg-background/50"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="apiSecretKey" className="text-sm font-medium">
-                  <Key className="h-4 w-4 inline mr-1" />
-                  API Secret Key
-                </Label>
-                <Input
-                  id="apiSecretKey"
-                  type="password"
-                  placeholder="Enter your Shopify API secret key"
-                  value={apiSecretKey}
-                  onChange={(e) => setApiSecretKey(e.target.value)}
-                  className="bg-background/50"
-                  required
-                />
-              </div>
-              
-              <div className="pt-2">
-                <Button 
-                  type="submit" 
-                  disabled={isLoading} 
-                  className="w-full gap-2 hover:shadow-md transition-all"
-                >
-                  {isLoading ? "Connecting..." : "Connect Store"}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </form>
-          </TabsContent>
+          <div className="space-y-2">
+            <Label htmlFor="accessToken" className="text-sm font-medium">
+              <Key className="h-4 w-4 inline mr-1" />
+              Access Token
+            </Label>
+            <Input
+              id="accessToken"
+              type="password"
+              placeholder="Enter your Shopify access token"
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              className="bg-background/50"
+              required
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              You can find your access token in your Shopify admin under Apps ➝ Develop apps ➝ Private apps
+            </p>
+          </div>
           
-          <TabsContent value="token">
-            <form onSubmit={handleConnectWithToken} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="storeUrlToken" className="text-sm font-medium">
-                  <Store className="h-4 w-4 inline mr-1" />
-                  Shopify Store URL
-                </Label>
-                <Input
-                  id="storeUrlToken"
-                  placeholder="your-store.myshopify.com"
-                  value={storeUrl}
-                  onChange={(e) => setStoreUrl(e.target.value)}
-                  className="bg-background/50"
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="accessToken" className="text-sm font-medium">
-                  <Key className="h-4 w-4 inline mr-1" />
-                  Access Token
-                </Label>
-                <Input
-                  id="accessToken"
-                  type="password"
-                  placeholder="Enter your Shopify access token"
-                  value={accessToken}
-                  onChange={(e) => setAccessToken(e.target.value)}
-                  className="bg-background/50"
-                  required
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  You can find your access token in your Shopify admin under Apps ➝ Develop apps ➝ Private apps
-                </p>
-              </div>
-              
-              <div className="pt-2">
-                <Button 
-                  type="submit" 
-                  disabled={isLoading} 
-                  className="w-full gap-2 hover:shadow-md transition-all"
-                >
-                  {isLoading ? "Connecting..." : "Connect with Token"}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </form>
-          </TabsContent>
-        </Tabs>
+          <div className="pt-2">
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="w-full gap-2 hover:shadow-md transition-all"
+            >
+              {isLoading ? "Connecting..." : "Connect Store"}
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </form>
       </CardContent>
       <CardFooter className="flex justify-center border-t px-6 py-4 bg-muted/5">
         <p className="text-xs text-muted-foreground">
-          Your credentials are securely stored and used only for SEO optimization. <a href="https://shopify.dev/docs/admin-api/access-token" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Learn how to get your API keys</a>
+          Your credentials are securely stored and used only for SEO optimization. <a href="https://shopify.dev/docs/admin-api/access-token" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Learn how to get your access token</a>
         </p>
       </CardFooter>
     </Card>

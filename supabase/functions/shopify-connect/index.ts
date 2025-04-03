@@ -17,12 +17,7 @@ serve(async (req) => {
     let requestData;
     try {
       requestData = await req.json();
-      console.log("Request received:", { 
-        storeUrl: requestData.storeUrl,
-        hasApiKey: !!requestData.apiKey,
-        hasSecretKey: !!requestData.apiSecretKey,
-        hasAccessToken: !!requestData.accessToken 
-      });
+      console.log("Request received for store:", requestData.storeUrl);
     } catch (error) {
       console.error("Error parsing request JSON:", error);
       return new Response(JSON.stringify({ 
@@ -33,12 +28,12 @@ serve(async (req) => {
       });
     }
     
-    const { apiKey, apiSecretKey, storeUrl, accessToken } = requestData;
+    const { storeUrl, accessToken } = requestData;
     
-    if ((!apiKey || !apiSecretKey) && !accessToken) {
-      console.error("Missing required credentials");
+    if (!accessToken) {
+      console.error("Missing required access token");
       return new Response(JSON.stringify({ 
-        error: 'Missing required Shopify credentials. Please provide either API key and secret, or an access token.' 
+        error: 'Missing required Shopify access token. Please provide your access token.' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
@@ -106,19 +101,19 @@ serve(async (req) => {
       formattedUrl = `${formattedUrl}.myshopify.com`;
     }
     
-    // Use token that was provided
-    const token_to_use = accessToken || apiSecretKey;
-    
-    // Connect to Shopify Admin API
     console.log(`Attempting to connect to Shopify store: ${formattedUrl}`);
     
     try {
+      // Test the access token by fetching shop data
       const response = await fetch(`https://${formattedUrl}/admin/api/2023-07/shop.json`, {
         headers: {
-          'X-Shopify-Access-Token': token_to_use,
+          'X-Shopify-Access-Token': accessToken,
           'Content-Type': 'application/json',
         },
       });
+      
+      // Log HTTP status for debugging
+      console.log(`Shopify API response status: ${response.status}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -175,7 +170,7 @@ serve(async (req) => {
             store_name: shop.name,
             store_owner: shop.shop_owner,
             email: shop.email,
-            access_token: token_to_use
+            access_token: accessToken
           })
           .eq('id', existingStore.id)
           .select()
@@ -208,7 +203,7 @@ serve(async (req) => {
             store_name: shop.name,
             store_owner: shop.shop_owner,
             email: shop.email,
-            access_token: token_to_use,
+            access_token: accessToken,
             user_id: user.id
           })
           .select()
