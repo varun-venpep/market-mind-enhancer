@@ -33,7 +33,24 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { keyword, location = "us", engine = "google", type = "search" } = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (e) {
+      console.error("Failed to parse request body:", e);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invalid request body. Expected JSON.",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
+    }
+
+    const { keyword, location = "us", engine = "google", type = "search" } = requestData;
     
     if (!keyword) {
       console.error("Missing required parameter: keyword");
@@ -63,7 +80,23 @@ serve(async (req) => {
 
     // Make request to SERP API
     console.log(`Sending request to SERP API: ${apiUrl.replace(SERP_API_KEY, "API_KEY_HIDDEN")}`);
-    const response = await fetch(apiUrl);
+    
+    let response;
+    try {
+      response = await fetch(apiUrl);
+    } catch (error) {
+      console.error(`Network error when calling SERP API:`, error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Network error when calling SERP API: ${error.message}`,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -72,6 +105,7 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           error: `SERP API error: ${response.status} ${response.statusText}`,
+          details: errorText
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -80,7 +114,23 @@ serve(async (req) => {
       );
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error(`Error parsing SERP API response:`, error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Error parsing SERP API response: ${error.message}`,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
+    
     console.log("SERP API response received successfully");
 
     return new Response(

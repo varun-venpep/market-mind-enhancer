@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SerpApiResponse {
@@ -59,7 +58,7 @@ export async function fetchSerpResults(
 
     console.log("SERP API response:", response);
 
-    if (response.error) {
+    if (!response.error) {
       console.error("SERP API Error:", response.error);
       throw new Error(response.error.message || "Failed to fetch SERP results");
     }
@@ -74,11 +73,6 @@ export async function fetchSerpResults(
     if (!success) {
       console.error("SERP API returned an error:", error || "Unknown error");
       throw new Error(error || "Failed to fetch SERP results");
-    }
-
-    if (!data) {
-      console.error("SERP API returned unexpected data structure:", response.data);
-      throw new Error("Received invalid data format from SERP API");
     }
 
     console.log(`Successfully retrieved SERP data for: ${keyword}`);
