@@ -17,7 +17,7 @@ import {
   OptimizationTips,
   ContentEditor
 } from "@/components/ContentBrief";
-import { OutlineItem } from "@/types";
+import { ContentBrief as ContentBriefType, OutlineItem } from "@/types";
 
 const ContentBrief = () => {
   const { id } = useParams();
@@ -26,7 +26,7 @@ const ContentBrief = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // Mock data that would normally be fetched from the API
-  const briefData = {
+  const briefData: ContentBriefType = {
     id: id || "1",
     title: "How to optimize content for AI search engines",
     status: "in-progress",
@@ -101,11 +101,10 @@ const ContentBrief = () => {
         text: "Future Trends in AI Search Optimization",
         score: 82
       }
-    ] as OutlineItem[],
+    ],
     recommendedWordCount: {
       min: 1800,
-      max: 2400,
-      avg: 2100
+      max: 2400
     },
     questions: [
       "How do AI search engines differ from traditional search?",
@@ -113,18 +112,18 @@ const ContentBrief = () => {
       "How to optimize for voice search powered by AI?",
       "Will AI search completely replace traditional search engines?",
       "What metrics should I track for AI search optimization?"
-    ]
+    ],
+    score: score,
+    wordCount: 0,
+    thumbnailUrl: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1920&auto=format&fit=crop"
   };
 
   return (
     <DashboardLayout>
       <div className="p-6 max-w-7xl mx-auto w-full">
         <BriefHeader 
-          title={briefData.title}
-          status={briefData.status as any}
+          brief={briefData}
           score={score}
-          createdAt={briefData.createdAt}
-          updatedAt={briefData.updatedAt}
         />
 
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -159,11 +158,11 @@ const ContentBrief = () => {
                     </CardHeader>
                     <CardContent>
                       <KeywordSection 
-                        keywords={briefData.keywords}
                         mainKeyword={briefData.keywords[0]}
+                        keywords={briefData.keywords}
                         searchVolume={briefData.searchVolume}
                         difficulty={briefData.difficulty}
-                        aiPotential={briefData.aiPotential}
+                        aiPotential={briefData.aiPotential || 0}
                       />
                     </CardContent>
                   </Card>
@@ -227,7 +226,7 @@ const ContentBrief = () => {
                     </CardContent>
                   </Card>
 
-                  <OptimizationTips />
+                  <OptimizationTips brief={briefData} />
                 </div>
               </TabsContent>
               
