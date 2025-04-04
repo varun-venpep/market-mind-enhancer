@@ -11,9 +11,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/Shopify/LoadingState';
 import { StoreHeader } from '@/components/Shopify/StoreHeader';
 import { ProductList } from '@/components/Shopify/ProductList';
-import { ArrowLeft, BarChart2, TrendingUp, Share2 } from 'lucide-react';
+import { ArrowLeft, BarChart2, TrendingUp, Share2, FileText, ArrowRight, Loader2, Pencil } from 'lucide-react';
 import DashboardLayout from '@/components/Dashboard/DashboardLayout';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { generateContent } from '@/services/geminiApi';
 
 export default function ShopifyStore() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -24,6 +28,11 @@ export default function ShopifyStore() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [serpData, setSerpData] = useState<any>(null);
   const [serpLoading, setSerpLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("products");
+  const [blogTitle, setBlogTitle] = useState("");
+  const [blogKeywords, setBlogKeywords] = useState("");
+  const [blogContent, setBlogContent] = useState("");
+  const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -165,6 +174,49 @@ export default function ShopifyStore() {
         variant: "destructive"
       });
       setIsOptimizing(false);
+    }
+  };
+
+  const handleBlogGenerate = async () => {
+    if (!blogTitle) {
+      toast({
+        title: "Missing Title",
+        description: "Please enter a blog post title",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingBlog(true);
+    setBlogContent("");
+
+    try {
+      const storeContext = store?.store_name || "e-commerce store";
+      const prompt = `
+        Write an SEO-optimized blog post for a Shopify store called "${storeContext}" with the title: "${blogTitle}".
+        ${blogKeywords ? `Focus on these keywords: ${blogKeywords}` : ''}
+        The blog post should be informative, engaging, and follow best practices for SEO content.
+        Include a compelling introduction, 3-5 main sections with subheadings, and a conclusion.
+        Format the content using markdown with proper headings, lists, and emphasis where appropriate.
+        The blog post should be around 800-1000 words.
+      `;
+
+      const content = await generateContent(prompt);
+      setBlogContent(content);
+
+      toast({
+        title: "Blog Post Generated",
+        description: "Your SEO-optimized blog post has been created"
+      });
+    } catch (error) {
+      console.error("Error generating blog post:", error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate blog post content",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingBlog(false);
     }
   };
   
@@ -330,13 +382,211 @@ export default function ShopifyStore() {
           )}
         </div>
         
-        <ProductList 
-          products={products}
-          storeId={storeId}
-          analysisResults={analysisResults}
-          onAnalysisComplete={handleAnalysisComplete}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+          <TabsList className="mb-6">
+            <TabsTrigger value="products" className="flex items-center gap-1">
+              <ShoppingBag className="h-4 w-4" />
+              <span>Products</span>
+            </TabsTrigger>
+            <TabsTrigger value="blog" className="flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              <span>Blog Content</span>
+            </TabsTrigger>
+            <TabsTrigger value="site-audit" className="flex items-center gap-1">
+              <Globe className="h-4 w-4" />
+              <span>Site Audit</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="products">
+            <ProductList 
+              products={products}
+              storeId={storeId}
+              analysisResults={analysisResults}
+              onAnalysisComplete={handleAnalysisComplete}
+            />
+          </TabsContent>
+          
+          <TabsContent value="blog">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Pencil className="h-4 w-4" />
+                    Blog Post Generator
+                  </CardTitle>
+                  <CardDescription>
+                    Create SEO-optimized blog content for your Shopify store
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="blog-title">Blog Post Title</Label>
+                    <Input
+                      id="blog-title"
+                      placeholder="e.g., 5 Ways to Improve Your Online Store"
+                      value={blogTitle}
+                      onChange={(e) => setBlogTitle(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="blog-keywords">Target Keywords (optional)</Label>
+                    <Input
+                      id="blog-keywords"
+                      placeholder="e.g., e-commerce tips, shopify store"
+                      value={blogKeywords}
+                      onChange={(e) => setBlogKeywords(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Separate keywords with commas
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full gap-2"
+                    onClick={handleBlogGenerate}
+                    disabled={isGeneratingBlog}
+                  >
+                    {isGeneratingBlog ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        Generate Blog Post
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+              
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Generated Blog Content</CardTitle>
+                  <CardDescription>
+                    Your AI-generated blog post will appear here
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isGeneratingBlog ? (
+                    <div className="flex flex-col items-center justify-center h-[500px]">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                      <p className="text-muted-foreground">Creating your SEO-optimized blog post...</p>
+                    </div>
+                  ) : blogContent ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none h-[500px] overflow-y-auto border rounded-md p-4">
+                      <div dangerouslySetInnerHTML={{ __html: blogContent.replace(/\n/g, '<br/>') }} />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-[500px] border border-dashed rounded-md">
+                      <FileText className="h-12 w-12 text-muted-foreground mb-2 opacity-20" />
+                      <p className="text-muted-foreground">Your blog post will appear here</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter a title and click Generate to create content
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2">
+                  {blogContent && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          navigator.clipboard.writeText(blogContent);
+                          toast({
+                            title: "Content Copied",
+                            description: "Blog post copied to clipboard"
+                          });
+                        }}
+                      >
+                        Copy Content
+                      </Button>
+                      <Button disabled>
+                        Publish to Store
+                      </Button>
+                    </>
+                  )}
+                </CardFooter>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="site-audit">
+            <Card>
+              <CardHeader>
+                <CardTitle>Site Audit</CardTitle>
+                <CardDescription>
+                  Comprehensive SEO audit for your Shopify store
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Globe className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                  <h3 className="text-lg font-medium mb-2">Site Audit Coming Soon</h3>
+                  <p className="text-center text-muted-foreground max-w-md">
+                    Our comprehensive site audit feature is currently in development. 
+                    It will analyze your entire Shopify store for technical SEO issues, 
+                    content optimization opportunities, and more.
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <Button disabled>
+                  Start Audit
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
+  );
+}
+
+// Helper components for icons
+function ShoppingBag(props) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+      <path d="M3 6h18"></path>
+      <path d="M16 10a4 4 0 0 1-8 0"></path>
+    </svg>
+  );
+}
+
+function Globe(props) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="2" x2="22" y1="12" y2="12"></line>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+    </svg>
   );
 }

@@ -18,6 +18,25 @@ export default function ProtectedRoute({
   const navigate = useNavigate();
   const location = useLocation();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  
+  // Check for local session data on first load
+  useEffect(() => {
+    const checkLocalSession = async () => {
+      // Only check on first load when there's no session yet
+      if (!isLoading && !session) {
+        // Check for session in localStorage as a backup
+        const localSession = localStorage.getItem('supabase.auth.token');
+        if (localSession) {
+          console.log('Found local session data, waiting for auth context to update');
+          // If we found a local session, we'll wait for auth context to catch up
+          // No need to redirect yet
+          return;
+        }
+      }
+    };
+    
+    checkLocalSession();
+  }, []);
 
   useEffect(() => {
     // Wait until auth is no longer loading before making decisions
@@ -52,10 +71,12 @@ export default function ProtectedRoute({
     }
   }, [user, isLoading, navigate, redirectTo, location.pathname, session]);
 
+  // Show more user-friendly loading state
   if (isLoading || isAuthorized === null) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Checking authentication...</p>
       </div>
     );
   }

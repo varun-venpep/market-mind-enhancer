@@ -1,50 +1,26 @@
 
-project_id = "zcftdyamlgcvnduafxzj"
+project_id = "lovable-project"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "pgbouncer"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+[functions.serpapi]
+verify_jwt = true
 
-[db]
-port = 54322
-shadow_port = 54320
-major_version = 15
+[functions.shopify-connect]
+verify_jwt = true
 
-[db.pooler]
-enabled = false
-port = 54329
-pool_mode = "transaction"
-default_pool_size = 15
-max_client_conn = 100
+[functions.shopify-products]
+verify_jwt = true
 
-[realtime]
-enabled = true
+[functions.shopify-seo]
+verify_jwt = true
 
-[studio]
-enabled = true
-port = 54323
-api_url = "http://127.0.0.1"
+[functions.shopify-optimize]
+verify_jwt = true
 
-[inbucket]
-enabled = true
-port = 54324
+[functions.shopify-bulk-optimize]
+verify_jwt = true
 
-[storage]
-enabled = true
+[functions.gemini-content]
+verify_jwt = true
 
-[auth]
-enabled = true
-site_url = "http://localhost:3000"
-
-# Fix the email configuration structure
-[auth.email]
-enable_signup = true
-double_confirm_changes = true
-enable_confirmations = true
-
-[analytics]
-enabled = false
-backend = "postgres"
+[functions.gemini-image]
+verify_jwt = true

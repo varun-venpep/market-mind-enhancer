@@ -19,10 +19,11 @@ import { Briefs } from "./pages/Briefs";
 import { Settings } from "./pages/Settings";
 import { Analytics } from "./pages/Analytics";
 import { Profile } from "./pages/Profile";
+import Integrations from "./pages/Integrations";
 import ShopifyStores from "./pages/ShopifyStores";
 import ShopifyCallback from "./pages/ShopifyCallback";
 import ShopifyStore from "./pages/ShopifyStore";
-import Integrations from "./pages/Integrations";
+import ContentGenerator from "./pages/ContentGenerator";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/dashboard/shopify" element={<ProtectedRoute><ShopifyStores /></ProtectedRoute>} />
               <Route path="/dashboard/shopify/:storeId" element={<ProtectedRoute><ShopifyStore /></ProtectedRoute>} />
+              <Route path="/dashboard/content-generator" element={<ProtectedRoute><ContentGenerator /></ProtectedRoute>} />
               <Route path="/shopify-callback" element={<ProtectedRoute><ShopifyCallback /></ProtectedRoute>} />
               
               {/* Catch-all route */}
