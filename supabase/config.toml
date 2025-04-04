@@ -30,12 +30,6 @@ enabled = true
 enabled = true
 site_url = "http://localhost:3000"
 
-[auth.email]
-enabled = true
-
-[auth.anonymous]
-enabled = true
-
 [auth.external.github]
 enabled = true
 client_id = "env(SUPABASE_AUTH_GITHUB_CLIENT_ID)"
