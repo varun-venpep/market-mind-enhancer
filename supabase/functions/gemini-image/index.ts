@@ -50,42 +50,45 @@ serve(async (req) => {
     
     console.log(`Generating image with prompt: ${prompt.substring(0, 50)}...`);
     
-    // Call Gemini API for image generation model
-    // Note: This is a simplified implementation as Gemini's image generation capabilities
-    // are still limited. For now, we'll use a free image generation API.
-    const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`, {
-      method: "GET"
-    });
+    // Call Gemini for text-to-image generation
+    // Note: Gemini's image generation capabilities are still evolving
+    // For now, we're using a free alternative image generation service
+    const imageServiceUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
     
-    if (!response.ok) {
-      console.error(`Image generation API error: ${response.status} ${response.statusText}`);
+    try {
+      // Verify the image service is accessible
+      const response = await fetch(imageServiceUrl, { method: "HEAD" });
+      
+      if (!response.ok) {
+        throw new Error(`Image service error: ${response.status} ${response.statusText}`);
+      }
+      
+      // Return the image URL
+      // pollinations.ai provides direct image URLs based on the prompt
       return new Response(
         JSON.stringify({
-          success: false,
-          error: `Failed to generate image: ${response.statusText}`,
+          success: true,
+          imageUrl: imageServiceUrl,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: response.status,
+          status: 200,
+        }
+      );
+    } catch (imgError) {
+      console.error("Error accessing image service:", imgError);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Failed to generate image. Image service unavailable.",
+          details: imgError instanceof Error ? imgError.message : "Unknown error"
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
         }
       );
     }
-    
-    // Get the final URL after redirects
-    const imageUrl = response.url;
-    
-    console.log("Successfully generated image:", imageUrl);
-    
-    return new Response(
-      JSON.stringify({
-        success: true,
-        imageUrl,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
   } catch (error) {
     console.error("Error in image generation function:", error);
     return new Response(

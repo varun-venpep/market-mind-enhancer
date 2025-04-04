@@ -1,12 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Award, BookOpen, Check, CheckCircle, Clock, Edit, Eye, FileText, HelpCircle, Lightbulb, List, RotateCcw, Save, Sparkles, Target, X } from "lucide-react";
+import { Award, BookOpen, Check, CheckCircle, Clock, Edit, Eye, FileText, HelpCircle, Image, Lightbulb, List, Loader2, RotateCcw, Save, Sparkles, Target, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { generateContent, generateImage } from "@/services/geminiApi";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ContentEditorProps {
   briefData: any;
@@ -23,143 +25,346 @@ export const ContentEditor = ({
   isEditing,
   setIsEditing
 }: ContentEditorProps) => {
-  const [content, setContent] = useState(
-    `# Optimizing Content for AI Search Engines in 2023
-
-In today's rapidly evolving digital landscape, AI search engines are transforming how users discover and interact with content online. This guide explores how content creators can optimize their work specifically for AI-powered search platforms.
-
-## Understanding How AI Search Engines Work
-
-AI search engines differ fundamentally from traditional search engines in how they process, understand, and rank content. While conventional search relies heavily on keywords and backlinks, AI search prioritizes comprehensive, accurate information that directly addresses user queries.
-
-### Key Differences Between Traditional and AI Search
-
-Traditional search engines like Google use algorithms that consider hundreds of ranking factors including keywords, backlinks, site structure, and user behavior metrics. In contrast, AI search engines leverage natural language processing (NLP) and machine learning to evaluate content based on:
-
-- Semantic understanding rather than keyword matching
-- Comprehensive coverage of topics
-- Direct answers to user questions
-- Content accuracy and factual correctness
-- Logical structure and content flow
-
-### How AI Evaluates Content Quality and Relevance
-
-AI-powered search engines can interpret content much like a human reader would. They assess whether the content provides valuable information on a topic, addresses potential questions, and presents information in a coherent, accessible manner.
-
-These systems can recognize when content genuinely explores a subject in depth versus simply incorporating keywords without substantive information.
-
-## Essential Optimization Strategies for AI Search
-
-To rank well in AI search environments, content creators need to shift their focus from traditional SEO tactics to strategies that emphasize quality, depth, and user value.
-
-### Creating Comprehensive, In-depth Content
-
-AI search engines reward content that thoroughly covers a topic from multiple angles. To optimize for these platforms:
-
-- Address the primary topic completely
-- Cover related subtopics and common questions
-- Include factual information with authoritative sources
-- Provide context and background when introducing concepts
-- Consider different user perspectives and needs
-
-The goal is to create content so thorough that a user wouldn't need to search elsewhere to understand the topic fully.
-
-### Focusing on User Intent and Conversational Queries
-
-Since many AI search interactions happen through conversational interfaces, optimizing for natural language queries is crucial:
-
-- Research common questions in your topic area
-- Structure content to directly answer specific questions
-- Use conversational headings that match how people ask questions
-- Include FAQ sections that address common user concerns
-- Consider voice search patterns in your content structure
-
-## Tools and Techniques for AI-First Content Creation
-
-Several specialized tools can help optimize content specifically for AI search engines:
-
-- AI content analysis tools that evaluate topic coverage
-- NLP-based keyword research platforms
-- Content brief generators focused on AI optimization
-- Readability analyzers that assess clarity and structure
-- Fact-checking tools to ensure information accuracy
-
-## Measuring Success in AI Search Environments
-
-Unlike traditional search, where ranking position is the primary success metric, AI search success requires different measurement approaches:
-
-- Feature rate (how often your content is featured in AI responses)
-- Attribution tracking (when AI engines cite your content)
-- Click-through rates from AI search results
-- Engagement metrics for users arriving from AI platforms
-- Conversion rates from AI search visitors
-
-## Future Trends in AI Search Optimization
-
-The AI search landscape continues to evolve rapidly. Forward-thinking content creators should watch for:
-
-- Multimodal search combining text, images, and audio
-- Enhanced personalization in AI search results
-- Greater emphasis on E-E-A-T principles in AI ranking
-- Integration between traditional and AI search systems
-- Emerging standards for AI-optimized content structure`
-  );
+  const [content, setContent] = useState("");
+  const [originalContent, setOriginalContent] = useState("");
+  const [wordCount, setWordCount] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [blogImage, setBlogImage] = useState("");
+  const [appliedSuggestions, setAppliedSuggestions] = useState<number[]>([]);
+  const { toast } = useToast();
   
-  const [wordCount, setWordCount] = useState(content.split(/\s+/).length);
   const recommendedWordCount = briefData.recommendedWordCount;
   const wordCountPercentage = Math.min(
     100,
     (wordCount / recommendedWordCount.min) * 100
   );
   
-  // Mock data for AI suggestions
-  const aiSuggestions = [
-    {
-      type: "content",
-      section: "Understanding How AI Search Engines Work",
-      suggestion: "Add examples of leading AI search engines like Perplexity, Claude, and ChatGPT to provide specific context for readers.",
-      severity: "medium"
-    },
-    {
-      type: "content",
-      section: "Essential Optimization Strategies",
-      suggestion: "Include a brief case study or success story showing real results from AI optimization.",
-      severity: "low"
-    },
-    {
-      type: "structure",
-      section: "Tools and Techniques",
-      suggestion: "This section needs more specific tool recommendations with brief descriptions of how each works.",
-      severity: "high"
-    },
-    {
-      type: "keyword",
-      section: "Overall",
-      suggestion: "The term 'AI search optimization' could be used 2-3 more times throughout the content for better visibility.",
-      severity: "medium"
-    },
-    {
-      type: "missing",
-      section: "Future Trends",
-      suggestion: "Add a paragraph about the implications for traditional SEO practices as AI search grows in prominence.",
-      severity: "medium"
+  // AI suggestions based on content analysis
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  
+  useEffect(() => {
+    // Initialize with the example content if content is empty
+    if (!content) {
+      generateInitialContent();
     }
-  ];
-
+  }, []);
+  
+  const generateInitialContent = async () => {
+    setIsGenerating(true);
+    try {
+      const initialPrompt = `Write a comprehensive blog post about "${briefData.title}". 
+      Focus on these keywords: ${briefData.keywords.join(", ")}.
+      Include the following sections:
+      ${briefData.outline.map(item => `- ${item.text}`).join("\n")}
+      
+      Make sure to address these questions:
+      ${briefData.questions.map(q => `- ${q}`).join("\n")}
+      
+      Format the content in markdown with appropriate headings, lists, and paragraphs.
+      The content should be informative, engaging, and optimized for both readers and search engines.
+      Target word count: ${recommendedWordCount.min}-${recommendedWordCount.max} words.`;
+      
+      const generatedContent = await generateContent(initialPrompt);
+      setContent(generatedContent);
+      setOriginalContent(generatedContent);
+      const words = generatedContent.split(/\s+/).length;
+      setWordCount(words);
+      
+      // Generate AI suggestions
+      generateSuggestions(generatedContent);
+      
+      // Simulate score change based on content
+      const newScore = Math.min(
+        100, 
+        Math.max(
+          60,
+          65 + Math.floor(Math.random() * 20)
+        )
+      );
+      onScoreChange(newScore);
+    } catch (error) {
+      console.error("Error generating content:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate content. Please try again.",
+        variant: "destructive"
+      });
+      // Fallback to empty content
+      setContent("");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  const generateSuggestions = async (contentToAnalyze: string) => {
+    try {
+      const analysisPrompt = `Analyze this content about "${briefData.title}" and provide 5 specific suggestions for improvement. 
+      Format each suggestion as a JSON object with these properties:
+      - type: One of these values: "content", "structure", "keyword", "missing", "readability"
+      - section: The section this suggestion applies to
+      - suggestion: The specific suggestion text
+      - severity: "low", "medium", or "high" based on importance
+      
+      Return ONLY the JSON array of 5 suggestions, nothing else.
+      
+      Here's the content:
+      ${contentToAnalyze.substring(0, 2000)}...`;
+      
+      const suggestionsResponse = await generateContent(analysisPrompt, { temperature: 0.7 });
+      
+      // Extract the JSON array from the response
+      const jsonString = suggestionsResponse.replace(/```json|```/g, '').trim();
+      let parsedSuggestions = [];
+      
+      try {
+        parsedSuggestions = JSON.parse(jsonString);
+      } catch (e) {
+        // If parsing fails, create some default suggestions
+        parsedSuggestions = [
+          {
+            type: "content",
+            section: "Introduction",
+            suggestion: "Add more context to better introduce the topic to new readers.",
+            severity: "medium"
+          },
+          {
+            type: "keyword",
+            section: "Overall",
+            suggestion: `Use the keyword "${briefData.keywords[0]}" more naturally throughout the content.`,
+            severity: "high"
+          },
+          {
+            type: "structure",
+            section: "Main Sections",
+            suggestion: "Break up long paragraphs into smaller, more digestible chunks.",
+            severity: "medium"
+          },
+          {
+            type: "missing",
+            section: "Conclusion",
+            suggestion: "Add a stronger call-to-action at the end of the content.",
+            severity: "low"
+          },
+          {
+            type: "readability",
+            section: "Overall",
+            suggestion: "Simplify some technical terms to improve readability for general audience.",
+            severity: "medium"
+          }
+        ];
+      }
+      
+      setAiSuggestions(parsedSuggestions);
+    } catch (error) {
+      console.error("Error generating suggestions:", error);
+      // Set default suggestions if generation fails
+      setAiSuggestions([
+        {
+          type: "content",
+          section: "Introduction",
+          suggestion: "Add more context to better introduce the topic to new readers.",
+          severity: "medium"
+        },
+        {
+          type: "keyword",
+          section: "Overall",
+          suggestion: `Use the keyword "${briefData.keywords[0]}" more naturally throughout the content.`,
+          severity: "high"
+        },
+        {
+          type: "structure",
+          section: "Main Sections",
+          suggestion: "Break up long paragraphs into smaller, more digestible chunks.",
+          severity: "medium"
+        },
+        {
+          type: "missing",
+          section: "Conclusion",
+          suggestion: "Add a stronger call-to-action at the end of the content.",
+          severity: "low"
+        },
+        {
+          type: "readability",
+          section: "Overall",
+          suggestion: "Simplify some technical terms to improve readability for general audience.",
+          severity: "medium"
+        }
+      ]);
+    }
+  };
+  
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
-    setWordCount(e.target.value.split(/\s+/).length);
+    const newWordCount = e.target.value.split(/\s+/).length;
+    setWordCount(newWordCount);
     
-    // Simulate score changes based on content length
+    // Update score based on changes from original
+    const contentChangeFactor = 
+      Math.abs(e.target.value.length - originalContent.length) / originalContent.length;
+    
     const newScore = Math.min(
       100, 
       Math.max(
         60,
-        score + Math.floor(Math.random() * 6) - 2
+        score + (contentChangeFactor > 0.05 ? Math.floor(Math.random() * 6) - 2 : 0)
       )
     );
     onScoreChange(newScore);
   };
+  
+  const handleApplySuggestion = async (index: number) => {
+    if (appliedSuggestions.includes(index)) return;
+    
+    const suggestion = aiSuggestions[index];
+    
+    try {
+      const improvePrompt = `I have this content about "${briefData.title}". 
+      This is the specific suggestion to implement: "${suggestion.suggestion}" in the "${suggestion.section}" section.
+      
+      Please rewrite or improve ONLY the relevant part of the content to implement this suggestion.
+      Return ONLY the improved section, not the entire content.
+      
+      Here's the current content:
+      ${content}`;
+      
+      const improvedSection = await generateContent(improvePrompt, { temperature: 0.7 });
+      
+      // Notify user
+      toast({
+        title: "Suggestion Applied",
+        description: `Improved the ${suggestion.section} section based on AI suggestion.`,
+      });
+      
+      // Update score
+      const newScore = Math.min(100, score + Math.floor(Math.random() * 5) + 1);
+      onScoreChange(newScore);
+      
+      // Mark suggestion as applied
+      setAppliedSuggestions([...appliedSuggestions, index]);
+      
+      // Update content with improved section
+      // This is a simplified implementation; in a real app, you'd want to 
+      // more accurately identify and replace only the specific section
+      const contentLines = content.split('\n');
+      const sectionHeadingRegExp = new RegExp(suggestion.section, 'i');
+      
+      let sectionStartIndex = -1;
+      let sectionEndIndex = -1;
+      
+      // Find the section to replace
+      for (let i = 0; i < contentLines.length; i++) {
+        if (sectionHeadingRegExp.test(contentLines[i]) && sectionStartIndex === -1) {
+          sectionStartIndex = i;
+        } else if (sectionStartIndex !== -1 && 
+                  (contentLines[i].startsWith('#') || i === contentLines.length - 1)) {
+          sectionEndIndex = i === contentLines.length - 1 ? i + 1 : i;
+          break;
+        }
+      }
+      
+      // Replace the section if found
+      if (sectionStartIndex !== -1) {
+        const updatedContent = [
+          ...contentLines.slice(0, sectionStartIndex),
+          ...improvedSection.split('\n'),
+          ...contentLines.slice(sectionEndIndex)
+        ].join('\n');
+        
+        setContent(updatedContent);
+        setWordCount(updatedContent.split(/\s+/).length);
+      } else {
+        // If section heading not found, append the improvement as a note
+        setContent(content + '\n\n**Improvement Note:** ' + improvedSection);
+        setWordCount((content + '\n\n**Improvement Note:** ' + improvedSection).split(/\s+/).length);
+      }
+      
+    } catch (error) {
+      console.error("Error applying suggestion:", error);
+      toast({
+        title: "Error",
+        description: "Failed to apply the suggestion. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleGenerateImage = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const imagePrompt = `Create a professional, high-quality featured image for a blog post titled "${briefData.title}". 
+      The image should be visually appealing and relevant to the topic of ${briefData.keywords.join(", ")}.
+      Make it suitable for a professional business blog.`;
+      
+      const imageUrl = await generateImage(imagePrompt);
+      setBlogImage(imageUrl);
+      
+      toast({
+        title: "Image Generated",
+        description: "Blog featured image has been generated successfully.",
+      });
+      
+    } catch (error) {
+      console.error("Error generating image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate image. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+  
+  const handleRegenerate = async () => {
+    setIsGenerating(true);
+    try {
+      const regeneratePrompt = `Rewrite this blog post about "${briefData.title}" to make it more engaging and SEO-optimized.
+      Keep the same structure and key points, but improve the language, flow, and presentation.
+      Focus on these keywords: ${briefData.keywords.join(", ")}.
+      
+      Here's the current content:
+      ${content}`;
+      
+      const regeneratedContent = await generateContent(regeneratePrompt);
+      setContent(regeneratedContent);
+      setWordCount(regeneratedContent.split(/\s+/).length);
+      
+      // Generate new suggestions
+      generateSuggestions(regeneratedContent);
+      
+      // Update score
+      const newScore = Math.min(100, score + Math.floor(Math.random() * 10) - 3);
+      onScoreChange(newScore);
+      
+      toast({
+        title: "Content Regenerated",
+        description: "Your content has been refreshed with a new version.",
+      });
+    } catch (error) {
+      console.error("Error regenerating content:", error);
+      toast({
+        title: "Error",
+        description: "Failed to regenerate content. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (isGenerating && !content) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+        <h3 className="text-lg font-medium mb-2">Generating Content...</h3>
+        <p className="text-center text-muted-foreground max-w-md">
+          Our AI is creating high-quality content based on your brief.
+          This may take a moment.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -170,23 +375,54 @@ The AI search landscape continues to evolve rapidly. Forward-thinking content cr
             {isEditing ? "Editing" : "Preview"}
           </Badge>
         </div>
-        <Button 
-          variant={isEditing ? "outline" : "default"}
-          size="sm"
-          onClick={() => setIsEditing(!isEditing)}
-        >
-          {isEditing ? (
-            <>
-              <Eye className="mr-2 h-4 w-4" />
-              Preview
-            </>
+        <div className="flex gap-2">
+          {blogImage ? (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open(blogImage, '_blank')}
+            >
+              <Image className="mr-2 h-4 w-4" />
+              View Image
+            </Button>
           ) : (
-            <>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleGenerateImage}
+              disabled={isGeneratingImage}
+            >
+              {isGeneratingImage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Image className="mr-2 h-4 w-4" />
+                  Generate Image
+                </>
+              )}
+            </Button>
           )}
-        </Button>
+          <Button 
+            variant={isEditing ? "outline" : "default"}
+            size="sm"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? (
+              <>
+                <Eye className="mr-2 h-4 w-4" />
+                Preview
+              </>
+            ) : (
+              <>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -199,6 +435,22 @@ The AI search landscape continues to evolve rapidly. Forward-thinking content cr
                     {item}
                   </Button>
                 ))}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 px-2 ml-auto"
+                  onClick={handleRegenerate}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Regenerate
+                    </>
+                  )}
+                </Button>
               </div>
             ) : null}
             
@@ -208,9 +460,19 @@ The AI search landscape continues to evolve rapidly. Forward-thinking content cr
                   value={content}
                   onChange={handleEditorChange}
                   className="w-full h-full border-0 rounded-none focus-visible:ring-0 resize-none font-mono text-sm p-4"
+                  placeholder="Start writing your content here..."
                 />
               ) : (
                 <div className="prose max-w-full p-6 markdown-content">
+                  {blogImage && (
+                    <div className="mb-6">
+                      <img 
+                        src={blogImage} 
+                        alt={briefData.title} 
+                        className="w-full rounded-md border"
+                      />
+                    </div>
+                  )}
                   <div dangerouslySetInnerHTML={{ 
                     __html: content
                       .replace(/# (.*)/g, '<h1>$1</h1>')
@@ -277,16 +539,16 @@ The AI search landscape continues to evolve rapidly. Forward-thinking content cr
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm">Keyword Usage</span>
-                    <span className="text-sm font-medium">84/100</span>
+                    <span className="text-sm font-medium">{72 + Math.floor(score/10)}/100</span>
                   </div>
-                  <Progress value={84} className="h-2" />
+                  <Progress value={72 + Math.floor(score/10)} className="h-2" />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm">Topic Coverage</span>
-                    <span className="text-sm font-medium">78/100</span>
+                    <span className="text-sm font-medium">{68 + Math.floor(score/8)}/100</span>
                   </div>
-                  <Progress value={78} className="h-2" />
+                  <Progress value={68 + Math.floor(score/8)} className="h-2" />
                 </div>
               </div>
             </CardContent>
@@ -303,50 +565,75 @@ The AI search landscape continues to evolve rapidly. Forward-thinking content cr
               </CardDescription>
             </CardHeader>
             <CardContent className="max-h-[280px] overflow-y-auto">
-              <div className="space-y-3">
-                {aiSuggestions.map((suggestion, index) => (
-                  <div key={index} className="rounded-md border p-3 bg-muted/10">
-                    <div className="flex items-start gap-2">
-                      <div className={`
-                        rounded-full p-1 
-                        ${suggestion.severity === 'high' ? 'bg-red-100 text-red-600' : 
-                          suggestion.severity === 'medium' ? 'bg-amber-100 text-amber-600' : 
-                          'bg-green-100 text-green-600'}
-                      `}>
-                        {suggestion.severity === 'high' ? (
-                          <HelpCircle className="h-3 w-3" />
-                        ) : suggestion.severity === 'medium' ? (
-                          <Lightbulb className="h-3 w-3" />
-                        ) : (
-                          <Target className="h-3 w-3" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div className="text-xs font-medium mb-1">
-                            {suggestion.section}
-                          </div>
-                          <Badge variant="outline" className="text-xs font-normal">
-                            {suggestion.type}
-                          </Badge>
+              {aiSuggestions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <Loader2 className="w-6 h-6 text-muted-foreground animate-spin mb-2" />
+                  <p className="text-muted-foreground text-sm">Analyzing content...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {aiSuggestions.map((suggestion, index) => (
+                    <div key={index} className={`rounded-md border p-3 ${
+                      appliedSuggestions.includes(index) 
+                        ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
+                        : 'bg-muted/10'
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        <div className={`
+                          rounded-full p-1 
+                          ${suggestion.severity === 'high' ? 'bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400' : 
+                            suggestion.severity === 'medium' ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400' : 
+                            'bg-green-100 text-green-600 dark:bg-green-950/50 dark:text-green-400'}
+                        `}>
+                          {suggestion.severity === 'high' ? (
+                            <HelpCircle className="h-3 w-3" />
+                          ) : suggestion.severity === 'medium' ? (
+                            <Lightbulb className="h-3 w-3" />
+                          ) : (
+                            <Target className="h-3 w-3" />
+                          )}
                         </div>
-                        <p className="text-sm">{suggestion.suggestion}</p>
-                        
-                        <div className="flex items-center gap-1 mt-2">
-                          <Button variant="ghost" size="sm" className="h-7 px-2">
-                            <Check className="h-3 w-3 mr-1" />
-                            <span className="text-xs">Apply</span>
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-7 px-2">
-                            <X className="h-3 w-3 mr-1" />
-                            <span className="text-xs">Dismiss</span>
-                          </Button>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div className="text-xs font-medium mb-1">
+                              {suggestion.section}
+                            </div>
+                            <Badge variant="outline" className="text-xs font-normal">
+                              {suggestion.type}
+                            </Badge>
+                          </div>
+                          <p className="text-sm">{suggestion.suggestion}</p>
+                          
+                          <div className="flex items-center gap-1 mt-2">
+                            {appliedSuggestions.includes(index) ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-600 dark:bg-green-950/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Applied
+                              </Badge>
+                            ) : (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 px-2"
+                                  onClick={() => handleApplySuggestion(index)}
+                                >
+                                  <Check className="h-3 w-3 mr-1" />
+                                  <span className="text-xs">Apply</span>
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-7 px-2">
+                                  <X className="h-3 w-3 mr-1" />
+                                  <span className="text-xs">Dismiss</span>
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -354,3 +641,4 @@ The AI search landscape continues to evolve rapidly. Forward-thinking content cr
     </div>
   );
 };
+

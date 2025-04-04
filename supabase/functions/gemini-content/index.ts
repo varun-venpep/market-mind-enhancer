@@ -100,6 +100,7 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           error: `Failed to generate content: ${response.statusText}`,
+          details: errorData
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -122,6 +123,7 @@ serve(async (req) => {
         JSON.stringify({
           success: false,
           error: "Received invalid response format from Gemini API",
+          details: JSON.stringify(data)
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
