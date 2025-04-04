@@ -4,16 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Edit, Save, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
+import { ContentBrief } from "@/types";
 
 interface BriefHeaderProps {
-  title: string;
-  status: "draft" | "in-progress" | "completed";
+  brief: ContentBrief;
   score: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
-export const BriefHeader = ({ title, status, score, createdAt, updatedAt }: BriefHeaderProps) => {
+export const BriefHeader = ({ brief, score }: BriefHeaderProps) => {
+  const { title, status, createdAt, updatedAt } = brief;
+  
   const getStatusColor = () => {
     switch (status) {
       case "completed":

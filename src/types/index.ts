@@ -10,6 +10,13 @@ export interface ContentBrief {
   wordCount?: number;
   searchVolume?: number;
   difficulty?: number;
+  thumbnailUrl?: string;
+  outline?: any[];
+  questions?: string[];
+  recommendedWordCount?: {
+    min: number;
+    max: number;
+  };
 }
 
 export interface Keyword {

@@ -14,11 +14,11 @@ interface OutlineItem {
 }
 
 interface ContentOutlineProps {
-  outline: OutlineItem[];
-  onUpdate: (outline: OutlineItem[]) => void;
+  outline: OutlineItem[] | any[];
+  onUpdate?: (outline: OutlineItem[]) => void;
 }
 
-export const ContentOutline = ({ outline, onUpdate }: ContentOutlineProps) => {
+export const ContentOutline = ({ outline, onUpdate = () => {} }: ContentOutlineProps) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {

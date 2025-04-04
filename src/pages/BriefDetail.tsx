@@ -253,7 +253,10 @@ const BriefDetail = () => {
           <TabsContent value="brief" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-6">
-                <ContentOutline outline={briefData.outline} />
+                <ContentOutline 
+                  outline={briefData.outline} 
+                  onUpdate={(outline) => console.log(outline)}
+                />
                 <KeywordSection 
                   keywords={briefData.keywords} 
                   questions={briefData.questions}
@@ -266,7 +269,7 @@ const BriefDetail = () => {
           </TabsContent>
           
           <TabsContent value="competitors" className="mt-6">
-            <CompetitorInsights keywords={briefData.keywords} />
+            <CompetitorInsights keyword={briefData.keywords[0]} />
           </TabsContent>
         </Tabs>
       </div>

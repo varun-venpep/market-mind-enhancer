@@ -1,21 +1,21 @@
 
-import { Home } from "@/pages/Home";
-import { Dashboard } from "@/pages/Dashboard";
-import { Research } from "@/pages/Research";
-import { Briefs } from "@/pages/Briefs";
+import Index from "@/pages/Index";
+import Dashboard from "@/pages/Dashboard";
+import Research from "@/pages/Research";
+import Briefs from "@/pages/Briefs";
 import BriefDetail from "@/pages/BriefDetail";
-import { ContentGenerator } from "@/pages/ContentGenerator";
-import { Login } from "@/components/Auth/Login";
-import { Integrations } from "@/pages/Integrations";
-import { ShopifyStores } from "@/pages/ShopifyStores";
-import { ShopifyStore } from "@/pages/ShopifyStore";
-import { ShopifyConnect } from "@/pages/ShopifyConnect";
+import ContentGenerator from "@/pages/ContentGenerator";
+import Login from "@/pages/Login";
+import Integrations from "@/pages/Integrations";
+import ShopifyStores from "@/pages/ShopifyStores";
+import ShopifyStore from "@/pages/ShopifyStore";
+import ShopifyCallback from "@/pages/ShopifyCallback";
 
 // Define routes
 const routes = [
   {
     path: "/",
-    component: Home,
+    component: Index,
     protected: false,
   },
   {
@@ -59,13 +59,13 @@ const routes = [
     protected: true,
   },
   {
-    path: "/dashboard/shopify/:id",
+    path: "/dashboard/shopify/:storeId",
     component: ShopifyStore,
     protected: true,
   },
   {
-    path: "/shopify-connect",
-    component: ShopifyConnect,
+    path: "/shopify-callback",
+    component: ShopifyCallback,
     protected: true,
   },
 ];

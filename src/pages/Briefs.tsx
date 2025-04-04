@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -159,7 +158,6 @@ export const Briefs = () => {
       toast({
         title: "Brief Created",
         description: "Your content brief has been created successfully.",
-        variant: "success",
       });
       
       // Navigate to the new brief
