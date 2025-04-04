@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,9 +13,11 @@ import {
   LogIn,
   ShoppingBag
 } from "lucide-react";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isPro } = useSubscription();
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-2.5">
@@ -71,11 +72,17 @@ const Navbar = () => {
                 <ShoppingBag className="h-4 w-4 mr-2 md:hidden" /> Shopify
               </Link>
             </li>
-            <li>
-              <Link to="/pricing" className="flex items-center py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
-                <Settings className="h-4 w-4 mr-2 md:hidden" /> Pricing
-              </Link>
-            </li>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" asChild className="hidden md:flex">
+                <Link to="/pricing">Pricing</Link>
+              </Button>
+              
+              {isPro && (
+                <Badge className="bg-gradient-to-r from-brand-400 to-brand-600 text-white">
+                  Pro
+                </Badge>
+              )}
+            </div>
           </ul>
         </div>
       </div>

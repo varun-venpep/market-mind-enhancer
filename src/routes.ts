@@ -4,12 +4,14 @@ import Dashboard from "@/pages/Dashboard";
 import Research from "@/pages/Research";
 import Briefs from "@/pages/Briefs";
 import BriefDetail from "@/pages/BriefDetail";
+import ContentBrief from "@/pages/ContentBrief";
 import ContentGenerator from "@/pages/ContentGenerator";
 import Login from "@/pages/Login";
 import Integrations from "@/pages/Integrations";
 import ShopifyStores from "@/pages/ShopifyStores";
 import ShopifyStore from "@/pages/ShopifyStore";
 import ShopifyCallback from "@/pages/ShopifyCallback";
+import Pricing from "@/pages/Pricing";
 
 // Define routes
 const routes = [
@@ -21,6 +23,11 @@ const routes = [
   {
     path: "/login",
     component: Login,
+    protected: false,
+  },
+  {
+    path: "/pricing",
+    component: Pricing,
     protected: false,
   },
   {
@@ -41,6 +48,11 @@ const routes = [
   {
     path: "/dashboard/briefs/:id",
     component: BriefDetail,
+    protected: true,
+  },
+  {
+    path: "/dashboard/content-brief/:id",
+    component: ContentBrief,
     protected: true,
   },
   {

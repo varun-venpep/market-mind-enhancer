@@ -1,54 +1,64 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import routes from "./routes";
-import NotFound from "./pages/NotFound";
-import { ThemeProvider } from "./components/Theme/ThemeProvider";
-import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from "./components/Auth/ProtectedRoute";
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from "@/components/theme-provider"
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { supabase } from './integrations/supabase/client';
+import { AuthProvider, ProtectedRoute } from './contexts/AuthContext';
+import routes from './routes';
+import './App.css';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    console.log('User signed in:', session);
+  } else if (event === 'SIGNED_OUT') {
+    console.log('User signed out');
+  }
+});
+
+function App() {
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="seo-wizard-ui-theme">
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              {routes.map((route) => (
-                <Route
-                  key={route.path}
-                  path={route.path}
-                  element={
-                    route.protected ? (
-                      <ProtectedRoute>
-                        <route.component />
-                      </ProtectedRoute>
-                    ) : (
-                      <route.component />
-                    )
+          <SubscriptionProvider>
+            <Router>
+              <Routes>
+                {routes.map((route) => {
+                  if (route.protected) {
+                    return (
+                      <Route
+                        key={route.path}
+                        path={route.path}
+                        element={
+                          <ProtectedRoute>
+                            <route.component />
+                          </ProtectedRoute>
+                        }
+                      />
+                    );
+                  } else {
+                    return (
+                      <Route
+                        key={route.path}
+                        path={route.path}
+                        element={<route.component />}
+                      />
+                    );
                   }
-                />
-              ))}
-              
-              {/* Redirects */}
-              <Route path="/shopify" element={<Navigate to="/dashboard/shopify" replace />} />
-              <Route path="/integrations" element={<Navigate to="/dashboard/integrations" replace />} />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+                })}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <Toaster richColors closeButton position="top-right" />
+            </Router>
+          </SubscriptionProvider>
         </AuthProvider>
-      </TooltipProvider>
+      </QueryClientProvider>
     </ThemeProvider>
-  </QueryClientProvider>
-);
+  );
+}
 
 export default App;

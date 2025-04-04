@@ -1,26 +1,51 @@
 
-project_id = "lovable-project"
+project_id = "zcftdyamlgcvnduafxzj"
 
-[functions.serpapi]
-verify_jwt = true
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
 
-[functions.shopify-connect]
-verify_jwt = true
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
 
-[functions.shopify-products]
-verify_jwt = true
+[realtime]
+enabled = true
 
-[functions.shopify-seo]
-verify_jwt = true
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
 
-[functions.shopify-optimize]
-verify_jwt = true
+[inbucket]
+enabled = true
+port = 54324
 
-[functions.shopify-bulk-optimize]
-verify_jwt = true
+[storage]
+enabled = true
 
-[functions.gemini-content]
-verify_jwt = true
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
 
-[functions.gemini-image]
+[auth.email]
+enabled = true
+
+[auth.anonymous]
+enabled = true
+
+[auth.external.github]
+enabled = true
+client_id = "env(SUPABASE_AUTH_GITHUB_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GITHUB_SECRET)"
+redirect_uri = "http://localhost:54323/auth/v1/callback"
+
+[functions]
+[functions.create-checkout]
 verify_jwt = true
+[functions.check-subscription]
+verify_jwt = true
+[functions.webhook-stripe]
+verify_jwt = false

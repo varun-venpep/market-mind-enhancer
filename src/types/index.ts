@@ -17,6 +17,7 @@ export interface ContentBrief {
     min: number;
     max: number;
   };
+  aiPotential?: number; // Adding this field to fix the error
 }
 
 export interface Keyword {
@@ -61,4 +62,23 @@ export interface OutlineItem {
   text: string;
   score: number;
   children?: OutlineItem[];
+}
+
+// Add subscription-related types
+export interface Subscription {
+  id: string;
+  userId: string;
+  status: 'active' | 'trialing' | 'canceled' | 'incomplete';
+  planId: string;
+  currentPeriodEnd: string;
+  createdAt: string;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  features: string[];
+  stripePriceId: string;
 }
