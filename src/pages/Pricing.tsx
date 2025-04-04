@@ -1,195 +1,225 @@
 
-import { useState } from 'react';
-import { Check, X, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CheckIcon, XIcon } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const PricingPage = () => {
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   const { user } = useAuth();
-  const { isPro, subscription, redirectToCheckout } = useSubscription();
-  const navigate = useNavigate();
+  const { isPro, loading: subscriptionLoading } = useSubscription();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubscribe = async (priceId: string) => {
     if (!user) {
-      // Redirect to login page with return URL
-      navigate('/login?redirect=/pricing');
+      toast.error("Please sign in to subscribe");
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      await redirectToCheckout(priceId);
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
     } catch (error) {
-      console.error('Error during checkout:', error);
-      toast.error('Failed to start checkout process. Please try again.');
+      console.error("Error creating checkout session:", error);
+      toast.error("Failed to create checkout session");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Price IDs for Stripe (replace with your actual Stripe price IDs)
-  const priceIds = {
-    monthly: 'price_1OtbDSKnT5Cm1MKlMVLrV3ZH',
-    yearly: 'price_1OtbDuKnT5Cm1MKlnefBQTin'
-  };
-
-  // Pricing data
   const plans = [
     {
-      name: 'Free',
-      description: 'Basic features for getting started with SEO.',
-      price: { monthly: 0, yearly: 0 },
+      name: "Free",
+      description: "Get started with basic SEO tools",
+      price: "$0",
+      interval: "forever",
       features: [
-        { name: 'Basic SEO content brief', included: true },
-        { name: 'Content optimization suggestions', included: true },
-        { name: 'Up to 5 content briefs', included: true },
-        { name: 'Connect 1 Shopify store', included: true },
-        { name: 'Basic SEO analysis', included: true },
-        { name: 'AI-powered keyword research', included: false },
-        { name: 'Advanced content optimization', included: false },
-        { name: 'Unlimited content briefs', included: false },
-        { name: 'Connect unlimited Shopify stores', included: false },
-        { name: 'Bulk SEO optimization', included: false },
+        "Basic keyword research",
+        "Up to 5 content briefs",
+        "Weekly domain analysis",
+        "10 SERP analysis queries/month",
+        "Basic content optimization",
       ],
-      cta: 'Get Started',
-      priceId: null,
+      limitations: [
+        "No Shopify integration",
+        "No WordPress integration",
+        "Limited keyword tracking",
+        "Basic reporting",
+      ],
+      priceId: "",
+      highlight: false,
     },
     {
-      name: 'Pro',
-      description: 'Advanced features for serious content creators.',
-      price: { monthly: 49, yearly: 490 },
+      name: "Pro",
+      description: "Advanced tools for serious marketers",
+      price: "$49",
+      interval: "month",
       features: [
-        { name: 'Basic SEO content brief', included: true },
-        { name: 'Content optimization suggestions', included: true },
-        { name: 'Unlimited content briefs', included: true },
-        { name: 'Connect unlimited Shopify stores', included: true },
-        { name: 'Advanced SEO analysis', included: true },
-        { name: 'AI-powered keyword research', included: true },
-        { name: 'Advanced content optimization', included: true },
-        { name: 'Priority customer support', included: true },
-        { name: 'Bulk SEO optimization', included: true },
-        { name: 'API access', included: true },
+        "Advanced keyword research",
+        "Unlimited content briefs",
+        "Daily domain analysis",
+        "100 SERP analysis queries/month",
+        "Advanced content optimization",
+        "Shopify integration",
+        "WordPress integration",
+        "Unlimited keyword tracking",
+        "Advanced reporting",
+        "Priority support",
       ],
-      cta: isPro ? 'Current Plan' : 'Upgrade',
-      priceId: billingInterval === 'monthly' ? priceIds.monthly : priceIds.yearly,
+      limitations: [],
+      priceId: "price_pro_monthly",
       highlight: true,
+    },
+    {
+      name: "Enterprise",
+      description: "Custom solutions for large businesses",
+      price: "Custom",
+      interval: "month",
+      features: [
+        "All Pro features",
+        "Dedicated account manager",
+        "Custom API access",
+        "White-label reports",
+        "Enterprise SLA",
+        "Unlimited SERP analysis",
+        "Custom integrations",
+        "Multi-user access",
+      ],
+      limitations: [],
+      priceId: "",
+      highlight: false,
     }
   ];
 
   return (
-    <div className="container mx-auto py-12 px-4">
-      <div className="text-center space-y-4 mb-12">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-          Simple, Transparent Pricing
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Choose the plan that works best for your SEO needs. Upgrade or downgrade anytime.
-        </p>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-grow py-12 px-4 md:px-6 bg-gray-50 dark:bg-gray-900">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4 gradient-text">Choose Your Plan</h1>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Select the perfect plan for your SEO needs. Upgrade anytime as your business grows.
+          </p>
+        </div>
 
-        <Tabs 
-          defaultValue="monthly" 
-          value={billingInterval}
-          onValueChange={(value) => setBillingInterval(value as 'monthly' | 'yearly')}
-          className="w-fit mx-auto mt-6"
-        >
-          <TabsList className="grid w-[300px] grid-cols-2">
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
-            <TabsTrigger value="yearly">
-              Yearly
-              <Badge variant="secondary" className="ml-2 bg-brand-50 text-brand-900">Save 15%</Badge>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-        {plans.map((plan) => (
-          <Card 
-            key={plan.name} 
-            className={`relative flex flex-col ${
-              plan.highlight ? 'border-brand-500 shadow-lg' : ''
-            }`}
-          >
-            {plan.highlight && (
-              <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
-                <Badge className="bg-brand-500 text-white px-3 py-1 rounded-full">Popular</Badge>
-              </div>
-            )}
-            <CardHeader className="flex flex-col">
-              <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                {plan.description}
-              </CardDescription>
-              <div className="mt-4 flex items-baseline">
-                <span className="text-4xl font-extrabold tracking-tight">
-                  ${plan.price[billingInterval]}
-                </span>
-                {plan.price[billingInterval] > 0 && (
-                  <span className="ml-2 text-muted-foreground">
-                    /{billingInterval === 'monthly' ? 'month' : 'year'}
-                  </span>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          {plans.map((plan) => (
+            <Card 
+              key={plan.name} 
+              className={`flex flex-col h-full ${
+                plan.highlight 
+                  ? 'border-primary shadow-lg shadow-primary/10 relative overflow-hidden' 
+                  : ''
+              }`}
+            >
+              {plan.highlight && (
+                <div className="absolute top-0 right-0">
+                  <Badge className="m-2 bg-primary text-white">Most Popular</Badge>
+                </div>
+              )}
+              <CardHeader>
+                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <div className="mb-6">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  {plan.price !== "Custom" && (
+                    <span className="text-muted-foreground">/{plan.interval}</span>
+                  )}
+                </div>
+                
+                <ul className="space-y-2 mb-6">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center text-sm">
+                      <CheckIcon className="text-green-500 mr-2 h-5 w-5 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                  
+                  {plan.limitations.map((limitation) => (
+                    <li key={limitation} className="flex items-center text-sm text-muted-foreground">
+                      <XIcon className="text-muted-foreground mr-2 h-5 w-5 flex-shrink-0" />
+                      <span>{limitation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter className="pt-0">
+                {plan.name === "Free" ? (
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    disabled={subscriptionLoading}
+                    onClick={() => toast("You're already on the Free plan")}
+                  >
+                    Current Plan
+                  </Button>
+                ) : plan.name === "Pro" ? (
+                  isPro ? (
+                    <Button className="w-full" variant="outline" disabled>
+                      Current Plan
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="w-full gradient-button" 
+                      onClick={() => handleSubscribe(plan.priceId)}
+                      disabled={isLoading || !user}
+                    >
+                      {isLoading ? "Processing..." : user ? "Subscribe Now" : "Sign In to Subscribe"}
+                    </Button>
+                  )
+                ) : (
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => window.location.href = "mailto:sales@marketmind.com?subject=Enterprise Plan Inquiry"}
+                  >
+                    Contact Sales
+                  </Button>
                 )}
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <ul className="space-y-3">
-                {plan.features.map((feature) => (
-                  <li key={feature.name} className="flex items-start">
-                    {feature.included ? (
-                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                    ) : (
-                      <X className="h-5 w-5 text-muted-foreground mr-2 flex-shrink-0" />
-                    )}
-                    <span className={!feature.included ? 'text-muted-foreground' : ''}>
-                      {feature.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className={`w-full ${
-                  plan.highlight ? 'gradient-button' : plan.name === 'Free' ? 'bg-muted' : ''
-                }`}
-                onClick={() => {
-                  if (plan.priceId) {
-                    handleSubscribe(plan.priceId);
-                  } else if (plan.name === 'Free') {
-                    navigate('/dashboard');
-                  }
-                }}
-                disabled={plan.name === 'Pro' && isPro}
-              >
-                {plan.highlight && <Zap className="h-4 w-4 mr-2" />}
-                {plan.cta}
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
 
-      <div className="mt-12 text-center max-w-2xl mx-auto">
-        <h3 className="text-xl font-semibold mb-4">Frequently Asked Questions</h3>
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-medium">Can I cancel my subscription?</h4>
-            <p className="text-muted-foreground">Yes, you can cancel your subscription at any time. Your plan will remain active until the end of your billing period.</p>
-          </div>
-          <div>
-            <h4 className="font-medium">Is there a free trial?</h4>
-            <p className="text-muted-foreground">Yes, you can use our Free plan with limited features indefinitely.</p>
-          </div>
-          <div>
-            <h4 className="font-medium">What payment methods do you accept?</h4>
-            <p className="text-muted-foreground">We accept all major credit cards (Visa, Mastercard, American Express) through our secure payment processor, Stripe.</p>
+        <div className="max-w-3xl mx-auto mt-16 text-center">
+          <h2 className="text-2xl font-bold mb-4">Frequently Asked Questions</h2>
+          <div className="space-y-6 text-left">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Can I change plans later?</h3>
+              <p className="text-muted-foreground">Yes, you can upgrade or downgrade your plan at any time. Changes take effect at the end of your current billing cycle.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">How does the Shopify integration work?</h3>
+              <p className="text-muted-foreground">Our Shopify integration allows you to connect your store and automatically optimize product listings, meta descriptions, and content for better SEO performance.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Is there a free trial for Pro?</h3>
+              <p className="text-muted-foreground">Yes, we offer a 14-day free trial for our Pro plan. No credit card required until you decide to continue.</p>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 };

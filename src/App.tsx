@@ -11,13 +11,23 @@ import routes from './routes';
 import './App.css';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN') {
     console.log('User signed in:', session);
   } else if (event === 'SIGNED_OUT') {
     console.log('User signed out');
+    // Clear any cached data when user signs out
+    queryClient.clear();
   }
 });
 
@@ -28,33 +38,35 @@ function App() {
         <AuthProvider>
           <SubscriptionProvider>
             <Router>
-              <Routes>
-                {routes.map((route) => {
-                  if (route.protected) {
-                    return (
-                      <Route
-                        key={route.path}
-                        path={route.path}
-                        element={
-                          <ProtectedRoute>
-                            <route.component />
-                          </ProtectedRoute>
-                        }
-                      />
-                    );
-                  } else {
-                    return (
-                      <Route
-                        key={route.path}
-                        path={route.path}
-                        element={<route.component />}
-                      />
-                    );
-                  }
-                })}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-              <Toaster richColors closeButton position="top-right" />
+              <div className="app-container full-width full-height">
+                <Routes>
+                  {routes.map((route) => {
+                    if (route.protected) {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={
+                            <ProtectedRoute>
+                              <route.component />
+                            </ProtectedRoute>
+                          }
+                        />
+                      );
+                    } else {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={<route.component />}
+                        />
+                      );
+                    }
+                  })}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                <Toaster richColors closeButton position="top-right" />
+              </div>
             </Router>
           </SubscriptionProvider>
         </AuthProvider>
