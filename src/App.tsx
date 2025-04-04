@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +24,7 @@ import ShopifyCallback from "./pages/ShopifyCallback";
 import ShopifyStore from "./pages/ShopifyStore";
 import ContentGenerator from "./pages/ContentGenerator";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
+import BriefDetail from "./pages/BriefDetail";
 
 const queryClient = new QueryClient();
 
@@ -50,7 +50,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/research" element={<ProtectedRoute><Research /></ProtectedRoute>} />
               <Route path="/dashboard/briefs" element={<ProtectedRoute><Briefs /></ProtectedRoute>} />
-              <Route path="/dashboard/briefs/:id" element={<ProtectedRoute><ContentBrief /></ProtectedRoute>} />
+              <Route path="/dashboard/briefs/:id" element={<BriefDetail />} />
               <Route path="/dashboard/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
               <Route path="/dashboard/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
