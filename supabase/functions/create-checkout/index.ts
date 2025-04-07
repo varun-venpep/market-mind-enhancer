@@ -56,9 +56,20 @@ serve(async (req) => {
     // Initialize Stripe
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
-      throw new Error("Stripe secret key is not configured");
+      console.error("Stripe secret key is not configured");
+      return new Response(
+        JSON.stringify({ 
+          error: "Stripe is not configured. Please contact the administrator.", 
+          missingConfig: true 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
     }
     
+    console.log("Initializing Stripe with secret key");
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
@@ -71,15 +82,18 @@ serve(async (req) => {
       .maybeSingle();
 
     if (customersError) {
+      console.error("Error fetching customer:", customersError);
       throw new Error(`Error fetching customer: ${customersError.message}`);
     }
 
     // Get or create Stripe customer
     let stripeCustomerId;
     if (customers && customers.stripe_customer_id) {
+      console.log("Using existing customer:", customers.stripe_customer_id);
       stripeCustomerId = customers.stripe_customer_id;
     } else {
       // Create new Stripe customer
+      console.log("Creating new Stripe customer for:", userEmail);
       const customer = await stripe.customers.create({
         email: userEmail,
         metadata: {
@@ -87,6 +101,7 @@ serve(async (req) => {
         },
       });
       stripeCustomerId = customer.id;
+      console.log("New customer created:", stripeCustomerId);
 
       // Store customer ID in database
       const { error: insertError } = await supabase
@@ -98,11 +113,13 @@ serve(async (req) => {
         });
 
       if (insertError) {
+        console.error("Error storing customer:", insertError);
         throw new Error(`Error storing customer: ${insertError.message}`);
       }
     }
 
     // Create Stripe checkout session
+    console.log("Creating checkout session with price:", priceId);
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       line_items: [
@@ -120,6 +137,8 @@ serve(async (req) => {
         },
       },
     });
+
+    console.log("Checkout session created:", session.id, "with URL:", session.url);
 
     return new Response(
       JSON.stringify({ sessionId: session.id, url: session.url }),

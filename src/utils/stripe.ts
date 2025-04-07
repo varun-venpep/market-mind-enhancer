@@ -18,6 +18,7 @@ export const createCheckoutSession = async (priceId: string): Promise<string | n
       return `${window.location.origin}/dashboard?payment=success&test=true`;
     }
     
+    console.log('Creating checkout session for price ID:', priceId);
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: { priceId }
     });
@@ -28,11 +29,25 @@ export const createCheckoutSession = async (priceId: string): Promise<string | n
       return null;
     }
 
-    if (!data?.url) {
+    if (!data) {
+      console.error('No data returned from checkout function');
+      toast.error('Server error: No response data');
+      return null;
+    }
+
+    if (data.missingConfig) {
+      console.error('Stripe is not configured on the server');
+      toast.error('Payment system is not fully configured. Please contact support.');
+      return null;
+    }
+
+    if (!data.url) {
+      console.error('No checkout URL returned:', data);
       toast.error('No checkout URL returned from server');
       return null;
     }
 
+    console.log('Checkout URL created successfully');
     return data.url;
   } catch (err: any) {
     console.error('Stripe checkout error:', err);

@@ -75,10 +75,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return;
       }
       
+      console.log('Checking subscription status for user:', user.id);
       // Call an API endpoint to check subscription status using our utility
       const result = await checkSubscription();
       
       if (result.subscription) {
+        console.log('Subscription found:', result.subscription);
         setSubscription(result.subscription);
         setIsPro(result.isPro);
         
@@ -90,6 +92,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         setHasActiveSubscription(result.subscription.status === 'active');
       } else {
+        console.log('No subscription found from checkSubscription, checking database');
         // Call an API endpoint to check subscription status from the database instead
         const { data, error } = await supabase.functions.invoke('check-user-subscription', {
           body: { user_id: user.id }
@@ -103,6 +106,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
         
         if (data) {
+          console.log('Subscription data from database:', data);
           setSubscription(data);
           setIsPro(data.plan === 'pro');
           
