@@ -18,9 +18,7 @@ import { Settings } from "@/pages/Settings";
 import { Profile } from "@/pages/Profile";
 import AdminSubscriptionPage from "@/pages/AdminSubscriptionPage";
 import NotFound from "@/pages/NotFound";
-
-// Create a Features component for the /features route
-const Features = () => <div>Features Page Coming Soon</div>;
+import Features from "@/pages/Features";
 
 const routes = [
   {
