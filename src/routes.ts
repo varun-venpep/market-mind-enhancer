@@ -1,3 +1,4 @@
+
 import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Research from "@/pages/Research";
@@ -12,12 +13,14 @@ import ShopifyStore from "@/pages/ShopifyStore";
 import ShopifyCallback from "@/pages/ShopifyCallback";
 import Pricing from "@/pages/Pricing";
 import SignUp from "@/pages/SignUp";
-import Analytics from "@/pages/Analytics";
-import Settings from "@/pages/Settings";
-import Profile from "@/pages/Profile";
+import { Analytics } from "@/pages/Analytics";
+import { Settings } from "@/pages/Settings";
+import { Profile } from "@/pages/Profile";
 import AdminSubscriptionPage from "@/pages/AdminSubscriptionPage";
-import Features from "@/pages/Features";
 import NotFound from "@/pages/NotFound";
+
+// Create a Features component for the /features route
+const Features = () => <div>Features Page Coming Soon</div>;
 
 const routes = [
   {

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,38 +46,40 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
     try {
       setLoading(true);
       
-      // First check directly in the profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('plan, trial_ends_at')
-        .eq('id', user.id)
-        .single();
-      
-      if (!profileError && profileData) {
-        // Check if the user has a pro plan that hasn't expired
-        const isPlanActive = profileData.plan === 'pro' && 
-          (!profileData.trial_ends_at || new Date(profileData.trial_ends_at) > new Date());
-        
-        if (isPlanActive) {
-          setIsPro(true);
-          // Create a basic subscription object from profile data
-          setSubscription({
-            id: 'profile_subscription',
-            status: 'active',
-            currentPeriodEnd: profileData.trial_ends_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            planName: 'Pro'
-          });
-          setLoading(false);
-          return;
-        }
-      }
-      
-      // Otherwise check with the edge function
+      // First try to get subscription status from edge function
       const { data, error } = await supabase.functions.invoke('check-subscription');
 
       if (error) {
         console.error('Error checking subscription:', error);
-        toast.error('Failed to check subscription status');
+        
+        // Fallback: check directly in the profiles table with RPC to avoid type issues
+        const { data: profileData, error: profileError } = await supabase.rpc(
+          'get_profile_subscription_status',
+          { user_id: user.id }
+        );
+        
+        if (profileError) {
+          toast.error('Failed to check subscription status');
+          setIsPro(false);
+          setSubscription(null);
+          return;
+        }
+        
+        if (profileData) {
+          const isPlanActive = profileData.plan === 'pro' && 
+            (!profileData.trial_ends_at || new Date(profileData.trial_ends_at) > new Date());
+          
+          setIsPro(isPlanActive);
+          setSubscription(isPlanActive ? {
+            id: 'profile_subscription',
+            status: 'active',
+            currentPeriodEnd: profileData.trial_ends_at || 
+              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            planName: 'Pro'
+          } : null);
+          return;
+        }
+        
         setIsPro(false);
         setSubscription(null);
         return;
