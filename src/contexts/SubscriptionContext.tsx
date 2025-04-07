@@ -1,149 +1,103 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
-interface Subscription {
-  id: string;
-  status: string;
-  currentPeriodEnd: string;
-  planName: string;
-}
 
 interface SubscriptionContextType {
   isPro: boolean;
-  subscription: Subscription | null;
-  loading: boolean;
-  checkSubscription: () => Promise<void>;
-  redirectToCheckout: (priceId: string) => Promise<void>;
+  isLoading: boolean;
+  subscription: any;
+  refreshSubscription: () => void;
+  hasActiveSubscription: boolean;
+  hasTrialEnded: boolean;
+  trialEndDate: Date | null;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
   isPro: false,
+  isLoading: true,
   subscription: null,
-  loading: true,
-  checkSubscription: async () => {},
-  redirectToCheckout: async () => {},
+  refreshSubscription: () => {},
+  hasActiveSubscription: false,
+  hasTrialEnded: false,
+  trialEndDate: null,
 });
 
 export const useSubscription = () => useContext(SubscriptionContext);
 
-export const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
+export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [isPro, setIsPro] = useState(false);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { user, session } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [hasTrialEnded, setHasTrialEnded] = useState(false);
+  const [trialEndDate, setTrialEndDate] = useState<Date | null>(null);
 
-  const checkSubscription = async () => {
-    if (!user || !session) {
-      setIsPro(false);
-      setSubscription(null);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // First try to get subscription status from edge function
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-
-      if (error) {
-        console.error('Error checking subscription:', error);
-        
-        // Fallback: check directly in the profiles table with RPC to avoid type issues
-        const { data: profileData, error: profileError } = await supabase.rpc(
-          'get_profile_subscription_status',
-          { user_id: user.id }
-        );
-        
-        if (profileError) {
-          toast.error('Failed to check subscription status');
-          setIsPro(false);
-          setSubscription(null);
-          return;
-        }
-        
-        if (profileData) {
-          const isPlanActive = profileData.plan === 'pro' && 
-            (!profileData.trial_ends_at || new Date(profileData.trial_ends_at) > new Date());
-          
-          setIsPro(isPlanActive);
-          setSubscription(isPlanActive ? {
-            id: 'profile_subscription',
-            status: 'active',
-            currentPeriodEnd: profileData.trial_ends_at || 
-              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            planName: 'Pro'
-          } : null);
-          return;
-        }
-        
-        setIsPro(false);
-        setSubscription(null);
-        return;
-      }
-
-      setIsPro(data.isPro);
-      setSubscription(data.subscription);
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      toast.error('Failed to check subscription status');
-      setIsPro(false);
-      setSubscription(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const redirectToCheckout = async (priceId: string) => {
+  const fetchSubscriptionStatus = async () => {
     if (!user) {
-      toast.error('You must be logged in to subscribe');
+      setIsLoading(false);
+      setIsPro(false);
+      setSubscription(null);
+      setHasActiveSubscription(false);
+      setHasTrialEnded(false);
+      setTrialEndDate(null);
       return;
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId },
+      setIsLoading(true);
+      
+      // Call an API endpoint to check subscription status instead of direct DB access
+      const { data, error } = await supabase.functions.invoke('check-user-subscription', {
+        body: { user_id: user.id }
       });
-
+      
       if (error) {
-        console.error('Error creating checkout session:', error);
-        toast.error('Failed to create checkout session');
+        console.error('Error fetching subscription:', error);
+        toast.error('Failed to load subscription information');
+        setIsLoading(false);
         return;
       }
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error('Failed to create checkout session');
+      
+      if (data) {
+        setSubscription(data);
+        setIsPro(data.plan === 'pro');
+        
+        if (data.trial_ends_at) {
+          const trialEnd = new Date(data.trial_ends_at);
+          setTrialEndDate(trialEnd);
+          setHasTrialEnded(trialEnd < new Date());
+        }
+        
+        setHasActiveSubscription(data.status === 'active');
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
-      toast.error('Failed to create checkout session');
+      console.error('Error in subscription check:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Check subscription status when user or session changes
   useEffect(() => {
-    if (user && session) {
-      checkSubscription();
-    } else {
-      setIsPro(false);
-      setSubscription(null);
-      setLoading(false);
-    }
-  }, [user, session]);
+    fetchSubscriptionStatus();
+  }, [user]);
+
+  const refreshSubscription = () => {
+    fetchSubscriptionStatus();
+  };
 
   return (
     <SubscriptionContext.Provider
       value={{
         isPro,
+        isLoading,
         subscription,
-        loading,
-        checkSubscription,
-        redirectToCheckout,
+        refreshSubscription,
+        hasActiveSubscription,
+        hasTrialEnded,
+        trialEndDate,
       }}
     >
       {children}
