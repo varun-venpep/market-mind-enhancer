@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,9 +51,9 @@ const Navbar = () => {
   }, [location.pathname]);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-2.5">
-      <div className="container mx-auto flex flex-wrap justify-between items-center">
-        <Link to="/" className="flex items-center">
+    <nav className="sticky top-0 z-50 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-2.5">
+      <div className="container mx-auto flex flex-wrap items-center justify-between">
+        <Link to="/" className="flex items-center flex-shrink-0">
           <span className="self-center text-xl font-bold whitespace-nowrap gradient-text">MarketMind</span>
         </Link>
         
@@ -75,7 +76,7 @@ const Navbar = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white">
+                <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-900">
                   <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
@@ -113,41 +114,71 @@ const Navbar = () => {
         
         <div 
           id="mobile-menu" 
-          className={`${isOpen ? 'block' : 'hidden'} w-full md:flex md:w-auto md:order-1`}
+          className={`${isOpen ? 'flex' : 'hidden'} w-full md:flex md:w-auto md:order-1 md:flex-grow flex-col md:flex-row items-start md:items-center`}
         >
-          <ul className="flex flex-col mt-4 font-medium md:flex-row md:space-x-8 md:mt-0">
+          <ul className="flex flex-col mt-4 font-medium md:flex-row md:space-x-8 md:mt-0 md:flex-wrap">
             <li>
-              <Link to="/" className={`block py-2 px-3 rounded ${location.pathname === '/' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+              <Link to="/" className={cn(
+                "block py-2 px-3 rounded md:p-0",
+                location.pathname === '/' 
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
+              )}>
                 <Home className="h-4 w-4 mr-2 inline md:hidden" /> Home
               </Link>
             </li>
             <li>
-              <Link to="/features" className={`block py-2 px-3 rounded ${location.pathname === '/features' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+              <Link to="/features" className={cn(
+                "block py-2 px-3 rounded md:p-0",
+                location.pathname === '/features' 
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
+              )}>
                 <Star className="h-4 w-4 mr-2 inline md:hidden" /> Features
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/research" className={`block py-2 px-3 rounded ${location.pathname === '/dashboard/research' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+              <Link to="/dashboard/research" className={cn(
+                "block py-2 px-3 rounded md:p-0",
+                location.pathname === '/dashboard/research' 
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
+              )}>
                 <Activity className="h-4 w-4 mr-2 inline md:hidden" /> Research
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/briefs" className={`block py-2 px-3 rounded ${location.pathname === '/dashboard/briefs' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+              <Link to="/dashboard/briefs" className={cn(
+                "block py-2 px-3 rounded md:p-0",
+                location.pathname === '/dashboard/briefs' 
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
+              )}>
                 <Database className="h-4 w-4 mr-2 inline md:hidden" /> Content Briefs
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/shopify" className={`block py-2 px-3 rounded ${location.pathname === '/dashboard/shopify' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+              <Link to="/dashboard/shopify" className={cn(
+                "block py-2 px-3 rounded md:p-0",
+                location.pathname === '/dashboard/shopify' 
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
+              )}>
                 <ShoppingBag className="h-4 w-4 mr-2 inline md:hidden" /> Shopify
               </Link>
             </li>
             <li className="md:hidden">
-              <Link to="/pricing" className={`block py-2 px-3 rounded ${location.pathname === '/pricing' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+              <Link to="/pricing" className={cn(
+                "block py-2 px-3 rounded",
+                location.pathname === '/pricing' 
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
+              )}>
                 Pricing
               </Link>
             </li>
           </ul>
-          <div className="hidden md:flex items-center ml-8">
+          <div className="hidden md:flex items-center ml-auto">
             <Button variant="ghost" asChild>
               <Link to="/pricing">Pricing</Link>
             </Button>

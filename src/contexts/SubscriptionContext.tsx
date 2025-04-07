@@ -40,6 +40,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [hasTrialEnded, setHasTrialEnded] = useState(false);
   const [trialEndDate, setTrialEndDate] = useState<Date | null>(null);
 
+  // Check if we're in a development/test environment
+  const isTestMode = import.meta.env.DEV || window.location.hostname === 'localhost';
+
   const fetchSubscriptionStatus = async () => {
     if (!user) {
       setIsLoading(false);
@@ -53,6 +56,24 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     try {
       setIsLoading(true);
+      
+      // For testing in development
+      if (isTestMode) {
+        console.log('Using test subscription data in development');
+        const testSubscription = {
+          status: 'active',
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          plan: 'pro'
+        };
+        
+        setSubscription(testSubscription);
+        setIsPro(true);
+        setHasActiveSubscription(true);
+        setTrialEndDate(new Date(testSubscription.currentPeriodEnd));
+        setHasTrialEnded(false);
+        setIsLoading(false);
+        return;
+      }
       
       // Call an API endpoint to check subscription status using our utility
       const result = await checkSubscription();
@@ -111,6 +132,11 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const manageBilling = async () => {
     try {
+      if (isTestMode) {
+        toast.success('Billing portal would open here in production');
+        return;
+      }
+      
       const { data, error } = await supabase.functions.invoke('create-portal-session', {});
       
       if (error) {
@@ -122,9 +148,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } else {
         throw new Error('No portal URL returned');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating portal session:', error);
-      toast.error('Failed to open billing portal');
+      toast.error('Failed to open billing portal: ' + (error.message || ''));
     }
   };
 

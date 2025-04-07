@@ -25,6 +25,11 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase credentials");
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get user from auth header
@@ -36,7 +41,8 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     
-    if (userError || !userData.user) {
+    if (userError || !userData?.user) {
+      console.error("Auth error:", userError);
       throw new Error("User not authenticated");
     }
     
@@ -48,7 +54,12 @@ serve(async (req) => {
     }
 
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeSecretKey) {
+      throw new Error("Stripe secret key is not configured");
+    }
+    
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -118,6 +129,8 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error("Checkout error:", error);
+    
     return new Response(
       JSON.stringify({ error: error.message || "Unknown error occurred" }),
       {

@@ -15,8 +15,11 @@ import { Helmet } from 'react-helmet';
 
 const PricingPage = () => {
   const { user } = useAuth();
-  const { isPro, loading: subscriptionLoading } = useSubscription();
+  const { isPro, loading: subscriptionLoading, refreshSubscription } = useSubscription();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check if we're in a development/test environment
+  const isTestMode = import.meta.env.DEV || window.location.hostname === 'localhost';
 
   const handleSubscribe = async (priceId: string) => {
     if (!user) {
@@ -27,19 +30,60 @@ const PricingPage = () => {
     setIsLoading(true);
 
     try {
+      if (isTestMode) {
+        // In test mode, simulate a successful subscription
+        console.log('Test mode: Simulating subscription process');
+        setTimeout(() => {
+          refreshSubscription();
+          navigate('/dashboard?payment=success&test=true');
+          toast.success('Test subscription activated!');
+        }, 1500);
+        return;
+      }
+      
       const url = await createCheckoutSession(priceId);
       if (url) {
         window.location.href = url;
       } else {
         throw new Error("No checkout URL returned");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating checkout session:", error);
-      toast.error("Failed to create checkout session");
+      toast.error("Failed to create checkout session: " + (error.message || ''));
     } finally {
       setIsLoading(false);
     }
   };
+
+  // URL query parsing to show success/failure messages
+  const { search } = window.location;
+  const urlParams = new URLSearchParams(search);
+  const paymentStatus = urlParams.get('payment');
+  const isTestPayment = urlParams.get('test') === 'true';
+
+  // Show feedback based on payment status
+  React.useEffect(() => {
+    if (paymentStatus === 'success') {
+      if (isTestPayment) {
+        toast.success('Test subscription activated successfully!');
+      } else {
+        toast.success('Subscription activated successfully!');
+      }
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('payment');
+      url.searchParams.delete('test');
+      window.history.replaceState({}, '', url.toString());
+    } else if (paymentStatus === 'canceled') {
+      toast.info('Subscription process was canceled');
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('payment');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [paymentStatus, isTestPayment]);
+
+  const navigate = useNavigate();
 
   const plans = [
     {
@@ -118,6 +162,11 @@ const PricingPage = () => {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Select the perfect plan for your SEO needs. Upgrade anytime as your business grows.
           </p>
+          {isTestMode && (
+            <p className="mt-4 p-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-md max-w-xl mx-auto text-sm">
+              ✨ Development Mode: You can test the Pro features without real payment ✨
+            </p>
+          )}
         </div>
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">

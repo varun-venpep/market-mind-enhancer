@@ -11,6 +11,9 @@ interface ShopifyProtectedProps {
 export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
   const { isPro, loading } = useSubscription();
   const [isChecking, setIsChecking] = useState(true);
+  
+  // Check if we're in a development/test environment
+  const isTestMode = import.meta.env.DEV || window.location.hostname === 'localhost';
 
   useEffect(() => {
     if (!loading) {
@@ -24,6 +27,12 @@ export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // Allow access to Pro features in development/test mode
+  if (isTestMode) {
+    console.log('Development mode: bypassing subscription check for Shopify features');
+    return <>{children}</>;
   }
 
   if (!isPro) {
