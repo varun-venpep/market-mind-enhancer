@@ -12,6 +12,7 @@ import routes from './routes';
 import './App.css';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import AdminSubscriptionPage from './pages/AdminSubscription';
+import ApiIntegrations from './pages/ApiIntegrations';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,11 @@ function App() {
                       );
                     }
                   })}
+                  <Route path="/dashboard/integrations" element={
+                    <ProtectedRoute>
+                      <ApiIntegrations />
+                    </ProtectedRoute>
+                  } />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
                 <Toaster richColors closeButton position="top-right" />

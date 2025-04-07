@@ -7,10 +7,11 @@ import { CheckIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { supabase } from "@/integrations/supabase/client";
+import { createCheckoutSession } from '@/utils/stripe';
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Helmet } from 'react-helmet';
 
 const PricingPage = () => {
   const { user } = useAuth();
@@ -26,14 +27,9 @@ const PricingPage = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
+      const url = await createCheckoutSession(priceId);
+      if (url) {
+        window.location.href = url;
       } else {
         throw new Error("No checkout URL returned");
       }
@@ -111,6 +107,10 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>Pricing | MarketMind</title>
+        <meta name="description" content="MarketMind pricing plans for SEO optimization" />
+      </Helmet>
       <Navbar />
       <main className="flex-grow py-12 px-4 md:px-6 bg-gray-50 dark:bg-gray-900">
         <div className="text-center mb-12">

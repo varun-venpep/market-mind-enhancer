@@ -56,9 +56,9 @@ const Navbar = () => {
           <span className="self-center text-xl font-bold whitespace-nowrap gradient-text">MarketMind</span>
         </Link>
         
-        <div className="flex items-center lg:order-2">
+        <div className="flex items-center md:order-2">
           {user ? (
-            <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-3">
               {isPro && (
                 <Badge className="bg-gradient-to-r from-brand-400 to-brand-600 text-white">
                   Pro
@@ -75,7 +75,7 @@ const Navbar = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 bg-white">
                   <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
@@ -102,45 +102,56 @@ const Navbar = () => {
           <button
             onClick={() => setIsOpen(!isOpen)}
             type="button"
-            className="inline-flex items-center p-2 ml-1 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            className="inline-flex items-center p-2 ml-3 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            aria-controls="mobile-menu"
+            aria-expanded={isOpen}
           >
-            {isOpen ? <X /> : <Menu />}
+            <span className="sr-only">Open main menu</span>
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
         
-        <div className={`${isOpen ? 'block' : 'hidden'} justify-between items-center w-full md:flex md:w-auto md:order-1`}>
+        <div 
+          id="mobile-menu" 
+          className={`${isOpen ? 'block' : 'hidden'} w-full md:flex md:w-auto md:order-1`}
+        >
           <ul className="flex flex-col mt-4 font-medium md:flex-row md:space-x-8 md:mt-0">
             <li>
-              <Link to="/" className="flex items-center py-2 pr-4 pl-3 text-brand-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
-                <Home className="h-4 w-4 mr-2 md:hidden" /> Home
+              <Link to="/" className={`block py-2 px-3 rounded ${location.pathname === '/' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+                <Home className="h-4 w-4 mr-2 inline md:hidden" /> Home
               </Link>
             </li>
             <li>
-              <Link to="/features" className="flex items-center py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
-                <Star className="h-4 w-4 mr-2 md:hidden" /> Features
+              <Link to="/features" className={`block py-2 px-3 rounded ${location.pathname === '/features' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+                <Star className="h-4 w-4 mr-2 inline md:hidden" /> Features
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/research" className="flex items-center py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
-                <Activity className="h-4 w-4 mr-2 md:hidden" /> Research
+              <Link to="/dashboard/research" className={`block py-2 px-3 rounded ${location.pathname === '/dashboard/research' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+                <Activity className="h-4 w-4 mr-2 inline md:hidden" /> Research
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/briefs" className="flex items-center py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
-                <Database className="h-4 w-4 mr-2 md:hidden" /> Content Briefs
+              <Link to="/dashboard/briefs" className={`block py-2 px-3 rounded ${location.pathname === '/dashboard/briefs' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+                <Database className="h-4 w-4 mr-2 inline md:hidden" /> Content Briefs
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/shopify" className="flex items-center py-2 pr-4 pl-3 text-gray-700 border-b border-gray-100 hover:bg-gray-50 md:hover:bg-transparent md:border-0 md:hover:text-brand-600 md:p-0">
-                <ShoppingBag className="h-4 w-4 mr-2 md:hidden" /> Shopify
+              <Link to="/dashboard/shopify" className={`block py-2 px-3 rounded ${location.pathname === '/dashboard/shopify' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+                <ShoppingBag className="h-4 w-4 mr-2 inline md:hidden" /> Shopify
               </Link>
             </li>
-            <div className="flex items-center">
-              <Button variant="ghost" asChild className="hidden md:flex">
-                <Link to="/pricing">Pricing</Link>
-              </Button>
-            </div>
+            <li className="md:hidden">
+              <Link to="/pricing" className={`block py-2 px-3 rounded ${location.pathname === '/pricing' ? 'text-brand-600 md:bg-transparent md:font-semibold' : 'text-gray-700 hover:bg-gray-50 md:hover:bg-transparent md:hover:text-brand-600'} md:p-0`}>
+                Pricing
+              </Link>
+            </li>
           </ul>
+          <div className="hidden md:flex items-center ml-8">
+            <Button variant="ghost" asChild>
+              <Link to="/pricing">Pricing</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </nav>

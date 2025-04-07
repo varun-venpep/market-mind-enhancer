@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { checkSubscription } from '@/utils/stripe';
 
 interface SubscriptionContextType {
   isPro: boolean;
@@ -13,6 +14,7 @@ interface SubscriptionContextType {
   hasActiveSubscription: boolean;
   hasTrialEnded: boolean;
   trialEndDate: Date | null;
+  manageBilling: () => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType>({
@@ -24,6 +26,7 @@ const SubscriptionContext = createContext<SubscriptionContextType>({
   hasActiveSubscription: false,
   hasTrialEnded: false,
   trialEndDate: null,
+  manageBilling: async () => {},
 });
 
 export const useSubscription = () => useContext(SubscriptionContext);
@@ -51,29 +54,45 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       setIsLoading(true);
       
-      // Call an API endpoint to check subscription status instead of direct DB access
-      const { data, error } = await supabase.functions.invoke('check-user-subscription', {
-        body: { user_id: user.id }
-      });
+      // Call an API endpoint to check subscription status using our utility
+      const result = await checkSubscription();
       
-      if (error) {
-        console.error('Error fetching subscription:', error);
-        toast.error('Failed to load subscription information');
-        setIsLoading(false);
-        return;
-      }
-      
-      if (data) {
-        setSubscription(data);
-        setIsPro(data.plan === 'pro');
+      if (result.subscription) {
+        setSubscription(result.subscription);
+        setIsPro(result.isPro);
         
-        if (data.trial_ends_at) {
-          const trialEnd = new Date(data.trial_ends_at);
+        if (result.subscription.currentPeriodEnd) {
+          const trialEnd = new Date(result.subscription.currentPeriodEnd);
           setTrialEndDate(trialEnd);
           setHasTrialEnded(trialEnd < new Date());
         }
         
-        setHasActiveSubscription(data.status === 'active');
+        setHasActiveSubscription(result.subscription.status === 'active');
+      } else {
+        // Call an API endpoint to check subscription status from the database instead
+        const { data, error } = await supabase.functions.invoke('check-user-subscription', {
+          body: { user_id: user.id }
+        });
+        
+        if (error) {
+          console.error('Error fetching subscription:', error);
+          toast.error('Failed to load subscription information');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (data) {
+          setSubscription(data);
+          setIsPro(data.plan === 'pro');
+          
+          if (data.trial_ends_at) {
+            const trialEnd = new Date(data.trial_ends_at);
+            setTrialEndDate(trialEnd);
+            setHasTrialEnded(trialEnd < new Date());
+          }
+          
+          setHasActiveSubscription(data.status === 'active');
+        }
       }
     } catch (error) {
       console.error('Error in subscription check:', error);
@@ -90,6 +109,25 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     fetchSubscriptionStatus();
   };
 
+  const manageBilling = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-portal-session', {});
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No portal URL returned');
+      }
+    } catch (error) {
+      console.error('Error creating portal session:', error);
+      toast.error('Failed to open billing portal');
+    }
+  };
+
   return (
     <SubscriptionContext.Provider
       value={{
@@ -101,6 +139,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         hasActiveSubscription,
         hasTrialEnded,
         trialEndDate,
+        manageBilling,
       }}
     >
       {children}
