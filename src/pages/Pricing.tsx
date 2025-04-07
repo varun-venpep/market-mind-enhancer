@@ -12,11 +12,13 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Helmet } from 'react-helmet';
+import { useNavigate } from "react-router-dom";
 
 const PricingPage = () => {
   const { user } = useAuth();
   const { isPro, loading: subscriptionLoading, refreshSubscription } = useSubscription();
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
   
   // Check if we're in a development/test environment
   const isTestMode = import.meta.env.DEV || window.location.hostname === 'localhost';
