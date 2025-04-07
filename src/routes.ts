@@ -1,4 +1,3 @@
-
 import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Research from "@/pages/Research";
@@ -12,8 +11,14 @@ import ShopifyStores from "@/pages/ShopifyStores";
 import ShopifyStore from "@/pages/ShopifyStore";
 import ShopifyCallback from "@/pages/ShopifyCallback";
 import Pricing from "@/pages/Pricing";
+import SignUp from "@/pages/SignUp";
+import Analytics from "@/pages/Analytics";
+import Settings from "@/pages/Settings";
+import Profile from "@/pages/Profile";
+import AdminSubscriptionPage from "@/pages/AdminSubscriptionPage";
+import Features from "@/pages/Features";
+import NotFound from "@/pages/NotFound";
 
-// Define routes
 const routes = [
   {
     path: "/",
@@ -26,18 +31,13 @@ const routes = [
     protected: false,
   },
   {
-    path: "/pricing",
-    component: Pricing,
+    path: "/signup",
+    component: SignUp,
     protected: false,
   },
   {
     path: "/dashboard",
     component: Dashboard,
-    protected: true,
-  },
-  {
-    path: "/dashboard/research",
-    component: Research,
     protected: true,
   },
   {
@@ -51,13 +51,28 @@ const routes = [
     protected: true,
   },
   {
-    path: "/dashboard/content-brief/:id",
+    path: "/dashboard/brief/:id",
     component: ContentBrief,
     protected: true,
   },
   {
-    path: "/dashboard/content-generator",
-    component: ContentGenerator,
+    path: "/dashboard/research",
+    component: Research,
+    protected: true,
+  },
+  {
+    path: "/dashboard/analytics",
+    component: Analytics,
+    protected: true,
+  },
+  {
+    path: "/dashboard/settings",
+    component: Settings,
+    protected: true,
+  },
+  {
+    path: "/dashboard/profile",
+    component: Profile,
     protected: true,
   },
   {
@@ -71,14 +86,39 @@ const routes = [
     protected: true,
   },
   {
-    path: "/dashboard/shopify/:storeId",
+    path: "/dashboard/shopify/:id",
     component: ShopifyStore,
     protected: true,
   },
   {
-    path: "/shopify-callback",
+    path: "/dashboard/shopify-callback",
     component: ShopifyCallback,
     protected: true,
+  },
+  {
+    path: "/dashboard/admin-subscription",
+    component: AdminSubscriptionPage,
+    protected: true,
+  },
+  {
+    path: "/content-generator",
+    component: ContentGenerator,
+    protected: true,
+  },
+  {
+    path: "/features",
+    component: Features,
+    protected: false,
+  },
+  {
+    path: "/pricing",
+    component: Pricing,
+    protected: false,
+  },
+  {
+    path: "*",
+    component: NotFound,
+    protected: false,
   },
 ];
 

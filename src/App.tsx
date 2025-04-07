@@ -7,9 +7,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import { ShopifyProtected } from './components/ShopifyProtected';
 import routes from './routes';
 import './App.css';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
+import AdminSubscriptionPage from './pages/AdminSubscription';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +43,21 @@ function App() {
               <div className="app-container full-width full-height">
                 <Routes>
                   {routes.map((route) => {
-                    if (route.protected) {
+                    if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:id') {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={
+                            <ProtectedRoute>
+                              <ShopifyProtected>
+                                <route.component />
+                              </ShopifyProtected>
+                            </ProtectedRoute>
+                          }
+                        />
+                      );
+                    } else if (route.protected) {
                       return (
                         <Route
                           key={route.path}
