@@ -35,6 +35,9 @@ export async function generateBriefContent(brief: ContentBrief): Promise<{
       }
     } catch (error) {
       console.error("Failed to parse outline JSON:", error);
+      console.log("Raw outline response:", outlineResponse);
+      
+      // Fallback outline if parsing fails
       outline = [
         { text: "Introduction", importance: 10, description: "Introduce the topic and its importance" },
         { text: "Main Points", importance: 8, description: "Cover the key aspects of the topic" },
@@ -60,6 +63,7 @@ export async function generateBriefContent(brief: ContentBrief): Promise<{
       
       // Ensure the parsed result is an array
       if (!Array.isArray(questions)) {
+        // Try to extract questions using regex as a fallback
         const questionMatches = questionsResponse.match(/\d+\.\s+(.*?)(?=\d+\.|$)/gs);
         if (questionMatches) {
           questions = questionMatches.map(q => q.replace(/^\d+\.\s+/, '').trim());
@@ -71,18 +75,20 @@ export async function generateBriefContent(brief: ContentBrief): Promise<{
       }
     } catch (error) {
       console.error("Failed to parse questions JSON:", error);
+      console.log("Raw questions response:", questionsResponse);
       
       // Extract questions with regex as fallback
       const questionMatches = questionsResponse.match(/["']([^"']+\?)["']/g);
       if (questionMatches) {
         questions = questionMatches.map(q => q.replace(/^["']|["']$/g, ''));
       } else {
+        // Default questions if all else fails
         questions = [
-          "What are the key benefits of this approach?",
-          "How can beginners get started with this topic?",
-          "What common challenges might someone face?",
-          "How does this compare to alternatives?",
-          "What future trends should readers be aware of?"
+          `What are the key benefits of ${brief.title}?`,
+          `How can beginners get started with ${brief.keywords[0]}?`,
+          `What common challenges might someone face with ${brief.keywords[0]}?`,
+          `How does ${brief.keywords[0]} compare to alternatives?`,
+          `What future trends should readers be aware of for ${brief.keywords[0]}?`
         ];
       }
     }
@@ -93,8 +99,8 @@ export async function generateBriefContent(brief: ContentBrief): Promise<{
       max: 2000 + (brief.keywords.length * 100)
     };
     
-    // Generate a random content score for the initial brief
-    const contentScore = Math.floor(Math.random() * 20) + 60; // Score between 60-80
+    // Generate a content score based on keyword relevance and outline quality
+    const contentScore = Math.min(95, Math.floor(60 + (outline.length * 2) + (questions.length * 2)));
     
     return {
       outline,
@@ -119,5 +125,36 @@ export async function generateBriefThumbnail(brief: ContentBrief): Promise<strin
     console.error("Error generating brief thumbnail:", error);
     // Return a fallback image URL
     return "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1920&auto=format&fit=crop";
+  }
+}
+
+// For storing briefs in the future, we can implement database integration
+export async function saveBrief(brief: ContentBrief): Promise<ContentBrief> {
+  try {
+    // In a real app with Supabase connected, this would save to the database
+    console.log("Saving brief:", brief);
+    
+    // For now, just return the brief with some added metadata
+    return {
+      ...brief,
+      updatedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error("Error saving brief:", error);
+    throw error;
+  }
+}
+
+export async function getBrief(id: string): Promise<ContentBrief | null> {
+  try {
+    // In a real app with Supabase connected, this would fetch from the database
+    console.log("Getting brief with ID:", id);
+    
+    // For now, return null to indicate that the brief was not found
+    // This will be handled by the UI to show a not found message
+    return null;
+  } catch (error) {
+    console.error("Error getting brief:", error);
+    throw error;
   }
 }

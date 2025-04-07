@@ -19,12 +19,12 @@ export interface SerpApiResponse {
   search_information?: {
     total_results: number;
     time_taken_displayed: number;
-  };
+  }>;
   knowledge_graph?: {
     title: string;
     type: string;
     description: string;
-  };
+  }>;
   autocomplete?: Array<{
     value: string;
   }>;
@@ -87,7 +87,6 @@ export async function fetchSerpResults(
   }
 }
 
-// Rest of the file remains unchanged
 export function extractSerpData(data: SerpApiResponse) {
   const organicResults = data.organic_results?.map(result => ({
     id: `serp-${result.position}`,
