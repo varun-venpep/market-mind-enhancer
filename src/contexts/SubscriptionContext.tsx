@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 interface SubscriptionContextType {
   isPro: boolean;
   isLoading: boolean;
+  loading: boolean; // Added for backward compatibility
   subscription: any;
   refreshSubscription: () => void;
   hasActiveSubscription: boolean;
@@ -17,6 +18,7 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType>({
   isPro: false,
   isLoading: true,
+  loading: true, // Added for backward compatibility
   subscription: null,
   refreshSubscription: () => {},
   hasActiveSubscription: false,
@@ -93,6 +95,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       value={{
         isPro,
         isLoading,
+        loading: isLoading, // Set loading to match isLoading for backward compatibility
         subscription,
         refreshSubscription,
         hasActiveSubscription,

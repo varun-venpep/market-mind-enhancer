@@ -16,8 +16,9 @@ import SignUp from "@/pages/SignUp";
 import { Analytics } from "@/pages/Analytics";
 import { Settings } from "@/pages/Settings";
 import { Profile } from "@/pages/Profile";
-import NotFound from "@/pages/NotFound";
+import AdminSubscriptionPage from "@/pages/AdminSubscriptionPage";
 import Features from "@/pages/Features";
+import NotFound from "@/pages/NotFound";
 
 const routes = [
   {
