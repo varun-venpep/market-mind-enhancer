@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { UpgradePrompt } from './UpgradePrompt';
+import UpgradePrompt from './UpgradePrompt';
 
 interface ShopifyProtectedProps {
   children: React.ReactNode;
