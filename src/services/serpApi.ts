@@ -1,3 +1,4 @@
+
 // serpApi.ts
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,12 +20,12 @@ export interface SerpApiResponse {
   search_information?: {
     total_results: number;
     time_taken_displayed: number;
-  }>;
+  };
   knowledge_graph?: {
     title: string;
     type: string;
     description: string;
-  }>;
+  };
   autocomplete?: Array<{
     value: string;
   }>;
