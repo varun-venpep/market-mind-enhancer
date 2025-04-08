@@ -10,8 +10,6 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
 import routes from './routes';
 import './App.css';
-import { SubscriptionProvider } from './contexts/SubscriptionContext';
-import AdminSubscriptionPage from './pages/AdminSubscription';
 import ApiIntegrations from './pages/ApiIntegrations';
 
 const queryClient = new QueryClient({
@@ -39,58 +37,56 @@ function App() {
     <ThemeProvider defaultTheme="light" storageKey="seo-wizard-ui-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <SubscriptionProvider>
-            <Router>
-              <div className="app-container full-width full-height">
-                <Routes>
-                  {routes.map((route) => {
-                    if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:id') {
-                      return (
-                        <Route
-                          key={route.path}
-                          path={route.path}
-                          element={
-                            <ProtectedRoute>
-                              <ShopifyProtected>
-                                <route.component />
-                              </ShopifyProtected>
-                            </ProtectedRoute>
-                          }
-                        />
-                      );
-                    } else if (route.protected) {
-                      return (
-                        <Route
-                          key={route.path}
-                          path={route.path}
-                          element={
-                            <ProtectedRoute>
+          <Router>
+            <div className="app-container full-width full-height">
+              <Routes>
+                {routes.map((route) => {
+                  if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:id') {
+                    return (
+                      <Route
+                        key={route.path}
+                        path={route.path}
+                        element={
+                          <ProtectedRoute>
+                            <ShopifyProtected>
                               <route.component />
-                            </ProtectedRoute>
-                          }
-                        />
-                      );
-                    } else {
-                      return (
-                        <Route
-                          key={route.path}
-                          path={route.path}
-                          element={<route.component />}
-                        />
-                      );
-                    }
-                  })}
-                  <Route path="/dashboard/integrations" element={
-                    <ProtectedRoute>
-                      <ApiIntegrations />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-                <Toaster richColors closeButton position="top-right" />
-              </div>
-            </Router>
-          </SubscriptionProvider>
+                            </ShopifyProtected>
+                          </ProtectedRoute>
+                        }
+                      />
+                    );
+                  } else if (route.protected) {
+                    return (
+                      <Route
+                        key={route.path}
+                        path={route.path}
+                        element={
+                          <ProtectedRoute>
+                            <route.component />
+                          </ProtectedRoute>
+                        }
+                      />
+                    );
+                  } else {
+                    return (
+                      <Route
+                        key={route.path}
+                        path={route.path}
+                        element={<route.component />}
+                      />
+                    );
+                  }
+                })}
+                <Route path="/dashboard/integrations" element={
+                  <ProtectedRoute>
+                    <ApiIntegrations />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <Toaster richColors closeButton position="top-right" />
+            </div>
+          </Router>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

@@ -61,19 +61,96 @@
   width: 100%;
 }
 
-/* Preserve gradient text and other components */
+/* Enhanced gradient text, buttons, and visual elements */
 .gradient-text {
-  @apply bg-gradient-to-r from-primary to-primary/80 text-transparent bg-clip-text;
+  @apply bg-gradient-to-r from-blue-600 to-blue-500 text-transparent bg-clip-text;
+}
+
+.gradient-border {
+  @apply relative before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-blue-500 before:to-purple-500 before:rounded-lg before:-z-10 before:content-[''];
 }
 
 .card-glass {
-  @apply backdrop-blur-sm bg-white/5 border border-white/10 shadow-lg;
+  @apply backdrop-blur-sm bg-white/90 dark:bg-gray-900/80 border border-white/20 dark:border-gray-800/50 shadow-lg;
 }
 
 .hover-card {
-  @apply transition-all hover:shadow-md hover:shadow-primary/10;
+  @apply transition-all hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-1;
 }
 
 .gradient-button {
-  @apply bg-gradient-to-r from-brand-600 to-brand-500 text-white hover:from-brand-700 hover:to-brand-600 transition-all;
+  @apply bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 transition-all;
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Interactive elements */
+.interactive-card {
+  @apply transition-all duration-300 hover:shadow-lg hover:shadow-blue-300/20 dark:hover:shadow-blue-500/10 hover:-translate-y-1 cursor-pointer;
+}
+
+.subtle-focus {
+  @apply focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 focus:outline-none;
+}
+
+/* Form styling */
+input, select, textarea {
+  @apply transition-colors duration-200;
+}
+
+/* Enhanced glassmorphism */
+.glass-card {
+  @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-white/20 dark:border-gray-800/30 shadow-xl;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* Enhanced accessible focus styles */
+:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
 }

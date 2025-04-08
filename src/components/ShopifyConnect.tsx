@@ -70,63 +70,64 @@ const ShopifyConnect = () => {
   
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="flex flex-col items-center mb-6">
-        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center mb-4">
-          <ShoppingBag className="h-6 w-6 text-white" />
+      <div className="flex flex-col items-center mb-8">
+        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mb-5 shadow-lg shadow-blue-200 dark:shadow-blue-900/30">
+          <ShoppingBag className="h-8 w-8 text-white" />
         </div>
-        <h3 className="text-xl font-semibold">Connect Your Shopify Store</h3>
-        <p className="text-muted-foreground text-center mt-1">
+        <h3 className="text-2xl font-semibold mb-2">Connect Your Shopify Store</h3>
+        <p className="text-muted-foreground text-center max-w-xs">
           Enter your Shopify store details to enable SEO automation
         </p>
       </div>
       
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="storeUrl">Store URL</Label>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-3">
+          <Label htmlFor="storeUrl" className="text-base">Store URL</Label>
           <div className="flex">
             <Input
               id="storeUrl"
               placeholder="your-store"
               {...register("storeUrl")}
-              className="rounded-r-none"
+              className="rounded-r-none text-base py-6"
             />
-            <div className="bg-muted px-3 flex items-center border border-l-0 border-input rounded-r-md">
-              <span className="text-muted-foreground text-sm">.myshopify.com</span>
+            <div className="bg-muted px-4 flex items-center border border-l-0 border-input rounded-r-md text-base">
+              <span className="text-muted-foreground">.myshopify.com</span>
             </div>
           </div>
           {errors.storeUrl && (
-            <p className="text-destructive text-sm">{errors.storeUrl.message}</p>
+            <p className="text-destructive text-sm mt-1">{errors.storeUrl.message}</p>
           )}
         </div>
         
-        <div className="space-y-2">
-          <Label htmlFor="accessToken">Access Token</Label>
+        <div className="space-y-3">
+          <Label htmlFor="accessToken" className="text-base">Access Token</Label>
           <Input
             id="accessToken"
             type="password"
             placeholder="Shopify Admin API access token"
             {...register("accessToken")}
+            className="text-base py-6"
           />
           {errors.accessToken && (
-            <p className="text-destructive text-sm">{errors.accessToken.message}</p>
+            <p className="text-destructive text-sm mt-1">{errors.accessToken.message}</p>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-2">
             Find this in your Shopify admin under Apps → App and sales channel settings → Develop apps → Create an app
           </p>
         </div>
         
         <Button 
           type="submit" 
-          className="w-full gradient-button"
+          className="w-full py-6 text-base font-medium mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-all duration-300"
           disabled={isConnecting}
         >
           {isConnecting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connecting...
-            </>
+            <div className="flex items-center justify-center">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span>Connecting...</span>
+            </div>
           ) : (
-            <>Connect Store</>
+            <span>Connect Store</span>
           )}
         </Button>
       </form>

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Lock, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronRight, Gift } from 'lucide-react';
 
 interface UpgradePromptProps {
   title?: string;
@@ -14,8 +14,8 @@ interface UpgradePromptProps {
 }
 
 const UpgradePrompt: React.FC<UpgradePromptProps> = ({
-  title = "Upgrade to Pro",
-  description = "Unlock premium features to maximize your SEO performance",
+  title = "Premium Features",
+  description = "All premium features are currently available for testing",
   features = [
     "Connect Shopify and WordPress stores",
     "Unlimited keyword tracking",
@@ -30,10 +30,10 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
 
   if (compact) {
     return (
-      <Card className={`border-brand-200/50 bg-gradient-to-br from-brand-50 to-blue-50 dark:from-brand-950/40 dark:to-blue-950/40 ${className}`}>
+      <Card className={`border-blue-200/50 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 hover-card ${className}`}>
         <CardContent className="p-4 flex items-center justify-between">
           <div className="flex items-center">
-            <Sparkles className="h-5 w-5 text-brand-500 mr-3" />
+            <Gift className="h-5 w-5 text-blue-500 mr-3" />
             <div>
               <h3 className="font-medium text-sm">{title}</h3>
               <p className="text-xs text-muted-foreground">{description}</p>
@@ -41,10 +41,10 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
           </div>
           <Button
             size="sm"
-            className="gradient-button"
-            onClick={() => navigate('/pricing')}
+            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
+            onClick={() => navigate('/dashboard/integrations')}
           >
-            Upgrade
+            Access Now
           </Button>
         </CardContent>
       </Card>
@@ -52,12 +52,12 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   }
 
   return (
-    <Card className={`border-brand-200/50 overflow-hidden ${className}`}>
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-brand-500/20 to-brand-600/30 rounded-full transform translate-x-16 -translate-y-16 blur-2xl" />
+    <Card className={`border-blue-200/50 overflow-hidden hover-card ${className}`}>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-indigo-600/30 rounded-full transform translate-x-16 -translate-y-16 blur-2xl" />
       
       <CardHeader className="relative">
         <div className="flex items-center mb-2">
-          <Sparkles className="h-5 w-5 text-brand-500 mr-2" />
+          <Sparkles className="h-5 w-5 text-blue-500 mr-2" />
           <CardTitle>{title}</CardTitle>
         </div>
         <CardDescription>{description}</CardDescription>
@@ -67,7 +67,11 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         <ul className="space-y-2">
           {features.map((feature, index) => (
             <li key={index} className="flex items-start">
-              <Lock className="h-4 w-4 text-brand-500 mr-2 mt-0.5" />
+              <div className="h-5 w-5 text-blue-500 mr-2 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
+                  <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
               <span className="text-sm">{feature}</span>
             </li>
           ))}
@@ -76,10 +80,10 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
       
       <CardFooter className="relative">
         <Button 
-          className="w-full gradient-button group"
-          onClick={() => navigate('/pricing')}
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-all group"
+          onClick={() => navigate('/dashboard/integrations')}
         >
-          View Pricing
+          Access Features
           <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
         </Button>
       </CardFooter>
