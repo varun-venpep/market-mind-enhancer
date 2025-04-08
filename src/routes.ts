@@ -7,6 +7,7 @@ import ShopifyStore from "@/pages/ShopifyStore";
 import Integrations from "@/pages/Integrations";
 import ContentBriefs from "@/pages/ContentBriefs";
 import Index from "@/pages/Index"; // Import Index component correctly
+import ApiIntegrations from "@/pages/ApiIntegrations"; // Add missing import
 
 const routes = [
   {
@@ -52,6 +53,11 @@ const routes = [
   {
     path: "/dashboard/integrations",
     component: Integrations,
+    protected: true
+  },
+  {
+    path: "/dashboard/api-integrations",
+    component: ApiIntegrations,
     protected: true
   },
   {

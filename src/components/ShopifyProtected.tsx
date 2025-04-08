@@ -14,6 +14,10 @@ export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
   // Check if we're in a development/test environment
   const isTestMode = import.meta.env.DEV || window.location.hostname === 'localhost';
 
+  // Check if current page is the Shopify connection page
+  const isShopifyConnectionPage = window.location.pathname.includes('/dashboard/api-integrations') || 
+                                 window.location.pathname.includes('/dashboard/integrations');
+
   useEffect(() => {
     // Set a timeout to prevent infinite loading state
     const checkingTimeout = setTimeout(() => {
@@ -30,9 +34,9 @@ export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
     };
   }, [loading]);
 
-  // Always grant access in development/test mode
-  if (isTestMode) {
-    console.log('Development mode: bypassing subscription check for Shopify features');
+  // Always grant access in development/test mode or on the connection page
+  if (isTestMode || isShopifyConnectionPage) {
+    console.log('Development mode or connection page: bypassing subscription check for Shopify features');
     return <>{children}</>;
   }
 

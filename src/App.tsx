@@ -41,7 +41,7 @@ function App() {
             <div className="app-container full-width full-height">
               <Routes>
                 {routes.map((route) => {
-                  if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:id') {
+                  if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:storeId') {
                     return (
                       <Route
                         key={route.path}
@@ -78,6 +78,11 @@ function App() {
                   }
                 })}
                 <Route path="/dashboard/integrations" element={
+                  <ProtectedRoute>
+                    <ApiIntegrations />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard/api-integrations" element={
                   <ProtectedRoute>
                     <ApiIntegrations />
                   </ProtectedRoute>

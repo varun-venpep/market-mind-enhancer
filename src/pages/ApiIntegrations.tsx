@@ -21,19 +21,13 @@ const ApiIntegrations = () => {
   const isPro = true;
 
   useEffect(() => {
-    // Add a timeout to prevent infinite loading
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    
-    // Simulate loading state for demonstration
+    // Shorter loading time to improve experience
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
+    }, 500);
 
     return () => {
       clearTimeout(timer);
-      clearTimeout(loadingTimeout);
     };
   }, []);
 
@@ -41,19 +35,9 @@ const ApiIntegrations = () => {
     setIsLoading(true);
     setError(null);
     
-    // Simulate loading again with a safety timeout
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    
     setTimeout(() => {
       setIsLoading(false);
-      clearTimeout(loadingTimeout);
-    }, 1000);
-    
-    return () => {
-      clearTimeout(loadingTimeout);
-    };
+    }, 500);
   };
 
   if (!user) {
