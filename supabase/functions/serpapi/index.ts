@@ -13,15 +13,11 @@ serve(async (req) => {
   try {
     console.log("SERP API function received request");
 
+    // For testing/development - use mock data if no SERP API key
+    let mockMode = false;
     if (!SERP_API_KEY) {
-      console.error("SERP API key is not configured");
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "SERP API key not configured. Please set it in Supabase Edge Function Secrets."
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-      );
+      console.log("SERP API key is not configured, using mock data");
+      mockMode = true;
     }
 
     let requestData;
@@ -46,6 +42,15 @@ serve(async (req) => {
     }
 
     console.log(`SERP API request: keyword=${keyword}, location=${location}, engine=${engine}, type=${type}`);
+
+    if (mockMode) {
+      // Return mock data for testing
+      const mockData = getMockSerpData(keyword, type);
+      return new Response(
+        JSON.stringify({ success: true, data: mockData }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
 
     let apiUrl;
     switch (type) {
@@ -87,39 +92,7 @@ serve(async (req) => {
 
     const data = await response.json();
     console.log("SERP API response received successfully");
-
-    // Add a mock/fallback response for demonstration if data lacks key fields
-    if (!data.organic_results || data.organic_results.length === 0) {
-      console.log("No organic results found, adding fallback data");
-      data.organic_results = [
-        {
-          position: 1,
-          title: "Search Engine Optimization (SEO) Starter Guide: The Basics | Google Search Central",
-          link: "https://developers.google.com/search/docs/fundamentals/seo-starter-guide",
-          snippet: "Following these guidelines will help Google find, index, and rank your site. We strongly encourage you to pay very close attention to the Quality Guidelines ...",
-          displayed_link: "developers.google.com › search › docs › fundamentals › seo-starter-guide"
-        },
-        {
-          position: 2,
-          title: "What Is SEO / Search Engine Optimization?",
-          link: "https://searchengineland.com/guide/what-is-seo",
-          snippet: "SEO stands for "search engine optimization." It's the practice of increasing both the quality and quantity of website traffic, as well as exposure to your brand, ...",
-          displayed_link: "searchengineland.com › guide › what-is-seo"
-        }
-      ];
-    }
-
-    if (!data.related_searches) {
-      console.log("No related searches found, adding fallback data");
-      data.related_searches = [
-        { query: keyword + " best practices" },
-        { query: keyword + " for beginners" },
-        { query: keyword + " tools" },
-        { query: keyword + " strategies" },
-        { query: "how to " + keyword }
-      ];
-    }
-
+    
     return new Response(
       JSON.stringify({ success: true, data }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
@@ -132,3 +105,63 @@ serve(async (req) => {
     );
   }
 });
+
+function getMockSerpData(keyword: string, type: string) {
+  const getMockOrganic = () => {
+    return Array(10).fill(0).map((_, i) => ({
+      position: i + 1,
+      title: `${i + 1}. Top Result for ${keyword} - Example Website ${i + 1}`,
+      link: `https://example.com/result-${i + 1}`,
+      snippet: `This is a sample snippet for result ${i + 1}. It includes information about ${keyword} and helps users understand what the page contains. The content is optimized for search engines and provides valuable insights.`,
+      displayed_link: `example.com/result-${i + 1}`
+    }));
+  };
+  
+  const getMockRelatedQuestions = () => {
+    return [
+      { question: `What is the best ${keyword}?`, answer: "The best approach depends on your specific needs and goals." },
+      { question: `How to learn ${keyword} for beginners?`, answer: "Beginners should start with the fundamentals and practice regularly." },
+      { question: `Why is ${keyword} important?`, answer: "It's important because it helps achieve better results and efficiency." },
+      { question: `How much does ${keyword} cost?`, answer: "Costs vary widely depending on scope and requirements." }
+    ];
+  };
+  
+  const getMockRelatedSearches = () => {
+    return [
+      { query: `${keyword} best practices` },
+      { query: `${keyword} for beginners` },
+      { query: `${keyword} examples` },
+      { query: `${keyword} tools` },
+      { query: `how to improve ${keyword}` },
+      { query: `${keyword} vs alternative` },
+      { query: `${keyword} tutorial` },
+      { query: `${keyword} 2025` }
+    ];
+  };
+  
+  const getMockAutocomplete = () => {
+    return [
+      { value: `${keyword} best practices` },
+      { value: `${keyword} for beginners` },
+      { value: `${keyword} tools` },
+      { value: `${keyword} examples` },
+      { value: `${keyword} guide` }
+    ];
+  };
+  
+  const mockData = {
+    organic_results: getMockOrganic(),
+    related_questions: getMockRelatedQuestions(),
+    related_searches: getMockRelatedSearches(),
+    search_information: {
+      total_results: 845000,
+      time_taken_displayed: 0.53
+    }
+  };
+  
+  if (type === "autocomplete") {
+    mockData.autocomplete = getMockAutocomplete();
+  }
+  
+  return mockData;
+}

@@ -30,6 +30,10 @@ const ShopifyConnect = () => {
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      storeUrl: '',
+      accessToken: ''
+    }
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -39,6 +43,7 @@ const ShopifyConnect = () => {
     }
     
     setIsConnecting(true);
+    console.log("Connecting store with data:", { storeUrl: data.storeUrl });
     
     try {
       // Normalize the store URL to ensure it has the right format

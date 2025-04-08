@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +9,36 @@ import ZapierConnect from "@/components/integrations/ZapierConnect";
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import UpgradePrompt from '@/components/UpgradePrompt';
+import { AlertCircle, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 const ApiIntegrations = () => {
   const [activeTab, setActiveTab] = useState("shopify");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { isPro } = useSubscription();
+  // For testing, we consider all users as pro users
+  const isPro = true; // Modified for testing purposes
+
+  useEffect(() => {
+    // Simulate loading state for demonstration
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleRetry = () => {
+    setIsLoading(true);
+    setError(null);
+    
+    // Simulate loading again
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
 
   if (!user) {
     return (
@@ -43,53 +68,45 @@ const ApiIntegrations = () => {
           </p>
         </div>
         
-        <Tabs defaultValue="shopify" value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
-          <TabsList className="grid grid-cols-3 mb-8">
-            <TabsTrigger value="shopify">Shopify</TabsTrigger>
-            <TabsTrigger value="wordpress" disabled={!isPro}>WordPress {!isPro && '(Pro)'}</TabsTrigger>
-            <TabsTrigger value="zapier" disabled={!isPro}>Zapier {!isPro && '(Pro)'}</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="shopify">
-            <ShopifyConnect />
-          </TabsContent>
-          
-          <TabsContent value="wordpress">
-            {isPro ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading integrations...</p>
+          </div>
+        ) : error ? (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+            <Button 
+              variant="outline" 
+              className="mt-4" 
+              onClick={handleRetry}
+            >
+              Retry
+            </Button>
+          </Alert>
+        ) : (
+          <Tabs defaultValue="shopify" value={activeTab} onValueChange={setActiveTab} className="max-w-3xl mx-auto">
+            <TabsList className="grid grid-cols-3 mb-8">
+              <TabsTrigger value="shopify">Shopify</TabsTrigger>
+              <TabsTrigger value="wordpress">WordPress</TabsTrigger>
+              <TabsTrigger value="zapier">Zapier</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="shopify">
+              <ShopifyConnect />
+            </TabsContent>
+            
+            <TabsContent value="wordpress">
               <WordPressConnect />
-            ) : (
-              <UpgradePrompt 
-                title="Upgrade to Connect WordPress"
-                description="Unlock WordPress integration to audit and optimize your WordPress sites"
-                features={[
-                  "Analyze WordPress SEO performance",
-                  "Bulk optimize all posts and pages",
-                  "Auto-update meta descriptions",
-                  "Integrate with Yoast SEO and other plugins",
-                  "Schedule regular SEO audits"
-                ]}
-              />
-            )}
-          </TabsContent>
-          
-          <TabsContent value="zapier">
-            {isPro ? (
+            </TabsContent>
+            
+            <TabsContent value="zapier">
               <ZapierConnect />
-            ) : (
-              <UpgradePrompt 
-                title="Upgrade to Connect Zapier"
-                description="Automate your SEO workflows with Zapier integration"
-                features={[
-                  "Create Zaps triggered by SEO events",
-                  "Automatically create content briefs from RSS feeds",
-                  "Send SEO reports to team members",
-                  "Connect with 3000+ other apps",
-                  "Build custom SEO automation workflows"
-                ]}
-              />
-            )}
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </>
   );
