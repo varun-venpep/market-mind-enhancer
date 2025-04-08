@@ -9,19 +9,17 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, ShoppingBag } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { connectShopifyStore } from "@/services/api";
 
 // Form schema validation
 const formSchema = z.object({
-  store_url: z.string()
+  storeUrl: z.string()
     .min(4, { message: "Store URL must be at least 4 characters" })
     .regex(/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$/, { 
       message: "Store name can only contain letters, numbers, and hyphens" 
     }),
-  api_key: z.string()
-    .min(10, { message: "API key must be at least 10 characters" }),
-  api_password: z.string()
-    .min(8, { message: "Password must be at least 8 characters" }),
+  accessToken: z.string()
+    .min(10, { message: "Access token must be at least 10 characters" }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,21 +42,16 @@ const ShopifyConnect = () => {
     
     try {
       // Normalize the store URL to ensure it has the right format
-      let storeUrl = data.store_url.trim().toLowerCase();
+      let storeUrl = data.storeUrl.trim().toLowerCase();
       if (!storeUrl.endsWith('.myshopify.com')) {
         storeUrl = `${storeUrl}.myshopify.com`;
       }
       
       // Call the Shopify connect function
-      const { data: response, error } = await supabase.functions.invoke('shopify-connect', {
-        body: { 
-          store_url: storeUrl,
-          api_key: data.api_key,
-          api_password: data.api_password
-        }
+      await connectShopifyStore({
+        storeUrl,
+        accessToken: data.accessToken
       });
-      
-      if (error) throw error;
       
       toast.success("Shopify store connected successfully!");
       reset();
@@ -89,49 +82,36 @@ const ShopifyConnect = () => {
       
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="store_url">Store URL</Label>
+          <Label htmlFor="storeUrl">Store URL</Label>
           <div className="flex">
             <Input
-              id="store_url"
+              id="storeUrl"
               placeholder="your-store"
-              {...register("store_url")}
+              {...register("storeUrl")}
               className="rounded-r-none"
             />
             <div className="bg-muted px-3 flex items-center border border-l-0 border-input rounded-r-md">
               <span className="text-muted-foreground text-sm">.myshopify.com</span>
             </div>
           </div>
-          {errors.store_url && (
-            <p className="text-destructive text-sm">{errors.store_url.message}</p>
+          {errors.storeUrl && (
+            <p className="text-destructive text-sm">{errors.storeUrl.message}</p>
           )}
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="api_key">API Key</Label>
+          <Label htmlFor="accessToken">Access Token</Label>
           <Input
-            id="api_key"
-            type="text"
-            placeholder="Shopify Admin API key"
-            {...register("api_key")}
-          />
-          {errors.api_key && (
-            <p className="text-destructive text-sm">{errors.api_key.message}</p>
-          )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="api_password">API Password</Label>
-          <Input
-            id="api_password"
+            id="accessToken"
             type="password"
-            placeholder="Shopify Admin API password"
-            {...register("api_password")}
+            placeholder="Shopify Admin API access token"
+            {...register("accessToken")}
           />
-          {errors.api_password && (
-            <p className="text-destructive text-sm">{errors.api_password.message}</p>
+          {errors.accessToken && (
+            <p className="text-destructive text-sm">{errors.accessToken.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Find these in your Shopify admin under Apps → App and sales channel settings → Develop apps → Create an app
+            Find this in your Shopify admin under Apps → App and sales channel settings → Develop apps → Create an app
           </p>
         </div>
         

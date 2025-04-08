@@ -54,8 +54,19 @@ serve(async (req) => {
       });
     }
     
+    if (!store.access_token) {
+      return new Response(JSON.stringify({ 
+        error: 'Store access token is missing' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+    
     // Fetch products from Shopify
     const apiUrl = `https://${store.store_url}/admin/api/2023-07/products.json`;
+    console.log(`Fetching products from: ${apiUrl}`);
+    
     const productsResponse = await fetch(apiUrl, {
       headers: {
         'X-Shopify-Access-Token': store.access_token,
@@ -64,8 +75,15 @@ serve(async (req) => {
     });
     
     if (!productsResponse.ok) {
-      console.error(`Shopify API error: ${productsResponse.status} ${productsResponse.statusText}`);
-      throw new Error(`Failed to fetch products from Shopify: ${productsResponse.statusText}`);
+      const errorText = await productsResponse.text();
+      console.error(`Shopify API error: ${productsResponse.status} ${productsResponse.statusText}`, errorText);
+      return new Response(JSON.stringify({
+        error: `Failed to fetch products from Shopify: ${productsResponse.statusText}`,
+        details: errorText
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: productsResponse.status,
+      });
     }
     
     const productsData = await productsResponse.json();
