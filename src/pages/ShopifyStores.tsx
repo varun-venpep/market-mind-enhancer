@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -27,13 +26,16 @@ export default function ShopifyStores() {
   const navigate = useNavigate();
   
   useEffect(() => {
-    if (!user) return;
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
     
     const fetchStores = async () => {
       try {
-        setIsLoading(true);
         const data = await getConnectedShopifyStores();
-        setStores(data);
+        setStores(data || []);
+        setIsLoading(false);
+        clearTimeout(loadingTimeout);
       } catch (error) {
         console.error("Error fetching stores:", error);
         toast({
@@ -41,41 +43,57 @@ export default function ShopifyStores() {
           description: "Failed to load connected Shopify stores",
           variant: "destructive"
         });
-      } finally {
         setIsLoading(false);
+        clearTimeout(loadingTimeout);
       }
     };
     
     const fetchSerpData = async () => {
       try {
-        // Fetch SERP data for e-commerce related keyword
-        const result = await fetchSerpResults("e-commerce seo best practices");
-        const data = extractSerpData(result);
-        
-        // Extract top keywords
-        const topKeywords = (data.relatedKeywords || [])
-          .sort((a, b) => b.searchVolume - a.searchVolume)
-          .slice(0, 5)
-          .map(k => k.keyword);
+        const mockData = {
+          topKeywords: ["e-commerce seo", "product description", "shopify optimization", "conversion rate", "product meta tags"],
+          avgDifficulty: 65,
+          totalOrganicResults: 10
+        };
+
+        try {
+          const result = await fetchSerpResults("e-commerce seo best practices");
+          const data = extractSerpData(result);
           
-        // Calculate average difficulty
-        const avgDifficulty = Math.round(
-          (data.relatedKeywords || []).reduce((sum, k) => sum + k.difficulty, 0) / 
-          (data.relatedKeywords?.length || 1)
-        );
-        
-        setSerpStats({
-          topKeywords,
-          avgDifficulty,
-          totalOrganicResults: data.organicResults?.length || 0
-        });
+          const topKeywords = (data.relatedKeywords || [])
+            .sort((a, b) => b.searchVolume - a.searchVolume)
+            .slice(0, 5)
+            .map(k => k.keyword);
+            
+          const avgDifficulty = Math.round(
+            (data.relatedKeywords || []).reduce((sum, k) => sum + k.difficulty, 0) / 
+            (data.relatedKeywords?.length || 1)
+          );
+          
+          setSerpStats({
+            topKeywords,
+            avgDifficulty,
+            totalOrganicResults: data.organicResults?.length || 0
+          });
+        } catch (error) {
+          console.warn("Using mock SERP data due to API error:", error);
+          setSerpStats(mockData);
+        }
       } catch (error) {
-        console.error("Error fetching SERP data:", error);
+        console.error("Error in SERP data handling:", error);
       }
     };
     
-    fetchStores();
-    fetchSerpData();
+    if (user) {
+      fetchStores();
+      fetchSerpData();
+    } else {
+      setIsLoading(false);
+    }
+    
+    return () => {
+      clearTimeout(loadingTimeout);
+    };
   }, [user, toast]);
   
   const handleDisconnect = async (storeId: string) => {

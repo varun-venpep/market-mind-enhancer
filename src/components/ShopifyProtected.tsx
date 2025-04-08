@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import UpgradePrompt from './UpgradePrompt';
 
@@ -16,11 +15,28 @@ export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
   const isTestMode = import.meta.env.DEV || window.location.hostname === 'localhost';
 
   useEffect(() => {
+    // Set a timeout to prevent infinite loading state
+    const checkingTimeout = setTimeout(() => {
+      setIsChecking(false);
+    }, 2000);
+
     if (!loading) {
       setIsChecking(false);
+      clearTimeout(checkingTimeout);
     }
+    
+    return () => {
+      clearTimeout(checkingTimeout);
+    };
   }, [loading]);
 
+  // Always grant access in development/test mode
+  if (isTestMode) {
+    console.log('Development mode: bypassing subscription check for Shopify features');
+    return <>{children}</>;
+  }
+
+  // Show loading state, but with a timeout to prevent getting stuck
   if (isChecking) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -29,12 +45,7 @@ export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
     );
   }
 
-  // Allow access to Pro features in development/test mode
-  if (isTestMode) {
-    console.log('Development mode: bypassing subscription check for Shopify features');
-    return <>{children}</>;
-  }
-
+  // Show upgrade prompt if user is not a Pro subscriber
   if (!isPro) {
     return (
       <div className="container mx-auto py-8 px-4">
@@ -62,5 +73,6 @@ export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
     );
   }
 
+  // If all checks pass, render the protected content
   return <>{children}</>;
 };

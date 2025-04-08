@@ -7,8 +7,6 @@ import ShopifyConnect from "@/components/ShopifyConnect";
 import WordPressConnect from "@/components/integrations/WordPressConnect";
 import ZapierConnect from "@/components/integrations/ZapierConnect";
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import UpgradePrompt from '@/components/UpgradePrompt';
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -18,26 +16,44 @@ const ApiIntegrations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  
   // For testing, we consider all users as pro users
-  const isPro = true; // Modified for testing purposes
+  const isPro = true;
 
   useEffect(() => {
+    // Add a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    
     // Simulate loading state for demonstration
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(loadingTimeout);
+    };
   }, []);
 
   const handleRetry = () => {
     setIsLoading(true);
     setError(null);
     
-    // Simulate loading again
+    // Simulate loading again with a safety timeout
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    
     setTimeout(() => {
       setIsLoading(false);
+      clearTimeout(loadingTimeout);
     }, 1000);
+    
+    return () => {
+      clearTimeout(loadingTimeout);
+    };
   };
 
   if (!user) {
