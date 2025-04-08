@@ -6,14 +6,12 @@ import ShopifyStores from "@/pages/ShopifyStores";
 import ShopifyStore from "@/pages/ShopifyStore";
 import Integrations from "@/pages/Integrations";
 import ContentBriefs from "@/pages/ContentBriefs";
-import Home from "@/pages/Index"; // Fixed: Home should be Index
-import PasswordReset from "@/pages/Login"; // Temporarily point to Login since PasswordReset doesn't exist
-import Register from "@/pages/Login"; // Temporarily point to Login since Register doesn't exist
+import Index from "@/pages/Index"; // Import Index component correctly
 
 const routes = [
   {
     path: "/",
-    component: Home,
+    component: Index, // Use Index component for home route
     protected: false
   },
   {
@@ -28,12 +26,12 @@ const routes = [
   },
   {
     path: "/register",
-    component: Register,
+    component: Login, // Temporarily use Login for register route
     protected: false
   },
   {
     path: "/password-reset",
-    component: PasswordReset,
+    component: Login, // Temporarily use Login for password-reset route
     protected: false
   },
   {

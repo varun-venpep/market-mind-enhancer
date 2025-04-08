@@ -11,6 +11,7 @@ import { Loader2, Plus, X, FileText, Target, List, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { generateBriefContent } from "@/services/briefService";
+import { ContentBrief } from "@/types";
 
 const briefFormSchema = z.object({
   title: z.string().min(5, { message: "Title must be at least 5 characters" }),
@@ -37,7 +38,6 @@ export function BriefCreator() {
     }
   });
   
-  // Watch keywords field to keep it in sync with the keywordList
   const keywordsField = watch("keywords");
   
   const addKeyword = () => {
@@ -62,7 +62,6 @@ export function BriefCreator() {
     }
   };
   
-  // Keep keywordList in sync if user manually edits the keywords field
   React.useEffect(() => {
     if (keywordsField && keywordsField !== keywordList.join(", ")) {
       const newList = keywordsField.split(/,\s*/).filter(k => k.trim());
@@ -73,16 +72,20 @@ export function BriefCreator() {
   const onSubmit = async (data: BriefFormValues) => {
     setIsCreating(true);
     try {
-      // Convert keywords string to array
       const keywordsArray = data.keywords.split(/,\s*/).filter(k => k.trim());
       
-      // Generate the brief content
-      const briefContent = await generateBriefContent({
+      const briefForGeneration: ContentBrief = {
+        id: crypto.randomUUID(),
         title: data.title,
+        status: 'draft',
         keywords: keywordsArray,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         targetAudience: data.targetAudience || undefined,
         notes: data.notes || undefined
-      });
+      };
+      
+      const briefContent = await generateBriefContent(briefForGeneration);
       
       setBriefData(briefContent);
       toast.success("Content brief created successfully!");
