@@ -1,4 +1,3 @@
-
 export interface ContentBrief {
   id: string;
   title: string;
@@ -17,7 +16,9 @@ export interface ContentBrief {
     min: number;
     max: number;
   };
-  aiPotential?: number; // Adding this field to fix the error
+  aiPotential?: number;
+  targetAudience?: string;
+  notes?: string;
 }
 
 export interface Keyword {
@@ -64,7 +65,6 @@ export interface OutlineItem {
   children?: OutlineItem[];
 }
 
-// Add subscription-related types
 export interface Subscription {
   id: string;
   userId: string;
