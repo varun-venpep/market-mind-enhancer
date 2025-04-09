@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, ChevronDown, LogOut, Home, Search, ShoppingBag, Settings, FileText, MessagesSquare, LayoutGrid } from 'lucide-react';
+import { Moon, Sun, ChevronDown, LogOut, Home, Search, ShoppingBag, Settings, FileText, MessagesSquare, LayoutGrid, FileEdit, ListChecks } from 'lucide-react';
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from '@/contexts/AuthContext';
 import { WorkspaceSelector } from '@/components/Workspace/WorkspaceSelector';
@@ -39,6 +39,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Dashboard", icon: Home, path: "/dashboard" },
     { name: "Research", icon: Search, path: "/dashboard/research" },
     { name: "Content Briefs", icon: FileText, path: "/dashboard/content-briefs" },
+    { name: "Article Generator", icon: FileEdit, path: "/dashboard/article-generator" },
+    { name: "Campaigns", icon: ListChecks, path: "/dashboard/campaigns" },
     { name: "Shopify", icon: ShoppingBag, path: "/dashboard/shopify" },
     { name: "Integrations", icon: LayoutGrid, path: "/dashboard/integrations" }
   ];

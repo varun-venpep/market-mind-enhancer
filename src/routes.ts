@@ -11,6 +11,9 @@ import Index from "@/pages/Index";
 import ApiIntegrations from "@/pages/ApiIntegrations";
 import CustomSiteIntegration from "@/pages/CustomSiteIntegration";
 import Workspaces from "@/pages/Workspaces";
+import ArticleGenerator from "@/pages/ArticleGenerator";
+import Campaigns from "@/pages/Campaigns";
+import CampaignDetail from "@/pages/CampaignDetail";
 
 const routes = [
   {
@@ -81,6 +84,21 @@ const routes = [
   {
     path: "/dashboard/workspaces",
     component: Workspaces,
+    protected: true
+  },
+  {
+    path: "/dashboard/article-generator",
+    component: ArticleGenerator,
+    protected: true
+  },
+  {
+    path: "/dashboard/campaigns",
+    component: Campaigns,
+    protected: true
+  },
+  {
+    path: "/dashboard/campaigns/:campaignId",
+    component: CampaignDetail,
     protected: true
   }
 ];

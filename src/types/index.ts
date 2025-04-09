@@ -53,3 +53,27 @@ export interface Workspace {
   ownerId: string;
   isDefault?: boolean;
 }
+
+// New Article interface for SEO article generation
+export interface Article {
+  id: string;
+  title?: string;
+  keywords: string[];
+  createdAt: string;
+  updatedAt: string;
+  workspaceId: string;
+  campaignId: string;
+  status: 'draft' | 'in-progress' | 'completed';
+  content?: string;
+}
+
+// New Campaign interface to group articles
+export interface Campaign {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  workspaceId: string;
+  articleCount?: number;
+}
