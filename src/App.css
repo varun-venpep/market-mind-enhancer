@@ -5,7 +5,7 @@
   margin: 0;
   padding: 0;
   color: white;
-  background-color: #000000;
+  background-color: #121212; /* Slightly lighter than pure black */
 }
 
 .container-fluid {
@@ -73,7 +73,7 @@
 }
 
 .card-glass {
-  @apply backdrop-blur-sm bg-dark-900/80 border border-dark-800/50 shadow-lg;
+  @apply backdrop-blur-sm bg-dark-800/90 border border-dark-700/50 shadow-lg;
 }
 
 .hover-card {
@@ -121,17 +121,17 @@
 }
 
 .subtle-focus {
-  @apply focus:ring-2 focus:ring-primary-500/30 focus:ring-offset-2 focus:ring-offset-dark-900 focus:outline-none;
+  @apply focus:ring-2 focus:ring-primary-500/30 focus:ring-offset-2 focus:ring-offset-dark-800 focus:outline-none;
 }
 
 /* Form styling */
 input, select, textarea {
-  @apply transition-colors duration-200 bg-dark-900 border-dark-800 text-white;
+  @apply transition-colors duration-200 bg-dark-800 border-dark-700 text-white;
 }
 
 /* Enhanced glassmorphism */
 .glass-card {
-  @apply bg-dark-900/80 backdrop-blur-md border border-dark-800/30 shadow-xl;
+  @apply bg-dark-800/80 backdrop-blur-md border border-dark-700/30 shadow-xl;
 }
 
 /* Custom scrollbar */
@@ -141,18 +141,18 @@ input, select, textarea {
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-dark-800;
+  @apply bg-dark-700;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-dark-600 rounded-full;
+  @apply bg-dark-500 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-dark-500;
+  @apply bg-dark-400;
 }
 
 /* Enhanced accessible focus styles */
 :focus-visible {
-  @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-dark-900;
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2 ring-offset-dark-800;
 }

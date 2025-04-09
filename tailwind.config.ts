@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 import withMT from "@material-tailwind/react/utils/withMT";
 
@@ -53,12 +54,12 @@ export default withMT({
 					"500": "#6b7280",
 					"600": "#4b5563",
 					"700": "#374151",
-					"800": "#222222",
+					"800": "#1e1e1e", /* Slightly lighter */
 					"900": "#111827",
-					"950": "#000000",
+					"950": "#0a0a0a", /* Not pure black */
 				},
-				border: "#2A2A2A",
-				input: "#2A2A2A",
+				border: "#3A3A3A", /* Lighter border */
+				input: "#3A3A3A",
 				ring: "#1DCD9F",
 				background: "#121212",
 				foreground: "#FFFFFF",
