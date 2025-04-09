@@ -61,9 +61,7 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
-      <MaterialThemeProvider value={theme}>
-        {children}
-      </MaterialThemeProvider>
+      {children}
     </ThemeProviderContext.Provider>
   );
 }

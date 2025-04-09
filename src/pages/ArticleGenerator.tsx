@@ -9,21 +9,21 @@ import * as z from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { Campaign, Article } from '@/types';
 
-// Material Tailwind imports
+// Import wrapped Material Tailwind components
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  Typography,
-  Button,
-  Tabs,
-  TabsHeader,
-  TabsBody,
-  Tab,
-  TabPanel,
-  Input,
-  Textarea,
-} from "@material-tailwind/react";
+  MTCard as Card,
+  MTCardBody as CardBody,
+  MTCardHeader as CardHeader,
+  MTTypography as Typography,
+  MTButton as Button,
+  MTTabs as Tabs,
+  MTTabsHeader as TabsHeader,
+  MTTabsBody as TabsBody,
+  MTTab as Tab,
+  MTTabPanel as TabPanel,
+  MTInput as Input,
+  MTTextarea as Textarea,
+} from "@/components/MaterialTailwindWrapper";
 
 // Icons
 import { 
@@ -131,7 +131,6 @@ const ArticleGenerator = () => {
               size="sm" 
               onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 text-white"
-              placeholder=""
             >
               <ArrowLeftIcon className="h-4 w-4" />
               Back to Dashboard
@@ -140,10 +139,10 @@ const ArticleGenerator = () => {
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <Typography variant="h2" color="white" className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent" placeholder="">
+              <Typography variant="h2" color="white" className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
                 Generate SEO Articles
               </Typography>
-              <Typography variant="paragraph" color="blue-gray" className="mt-1" placeholder="">
+              <Typography variant="paragraph" color="blue-gray" className="mt-1">
                 Create high-quality, SEO-optimized articles based on keywords
               </Typography>
             </div>
@@ -155,12 +154,10 @@ const ArticleGenerator = () => {
               indicatorProps={{
                 className: "bg-primary-500/20 shadow-none",
               }}
-              placeholder=""
             >
               <Tab 
                 value="manual" 
                 className={`${activeTab === "manual" ? "text-primary-500" : "text-white"} flex items-center gap-2`}
-                placeholder=""
               >
                 <DocumentTextIcon className="h-4 w-4" />
                 <span>Manual</span>
@@ -168,32 +165,30 @@ const ArticleGenerator = () => {
               <Tab 
                 value="import" 
                 className={`${activeTab === "import" ? "text-primary-500" : "text-white"} flex items-center gap-2`}
-                placeholder=""
               >
                 <ArrowsUpDownIcon className="h-4 w-4" />
                 <span>Import</span>
               </Tab>
             </TabsHeader>
             
-            <TabsBody animate={{ initial: { opacity: 0 }, mount: { opacity: 1 }, unmount: { opacity: 0 } }} placeholder="">
+            <TabsBody animate={{ initial: { opacity: 0 }, mount: { opacity: 1 }, unmount: { opacity: 0 } }}>
               <TabPanel value="manual">
-                <Card className="bg-dark-800 border border-dark-700 shadow-lg" placeholder="">
+                <Card className="bg-dark-800 border border-dark-700 shadow-lg">
                   <CardHeader 
                     color="transparent" 
                     floated={false} 
                     shadow={false}
                     className="px-6 pt-6 pb-0"
-                    placeholder=""
                   >
-                    <Typography variant="h4" color="white" className="mb-1" placeholder="">
+                    <Typography variant="h4" color="white" className="mb-1">
                       Create SEO Article
                     </Typography>
-                    <Typography variant="small" color="blue-gray" className="mb-4" placeholder="">
+                    <Typography variant="small" color="blue-gray" className="mb-4">
                       Enter keywords for your article. You can add an optional title or we'll generate one for you.
                     </Typography>
                   </CardHeader>
                   
-                  <CardBody className="px-6 pt-4" placeholder="">
+                  <CardBody className="px-6 pt-4">
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       <div className="mb-6">
                         <Textarea
@@ -202,10 +197,9 @@ const ArticleGenerator = () => {
                           {...form.register("keywords")}
                           placeholder="Enter keywords separated by commas (e.g., 'gardening for beginners, best tools for gardeners')"
                           className="border-dark-600 focus:border-primary-500 min-h-[100px]"
-                          crossOrigin=""
                         />
                         {form.formState.errors.keywords && (
-                          <Typography color="red" variant="small" className="mt-1" placeholder="">
+                          <Typography color="red" variant="small" className="mt-1">
                             {form.formState.errors.keywords.message}
                           </Typography>
                         )}
@@ -218,10 +212,9 @@ const ArticleGenerator = () => {
                           {...form.register("title")}
                           placeholder="Leave blank to generate from keywords"
                           className="border-dark-600 focus:border-primary-500"
-                          crossOrigin=""
                         />
                         {form.formState.errors.title && (
-                          <Typography color="red" variant="small" className="mt-1" placeholder="">
+                          <Typography color="red" variant="small" className="mt-1">
                             {form.formState.errors.title.message}
                           </Typography>
                         )}
@@ -231,7 +224,6 @@ const ArticleGenerator = () => {
                         <Button 
                           type="submit" 
                           className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:shadow-lg hover:shadow-primary-500/20 transition-all"
-                          placeholder=""
                         >
                           <PlusCircleIcon className="h-5 w-5" />
                           Add Keywords
@@ -243,29 +235,28 @@ const ArticleGenerator = () => {
               </TabPanel>
               
               <TabPanel value="import">
-                <Card className="bg-dark-800 border border-dark-700 shadow-lg" placeholder="">
+                <Card className="bg-dark-800 border border-dark-700 shadow-lg">
                   <CardHeader 
                     color="transparent" 
                     floated={false} 
                     shadow={false}
                     className="px-6 pt-6 pb-0"
-                    placeholder=""
                   >
-                    <Typography variant="h4" color="white" className="mb-1" placeholder="">
+                    <Typography variant="h4" color="white" className="mb-1">
                       Import Keywords
                     </Typography>
-                    <Typography variant="small" color="blue-gray" className="mb-4" placeholder="">
+                    <Typography variant="small" color="blue-gray" className="mb-4">
                       Import keywords from CSV, Excel or other sources (coming soon)
                     </Typography>
                   </CardHeader>
                   
-                  <CardBody className="flex items-center justify-center py-12" placeholder="">
+                  <CardBody className="flex items-center justify-center py-12">
                     <div className="flex flex-col items-center justify-center text-center">
                       <ArrowsUpDownIcon className="h-16 w-16 text-primary-500/30 mb-4" />
-                      <Typography color="blue-gray" className="mb-2" placeholder="">
+                      <Typography color="blue-gray" className="mb-2">
                         Import Feature Coming Soon
                       </Typography>
-                      <Typography variant="small" color="blue-gray" className="max-w-xs" placeholder="">
+                      <Typography variant="small" color="blue-gray" className="max-w-xs">
                         This feature is under development and will be available soon.
                       </Typography>
                     </div>

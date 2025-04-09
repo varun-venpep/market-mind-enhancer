@@ -5,16 +5,16 @@ import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Campaign } from '@/types';
 
-// Material Tailwind components
+// Import wrapped Material Tailwind components
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  Typography,
-  Button,
-  Input,
-  Chip,
-} from "@material-tailwind/react";
+  MTCard as Card,
+  MTCardBody as CardBody,
+  MTCardHeader as CardHeader,
+  MTTypography as Typography,
+  MTButton as Button,
+  MTInput as Input,
+  MTChip as Chip,
+} from "@/components/MaterialTailwindWrapper";
 
 // Icons
 import {
@@ -70,7 +70,6 @@ const Campaigns = () => {
               size="sm" 
               onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 text-white hover:bg-primary-500/10"
-              placeholder=""
             >
               <ArrowLeftIcon className="h-4 w-4" />
               Back to Dashboard
@@ -79,17 +78,16 @@ const Campaigns = () => {
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <Typography variant="h2" color="white" className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent" placeholder="">
+              <Typography variant="h2" color="white" className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
                 Campaigns
               </Typography>
-              <Typography variant="paragraph" color="blue-gray" className="mt-1" placeholder="">
+              <Typography variant="paragraph" color="blue-gray" className="mt-1">
                 Manage your article campaigns and track your SEO progress
               </Typography>
             </div>
             <Button 
               onClick={() => navigate('/dashboard/article-generator')}
               className="mt-4 md:mt-0 flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:shadow-lg hover:shadow-primary-500/20 transition-all"
-              placeholder=""
             >
               <PlusIcon className="h-4 w-4" />
               New Article
@@ -107,17 +105,16 @@ const Campaigns = () => {
               containerProps={{ className: "min-w-[288px]" }}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              crossOrigin=""
             />
           </div>
           
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array(3).fill(0).map((_, i) => (
-                <Card key={i} className="bg-dark-800 border border-dark-700 animate-pulse" placeholder="">
-                  <CardHeader className="h-16 bg-dark-700" placeholder="">
+                <Card key={i} className="bg-dark-800 border border-dark-700 animate-pulse">
+                  <CardHeader className="h-16 bg-dark-700">
                   </CardHeader>
-                  <CardBody placeholder="">
+                  <CardBody>
                     <div className="h-4 bg-dark-700 rounded-md w-3/4 mb-2"></div>
                     <div className="h-4 bg-dark-700 rounded-md w-1/2"></div>
                   </CardBody>
@@ -131,27 +128,25 @@ const Campaigns = () => {
                   key={campaign.id}
                   className="bg-dark-800 border border-dark-700 hover:shadow-md hover:shadow-primary-500/10 transition-all cursor-pointer"
                   onClick={() => navigate(`/dashboard/campaigns/${campaign.id}`)}
-                  placeholder=""
                 >
                   <CardHeader
                     color="transparent"
                     floated={false}
                     shadow={false}
                     className="px-6 pt-6 pb-0"
-                    placeholder=""
                   >
-                    <Typography variant="h5" color="white" className="mb-1" placeholder="">
+                    <Typography variant="h5" color="white" className="mb-1">
                       {campaign.name}
                     </Typography>
-                    <Typography variant="small" color="blue-gray" placeholder="">
+                    <Typography variant="small" color="blue-gray">
                       {campaign.description}
                     </Typography>
                   </CardHeader>
-                  <CardBody className="px-6 pt-4" placeholder="">
+                  <CardBody className="px-6 pt-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <DocumentTextIcon className="h-4 w-4 text-blue-gray-400" />
-                        <Typography variant="small" color="blue-gray" placeholder="">
+                        <Typography variant="small" color="blue-gray">
                           {campaign.articleCount || 0} Articles
                         </Typography>
                       </div>
@@ -166,15 +161,15 @@ const Campaigns = () => {
               ))}
             </div>
           ) : (
-            <Card className="bg-dark-800 border border-dark-700 shadow-lg" placeholder="">
-              <CardBody className="flex flex-col items-center justify-center py-16 text-center" placeholder="">
+            <Card className="bg-dark-800 border border-dark-700 shadow-lg">
+              <CardBody className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="rounded-full bg-dark-700 p-3 mb-4">
                   <DocumentTextIcon className="h-6 w-6 text-blue-gray-400" />
                 </div>
-                <Typography variant="h4" color="white" className="mb-2" placeholder="">
+                <Typography variant="h4" color="white" className="mb-2">
                   No campaigns found
                 </Typography>
-                <Typography color="blue-gray" className="mb-4 max-w-md" placeholder="">
+                <Typography color="blue-gray" className="mb-4 max-w-md">
                   {searchTerm 
                     ? `We couldn't find any campaigns matching "${searchTerm}". Try a different search term.`
                     : "You don't have any campaigns yet. Create your first article to get started."}
@@ -182,7 +177,6 @@ const Campaigns = () => {
                 <Button 
                   onClick={() => navigate('/dashboard/article-generator')}
                   className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:shadow-lg hover:shadow-primary-500/20 transition-all"
-                  placeholder=""
                 >
                   <PlusIcon className="h-4 w-4" />
                   Create Article

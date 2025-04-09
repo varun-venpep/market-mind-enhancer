@@ -1,5 +1,13 @@
 
-import { theme as baseTheme } from "@material-tailwind/react";
+const baseTheme = {
+  colors: {
+    primary: {},
+    "blue-gray": {},
+  },
+  fontFamily: {
+    sans: "Inter, sans-serif",
+  },
+};
 
 export const theme = {
   ...baseTheme,
