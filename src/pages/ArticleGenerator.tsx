@@ -1,21 +1,32 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useToast } from '@/components/ui/use-toast';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, FileText, Import, PlusCircle } from "lucide-react";
-import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { v4 as uuidv4 } from 'uuid';
 import { Campaign, Article } from '@/types';
+
+// Material Tailwind imports
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  Typography,
+  Button,
+  Tabs,
+  TabsHeader,
+  TabsBody,
+  Tab,
+  TabPanel,
+  Input,
+  Textarea,
+} from "@material-tailwind/react";
+
+// Icons
+import { ArrowLeftIcon, DocumentTextIcon, ArrowsUpDownIcon, PlusCircleIcon } from "@heroicons/react/24/outline";
 
 // Form schema for article generation
 const formSchema = z.object({
@@ -101,132 +112,159 @@ const ArticleGenerator = () => {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   return (
-    <DashboardLayout>
+    <div className="min-h-screen bg-dark-950 text-white">
       <div className="container mx-auto py-8">
         <div className="flex flex-col gap-6">
           <div className="flex items-center">
             <Button 
-              variant="ghost" 
+              variant="text" 
               size="sm" 
               onClick={() => navigate('/dashboard')}
-              className="mr-4"
+              className="flex items-center gap-2 text-white"
             >
-              <ArrowLeft className="h-4 w-4 mr-1" />
+              <ArrowLeftIcon className="h-4 w-4" />
               Back to Dashboard
             </Button>
           </div>
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold gradient-text">Generate SEO Articles</h1>
-              <p className="text-muted-foreground mt-1">
+              <Typography variant="h2" color="white" className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
+                Generate SEO Articles
+              </Typography>
+              <Typography variant="paragraph" color="blue-gray" className="mt-1">
                 Create high-quality, SEO-optimized articles based on keywords
-              </p>
+              </Typography>
             </div>
           </div>
           
-          <Tabs 
-            defaultValue="manual" 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="mb-8"
-          >
-            <TabsList className="mb-6">
-              <TabsTrigger value="manual" className="flex items-center gap-1">
-                <FileText className="h-4 w-4" />
-                <span>Manual</span>
-              </TabsTrigger>
-              <TabsTrigger value="import" className="flex items-center gap-1">
-                <Import className="h-4 w-4" />
-                <span>Import</span>
-              </TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab} className="my-6">
+            <TabsHeader
+              className="bg-dark-800 border-none"
+              indicatorProps={{
+                className: "bg-primary-500/20 shadow-none",
+              }}
+            >
+              <Tab 
+                value="manual" 
+                onClick={() => handleTabChange("manual")}
+                className={`${activeTab === "manual" ? "text-primary-500" : "text-white"} flex items-center gap-2`}
+              >
+                <DocumentTextIcon className="h-4 w-4" />
+                Manual
+              </Tab>
+              <Tab 
+                value="import" 
+                onClick={() => handleTabChange("import")}
+                className={`${activeTab === "import" ? "text-primary-500" : "text-white"} flex items-center gap-2`}
+              >
+                <ArrowsUpDownIcon className="h-4 w-4" />
+                Import
+              </Tab>
+            </TabsHeader>
             
-            <TabsContent value="manual">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create SEO Article</CardTitle>
-                  <CardDescription>
-                    Enter keywords for your article. You can add an optional title or we'll generate one for you.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
+            <TabsBody animate={{ initial: { opacity: 0 }, mount: { opacity: 1 }, unmount: { opacity: 0 } }}>
+              <TabPanel value="manual">
+                <Card className="bg-dark-800 border border-dark-700 shadow-lg">
+                  <CardHeader 
+                    color="transparent" 
+                    floated={false} 
+                    shadow={false}
+                    className="px-6 pt-6 pb-0"
+                  >
+                    <Typography variant="h4" color="white" className="mb-1">
+                      Create SEO Article
+                    </Typography>
+                    <Typography variant="small" color="blue-gray" className="mb-4">
+                      Enter keywords for your article. You can add an optional title or we'll generate one for you.
+                    </Typography>
+                  </CardHeader>
+                  
+                  <CardBody className="px-6 pt-4">
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="keywords"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Keywords</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Enter keywords separated by commas (e.g., 'gardening for beginners, best tools for gardeners')"
-                                className="min-h-[100px]"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                      <div className="mb-6">
+                        <Textarea
+                          label="Keywords"
+                          color="primary"
+                          {...form.register("keywords")}
+                          placeholder="Enter keywords separated by commas (e.g., 'gardening for beginners, best tools for gardeners')"
+                          className="border-dark-600 focus:border-primary-500 min-h-[100px]"
+                        />
+                        {form.formState.errors.keywords && (
+                          <Typography color="red" variant="small" className="mt-1">
+                            {form.formState.errors.keywords.message}
+                          </Typography>
                         )}
-                      />
+                      </div>
                       
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Title (Optional)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Leave blank to generate from keywords"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                      <div className="mb-6">
+                        <Input
+                          label="Title (Optional)"
+                          color="primary"
+                          {...form.register("title")}
+                          placeholder="Leave blank to generate from keywords"
+                          className="border-dark-600 focus:border-primary-500"
+                        />
+                        {form.formState.errors.title && (
+                          <Typography color="red" variant="small" className="mt-1">
+                            {form.formState.errors.title.message}
+                          </Typography>
                         )}
-                      />
+                      </div>
                       
                       <div className="flex justify-end">
                         <Button 
                           type="submit" 
-                          className="gradient-button"
+                          className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:shadow-lg hover:shadow-primary-500/20 transition-all"
                         >
-                          <PlusCircle className="mr-2 h-4 w-4" />
+                          <PlusCircleIcon className="h-5 w-5" />
                           Add Keywords
                         </Button>
                       </div>
                     </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="import">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Import Keywords</CardTitle>
-                  <CardDescription>
-                    Import keywords from CSV, Excel or other sources (coming soon)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <Import className="h-16 w-16 text-blue-500/30 mb-4" />
-                    <p className="text-muted-foreground">Import Feature Coming Soon</p>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                      This feature is under development and will be available soon.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  </CardBody>
+                </Card>
+              </TabPanel>
+              
+              <TabPanel value="import">
+                <Card className="bg-dark-800 border border-dark-700 shadow-lg">
+                  <CardHeader 
+                    color="transparent" 
+                    floated={false} 
+                    shadow={false}
+                    className="px-6 pt-6 pb-0"
+                  >
+                    <Typography variant="h4" color="white" className="mb-1">
+                      Import Keywords
+                    </Typography>
+                    <Typography variant="small" color="blue-gray" className="mb-4">
+                      Import keywords from CSV, Excel or other sources (coming soon)
+                    </Typography>
+                  </CardHeader>
+                  
+                  <CardBody className="flex items-center justify-center py-12">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <ArrowsUpDownIcon className="h-16 w-16 text-primary-500/30 mb-4" />
+                      <Typography color="blue-gray" className="mb-2">
+                        Import Feature Coming Soon
+                      </Typography>
+                      <Typography variant="small" color="blue-gray" className="max-w-xs">
+                        This feature is under development and will be available soon.
+                      </Typography>
+                    </div>
+                  </CardBody>
+                </Card>
+              </TabPanel>
+            </TabsBody>
           </Tabs>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

@@ -1,5 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { ThemeProvider as MaterialThemeProvider } from "@material-tailwind/react";
+import { theme } from "@/theme";
 
 type Theme = "dark" | "light" | "system";
 
@@ -23,7 +25,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "dark", // Changed to dark by default
   storageKey = "seo-wizard-ui-theme",
   ...props
 }: ThemeProviderProps) {
@@ -59,7 +61,9 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
+      <MaterialThemeProvider value={theme}>
+        {children}
+      </MaterialThemeProvider>
     </ThemeProviderContext.Provider>
   );
 }
