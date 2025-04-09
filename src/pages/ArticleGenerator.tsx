@@ -12,18 +12,20 @@ import { useToast } from "@/components/ui/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, FileText, Import, List, ListChecks, PlusCircle } from "lucide-react";
+import { ArrowLeft, FileText, Import, PlusCircle } from "lucide-react";
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { v4 as uuidv4 } from 'uuid';
-import { Article, Campaign } from '@/types';
+import { Campaign, Article } from '@/types';
 
 // Form schema for article generation
 const formSchema = z.object({
   keywords: z.string().min(1, {
-    message: "Please enter at least one keyword.",
+    message: "Please enter at least one keyword."
   }),
-  title: z.string().optional(),
+  title: z.string().optional()
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 const ArticleGenerator = () => {
   const navigate = useNavigate();
@@ -32,27 +34,24 @@ const ArticleGenerator = () => {
   const [activeTab, setActiveTab] = useState("manual");
   
   // Setup form with validation
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       keywords: "",
-      title: "",
-    },
+      title: ""
+    }
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: FormValues) => {
     try {
       // Process the keywords
-      const keywordArray = values.keywords
-        .split(',')
-        .map(k => k.trim())
-        .filter(k => k.length > 0);
+      const keywordArray = values.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
       
       if (keywordArray.length === 0) {
         toast({
           title: "No keywords provided",
           description: "Please enter at least one keyword",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -65,7 +64,7 @@ const ArticleGenerator = () => {
         description: "Automatically created campaign for keyword articles",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        workspaceId: currentWorkspace?.id || "",
+        workspaceId: currentWorkspace?.id || ""
       };
       
       // Create the article
@@ -87,18 +86,17 @@ const ArticleGenerator = () => {
       // Show success message
       toast({
         title: "Keywords Added",
-        description: `Added ${keywordArray.length} keywords to Default Campaign`,
+        description: `Added ${keywordArray.length} keywords to Default Campaign`
       });
       
       // Navigate to the campaigns page
       navigate('/dashboard/campaigns');
-      
     } catch (error) {
       console.error("Error creating article:", error);
       toast({
         title: "Error Adding Keywords",
         description: "There was a problem adding your keywords. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -128,7 +126,12 @@ const ArticleGenerator = () => {
             </div>
           </div>
           
-          <Tabs defaultValue="manual" value={activeTab} onValueChange={setActiveTab} className="mb-8">
+          <Tabs 
+            defaultValue="manual" 
+            value={activeTab} 
+            onValueChange={setActiveTab}
+            className="mb-8"
+          >
             <TabsList className="mb-6">
               <TabsTrigger value="manual" className="flex items-center gap-1">
                 <FileText className="h-4 w-4" />
@@ -158,7 +161,7 @@ const ArticleGenerator = () => {
                           <FormItem>
                             <FormLabel>Keywords</FormLabel>
                             <FormControl>
-                              <Textarea
+                              <Textarea 
                                 placeholder="Enter keywords separated by commas (e.g., 'gardening for beginners, best tools for gardeners')"
                                 className="min-h-[100px]"
                                 {...field}
@@ -176,7 +179,7 @@ const ArticleGenerator = () => {
                           <FormItem>
                             <FormLabel>Title (Optional)</FormLabel>
                             <FormControl>
-                              <Input
+                              <Input 
                                 placeholder="Leave blank to generate from keywords"
                                 {...field}
                               />
