@@ -23,7 +23,7 @@ import {
   Navbar,
 } from "@material-tailwind/react";
 
-// Heroicons
+// Heroicons (use v2 import syntax)
 import {
   MoonIcon,
   SunIcon,
@@ -70,7 +70,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-950 text-white">
-      <Navbar className="sticky top-0 z-10 h-max max-w-full rounded-none border-none py-2 px-4 lg:px-8 bg-dark-900">
+      <Navbar 
+        className="sticky top-0 z-10 h-max max-w-full rounded-none border-none py-2 px-4 lg:px-8 bg-dark-900"
+        placeholder=""
+      >
         <div className="flex items-center justify-between text-white">
           <div className="flex items-center gap-4">
             <Typography
@@ -78,6 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="#"
               variant="h5"
               className="mr-4 cursor-pointer py-1.5 text-primary-500 font-bold"
+              placeholder=""
             >
               SEO Wizard
             </Typography>
@@ -87,6 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="ml-auto h-6 w-6 text-white hover:bg-primary-500/10 md:hidden"
               ripple={false}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              placeholder=""
             >
               <ChatBubbleLeftRightIcon className="h-6 w-6" />
             </IconButton>
@@ -102,6 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               color="white"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="text-white hover:bg-primary-500/10"
+              placeholder=""
             >
               {theme === "dark" ? (
                 <MoonIcon className="h-5 w-5" />
@@ -116,6 +122,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   variant="text"
                   color="white"
                   className="flex items-center gap-2 px-2 text-white hover:bg-primary-500/10"
+                  placeholder=""
                 >
                   <Avatar
                     variant="circular"
@@ -123,6 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     alt="User"
                     className="bg-primary-500"
                     src=""
+                    placeholder=""
                   >
                     {user?.email?.charAt(0).toUpperCase() || 'U'}
                   </Avatar>
@@ -132,23 +140,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <ChevronDownIcon className="h-4 w-4 opacity-50" />
                 </Button>
               </MenuHandler>
-              <MenuList className="bg-dark-800 border-dark-700 text-white shadow-md">
-                <MenuItem className="flex items-center gap-2 text-white hover:bg-primary-500/10">
+              <MenuList className="bg-dark-800 border-dark-700 text-white shadow-md" placeholder="">
+                <MenuItem className="flex items-center gap-2 text-white hover:bg-primary-500/10" placeholder="">
                   <Cog8ToothIcon className="h-4 w-4" />
-                  <Typography onClick={() => navigate('/dashboard/settings')}>
+                  <Typography onClick={() => navigate('/dashboard/settings')} placeholder="">
                     Settings
                   </Typography>
                 </MenuItem>
-                <MenuItem className="flex items-center gap-2 text-white hover:bg-primary-500/10">
+                <MenuItem className="flex items-center gap-2 text-white hover:bg-primary-500/10" placeholder="">
                   <ServerStackIcon className="h-4 w-4" />
-                  <Typography onClick={() => navigate('/dashboard/workspaces')}>
+                  <Typography onClick={() => navigate('/dashboard/workspaces')} placeholder="">
                     Manage Workspaces
                   </Typography>
                 </MenuItem>
                 <hr className="my-2 border-dark-700" />
-                <MenuItem className="flex items-center gap-2 text-white hover:bg-primary-500/10" onClick={() => logout()}>
+                <MenuItem className="flex items-center gap-2 text-white hover:bg-primary-500/10" onClick={() => logout()} placeholder="">
                   <ArrowRightOnRectangleIcon className="h-4 w-4" />
-                  <Typography>
+                  <Typography placeholder="">
                     Sign out
                   </Typography>
                 </MenuItem>
@@ -167,21 +175,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           open={isMobileMenuOpen}
           onClose={() => setIsMobileMenuOpen(false)}
           className="p-4 bg-dark-900"
+          placeholder=""
+          overlayRef={null}
         >
           <div className="mb-6 flex items-center justify-between">
-            <Typography variant="h5" color="white">
+            <Typography variant="h5" color="white" placeholder="">
               SEO Wizard
             </Typography>
             <IconButton
               variant="text"
               color="white"
               onClick={() => setIsMobileMenuOpen(false)}
+              placeholder=""
             >
               <ChevronRightIcon strokeWidth={2} className="h-5 w-5" />
             </IconButton>
           </div>
           
-          <List className="text-white">
+          <List className="text-white" placeholder="">
             {menuItems.map((item, index) => (
               <ListItem
                 key={index}
@@ -192,8 +203,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={`${
                   isActive(item.path) ? "bg-primary-500/10 text-primary-500" : "hover:bg-primary-500/5"
                 }`}
+                placeholder=""
               >
-                <ListItemPrefix>
+                <ListItemPrefix placeholder="">
                   <item.icon className="h-5 w-5" />
                 </ListItemPrefix>
                 {item.name}
@@ -207,7 +219,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             WORKSPACE: {currentWorkspace?.name}
           </div>
           
-          <List className="text-white">
+          <List className="text-white" placeholder="">
             {menuItems.map((item, index) => (
               <ListItem
                 key={index}
@@ -215,8 +227,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={`${
                   isActive(item.path) ? "bg-primary-500/10 text-primary-500" : "hover:bg-primary-500/5"
                 }`}
+                placeholder=""
               >
-                <ListItemPrefix>
+                <ListItemPrefix placeholder="">
                   <item.icon className="h-5 w-5" />
                 </ListItemPrefix>
                 {item.name}
@@ -226,14 +239,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           
           <hr className="my-4 border-dark-800" />
           
-          <List className="text-white">
+          <List className="text-white" placeholder="">
             <ListItem
               onClick={() => navigate('/dashboard/workspaces')}
               className={`${
                 isActive('/dashboard/workspaces') ? "bg-primary-500/10 text-primary-500" : "hover:bg-primary-500/5"
               }`}
+              placeholder=""
             >
-              <ListItemPrefix>
+              <ListItemPrefix placeholder="">
                 <ServerStackIcon className="h-5 w-5" />
               </ListItemPrefix>
               Workspaces
@@ -246,6 +260,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               color="white"
               className="w-full flex items-center justify-start border-dark-800 text-white hover:bg-primary-500/5"
               onClick={() => navigate('/dashboard/settings')}
+              placeholder=""
             >
               <Cog8ToothIcon className="mr-2 h-5 w-5" />
               Settings
