@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, ShoppingBag, ArrowRight, ArrowLeft, Brain, Activity, FileText, Globe, Image } from "lucide-react";
+import { Package, ShoppingBag, ArrowRight, ArrowLeft, Brain, Activity, FileText, Globe, Code } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { useState, useEffect } from "react";
@@ -69,6 +68,15 @@ export default function Integrations() {
       url: "/dashboard/shopify",
       status: "available",
       features: ["Product SEO", "Blog Content", "Site Audit"]
+    },
+    {
+      id: "custom-site",
+      name: "Custom Website",
+      description: "Connect your custom-built website or web application with our API for SEO optimization.",
+      icon: Code,
+      url: "/dashboard/custom-site",
+      status: "available",
+      features: ["API Integration", "Content Optimization", "SEO Analytics"]
     },
     {
       id: "wordpress",
@@ -171,7 +179,6 @@ export default function Integrations() {
           </TabsContent>
           
           <TabsContent value="insights">
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Card className="bg-gradient-to-br from-indigo-50 to-pink-50 dark:from-indigo-950/30 dark:to-pink-950/30 border-muted/40">
                 <CardHeader className="pb-2">
@@ -225,7 +232,6 @@ export default function Integrations() {
               </Card>
             </div>
             
-            {/* Trending Keywords Card */}
             <Card className="border-muted/40 mb-6">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -261,7 +267,6 @@ export default function Integrations() {
   );
 }
 
-// Helper component for trending keywords icon
 function TrendingKeywords(props) {
   return (
     <svg

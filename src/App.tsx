@@ -10,7 +10,6 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
 import routes from './routes';
 import './App.css';
-import ApiIntegrations from './pages/ApiIntegrations';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,16 +76,6 @@ function App() {
                     );
                   }
                 })}
-                <Route path="/dashboard/integrations" element={
-                  <ProtectedRoute>
-                    <ApiIntegrations />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dashboard/api-integrations" element={
-                  <ProtectedRoute>
-                    <ApiIntegrations />
-                  </ProtectedRoute>
-                } />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <Toaster richColors closeButton position="top-right" />

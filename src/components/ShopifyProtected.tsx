@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import UpgradePrompt from './UpgradePrompt';
+import { useLocation } from 'react-router-dom';
 
 interface ShopifyProtectedProps {
   children: React.ReactNode;
@@ -10,19 +11,22 @@ interface ShopifyProtectedProps {
 export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
   const { isPro, loading } = useSubscription();
   const [isChecking, setIsChecking] = useState(true);
+  const location = useLocation();
   
   // Check if we're in a development/test environment
   const isTestMode = import.meta.env.DEV || window.location.hostname === 'localhost';
 
-  // Check if current page is the Shopify connection page
-  const isShopifyConnectionPage = window.location.pathname.includes('/dashboard/api-integrations') || 
-                                 window.location.pathname.includes('/dashboard/integrations');
+  // Check if current page is the Shopify connection page or API integrations page
+  const isIntegrationPage = 
+    location.pathname.includes('/dashboard/api-integrations') || 
+    location.pathname.includes('/dashboard/integrations') || 
+    location.pathname.includes('/dashboard/custom-site');
 
   useEffect(() => {
     // Set a timeout to prevent infinite loading state
     const checkingTimeout = setTimeout(() => {
       setIsChecking(false);
-    }, 2000);
+    }, 1000); // Reduced from 2000ms for faster response
 
     if (!loading) {
       setIsChecking(false);
@@ -34,9 +38,9 @@ export const ShopifyProtected = ({ children }: ShopifyProtectedProps) => {
     };
   }, [loading]);
 
-  // Always grant access in development/test mode or on the connection page
-  if (isTestMode || isShopifyConnectionPage) {
-    console.log('Development mode or connection page: bypassing subscription check for Shopify features');
+  // Always grant access in development/test mode or on integration pages
+  if (isTestMode || isIntegrationPage) {
+    console.log('Development mode or integration page: bypassing subscription check for Shopify/integration features');
     return <>{children}</>;
   }
 

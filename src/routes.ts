@@ -4,15 +4,17 @@ import Login from "@/pages/Login";
 import Research from "@/pages/Research";
 import ShopifyStores from "@/pages/ShopifyStores";
 import ShopifyStore from "@/pages/ShopifyStore";
+import ShopifyCallback from "@/pages/ShopifyCallback";
 import Integrations from "@/pages/Integrations";
 import ContentBriefs from "@/pages/ContentBriefs";
-import Index from "@/pages/Index"; // Import Index component correctly
-import ApiIntegrations from "@/pages/ApiIntegrations"; // Add missing import
+import Index from "@/pages/Index";
+import ApiIntegrations from "@/pages/ApiIntegrations";
+import CustomSiteIntegration from "@/pages/CustomSiteIntegration";
 
 const routes = [
   {
     path: "/",
-    component: Index, // Use Index component for home route
+    component: Index,
     protected: false
   },
   {
@@ -27,12 +29,12 @@ const routes = [
   },
   {
     path: "/register",
-    component: Login, // Temporarily use Login for register route
+    component: Login,
     protected: false
   },
   {
     path: "/password-reset",
-    component: Login, // Temporarily use Login for password-reset route
+    component: Login,
     protected: false
   },
   {
@@ -51,6 +53,11 @@ const routes = [
     protected: true
   },
   {
+    path: "/shopify-callback",
+    component: ShopifyCallback, 
+    protected: false
+  },
+  {
     path: "/dashboard/integrations",
     component: Integrations,
     protected: true
@@ -58,6 +65,11 @@ const routes = [
   {
     path: "/dashboard/api-integrations",
     component: ApiIntegrations,
+    protected: true
+  },
+  {
+    path: "/dashboard/custom-site",
+    component: CustomSiteIntegration,
     protected: true
   },
   {
