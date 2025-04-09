@@ -10,6 +10,7 @@ import ContentBriefs from "@/pages/ContentBriefs";
 import Index from "@/pages/Index";
 import ApiIntegrations from "@/pages/ApiIntegrations";
 import CustomSiteIntegration from "@/pages/CustomSiteIntegration";
+import Workspaces from "@/pages/Workspaces";
 
 const routes = [
   {
@@ -75,6 +76,11 @@ const routes = [
   {
     path: "/dashboard/content-briefs",
     component: ContentBriefs,
+    protected: true
+  },
+  {
+    path: "/dashboard/workspaces",
+    component: Workspaces,
     protected: true
   }
 ];

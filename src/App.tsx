@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './contexts/AuthContext';
+import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
 import routes from './routes';
@@ -36,51 +37,53 @@ function App() {
     <ThemeProvider defaultTheme="light" storageKey="seo-wizard-ui-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Router>
-            <div className="app-container full-width full-height">
-              <Routes>
-                {routes.map((route) => {
-                  if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:storeId') {
-                    return (
-                      <Route
-                        key={route.path}
-                        path={route.path}
-                        element={
-                          <ProtectedRoute>
-                            <ShopifyProtected>
+          <WorkspaceProvider>
+            <Router>
+              <div className="app-container full-width full-height">
+                <Routes>
+                  {routes.map((route) => {
+                    if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:storeId') {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={
+                            <ProtectedRoute>
+                              <ShopifyProtected>
+                                <route.component />
+                              </ShopifyProtected>
+                            </ProtectedRoute>
+                          }
+                        />
+                      );
+                    } else if (route.protected) {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={
+                            <ProtectedRoute>
                               <route.component />
-                            </ShopifyProtected>
-                          </ProtectedRoute>
-                        }
-                      />
-                    );
-                  } else if (route.protected) {
-                    return (
-                      <Route
-                        key={route.path}
-                        path={route.path}
-                        element={
-                          <ProtectedRoute>
-                            <route.component />
-                          </ProtectedRoute>
-                        }
-                      />
-                    );
-                  } else {
-                    return (
-                      <Route
-                        key={route.path}
-                        path={route.path}
-                        element={<route.component />}
-                      />
-                    );
-                  }
-                })}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-              <Toaster richColors closeButton position="top-right" />
-            </div>
-          </Router>
+                            </ProtectedRoute>
+                          }
+                        />
+                      );
+                    } else {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={<route.component />}
+                        />
+                      );
+                    }
+                  })}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                <Toaster richColors closeButton position="top-right" />
+              </div>
+            </Router>
+          </WorkspaceProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

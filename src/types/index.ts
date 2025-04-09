@@ -42,3 +42,14 @@ export interface OutlineItem {
   score?: number;
   children?: OutlineItem[];
 }
+
+// New Workspace interface
+export interface Workspace {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  ownerId: string;
+  isDefault?: boolean;
+}

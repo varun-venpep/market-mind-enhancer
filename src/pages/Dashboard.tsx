@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, TrendingUp, FileText, BookOpen, Filter } from "lucide-react";
+import { Plus, Search, FileText, Filter, LayoutGrid } from "lucide-react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { DashboardStats } from "@/components/Dashboard/DashboardStats";
 import { ContentBriefSkeleton } from "@/components/Dashboard/ContentBriefSkeleton";
 import { CreateBriefDialog } from "@/components/Dashboard/CreateBriefDialog";
 import { ContentBrief } from "@/types";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 const mockBriefs: ContentBrief[] = [
   {
@@ -52,6 +53,7 @@ const mockBriefs: ContentBrief[] = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { currentWorkspace } = useWorkspace();
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -68,9 +70,18 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome back</h1>
-              <p className="text-muted-foreground">Here's an overview of your content strategy</p>
+              <p className="text-muted-foreground">
+                Working in <span className="font-medium text-primary">{currentWorkspace?.name}</span> workspace
+              </p>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
+              <Button 
+                onClick={() => navigate('/dashboard/workspaces')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <LayoutGrid className="h-4 w-4" /> Workspaces
+              </Button>
               <Button 
                 onClick={() => setIsCreateDialogOpen(true)}
                 className="gradient-button w-full md:w-auto"
@@ -125,9 +136,9 @@ const Dashboard = () => {
                 ) : (
                   <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
                     <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">No briefs found</h3>
+                    <h3 className="text-lg font-medium">No briefs found in this workspace</h3>
                     <p className="text-muted-foreground mt-2 mb-4">
-                      Get started by creating your first content brief
+                      Get started by creating your first content brief in the {currentWorkspace?.name} workspace
                     </p>
                     <Button 
                       onClick={() => setIsCreateDialogOpen(true)}
