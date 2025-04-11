@@ -24,6 +24,11 @@ const theme = {
       style: undefined,
       target: undefined,
       role: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
     },
     styles: {
       variants: {}
@@ -44,6 +49,12 @@ const theme = {
       style: undefined,
       role: undefined,
       tabIndex: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
@@ -66,6 +77,12 @@ const theme = {
       style: undefined,
       role: undefined,
       tabIndex: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
@@ -86,6 +103,12 @@ const theme = {
       style: undefined,
       role: undefined,
       tabIndex: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
@@ -107,6 +130,12 @@ const theme = {
       style: undefined,
       role: undefined,
       tabIndex: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
@@ -135,6 +164,13 @@ const theme = {
       style: undefined,
       role: undefined,
       tabIndex: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
+      form: undefined,
+      pattern: undefined,
     },
     styles: {
       variants: {}
@@ -161,6 +197,11 @@ const theme = {
       lang: undefined,
       style: undefined,
       role: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
     },
     styles: {
       variants: {}
@@ -195,6 +236,13 @@ const theme = {
       media: undefined,
       method: undefined,
       style: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
+      form: undefined,
+      pattern: undefined,
     },
     styles: {
       variants: {}
@@ -217,6 +265,14 @@ const theme = {
       method: undefined,
       min: undefined,
       style: undefined,
+      string: undefined,
+      filter: undefined,
+      mask: undefined,
+      path: undefined,
+      key: undefined,
+      role: undefined,
+      tabIndex: undefined,
+      clipPath: undefined,
     },
   },
   checkbox: {
@@ -241,6 +297,13 @@ const theme = {
       max: undefined,
       min: undefined,
       style: undefined,
+      slot: undefined,
+      key: undefined,
+      defaultChecked: undefined,
+      defaultValue: undefined,
+      suppressContentEditableWarning: undefined,
+      form: undefined,
+      pattern: undefined,
     },
     styles: {
       variants: {}
