@@ -9,7 +9,7 @@ import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
 import MaterialThemeProvider from './components/Theme/MaterialThemeProvider';
-import { routes } from './routes';
+import routes from './routes';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -42,8 +42,6 @@ function App() {
               <div className="app-container full-width full-height">
                 <Routes>
                   {routes.map((route) => {
-                    const Element = route.element;
-                    
                     if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:storeId') {
                       return (
                         <Route
@@ -52,20 +50,20 @@ function App() {
                           element={
                             <ProtectedRoute>
                               <ShopifyProtected>
-                                <Element />
+                                <route.component />
                               </ShopifyProtected>
                             </ProtectedRoute>
                           }
                         />
                       );
-                    } else if (route.path.startsWith('/dashboard')) {
+                    } else if (route.protected) {
                       return (
                         <Route
                           key={route.path}
                           path={route.path}
                           element={
                             <ProtectedRoute>
-                              <Element />
+                              <route.component />
                             </ProtectedRoute>
                           }
                         />
@@ -75,7 +73,7 @@ function App() {
                         <Route
                           key={route.path}
                           path={route.path}
-                          element={<Element />}
+                          element={<route.component />}
                         />
                       );
                     }

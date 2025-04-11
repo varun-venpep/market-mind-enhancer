@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { 
@@ -17,12 +17,9 @@ import {
   Select,
   Option,
   Radio,
-  Chip,
 } from "@material-tailwind/react";
-import { ArrowLeft, FileText, Plus, Save, RefreshCw, Check, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Save } from "lucide-react";
 import { useToast } from '@/components/ui/use-toast';
-import { generateContent } from '@/services/geminiApi';
-import { Article } from '@/types';
 
 const CampaignDetail = () => {
   const { campaignId } = useParams();
@@ -41,15 +38,6 @@ const CampaignDetail = () => {
     formality: "neutral"
   });
 
-  // Articles state
-  const [articles, setArticles] = useState<Article[]>([]);
-  
-  // Article generation state
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Mock keywords for demo
-  const mockKeywords = ["gardening", "beginners", "plants", "easy gardening"];
-
   // Handle preferences change
   const handlePreferencesChange = (field, value) => {
     setPreferences({
@@ -67,120 +55,6 @@ const CampaignDetail = () => {
       title: "Preferences Saved",
       description: "Your article preferences have been saved successfully.",
     });
-  };
-
-  // Handle article generation
-  const handleGenerateArticle = async () => {
-    try {
-      // Show generating state
-      setIsGenerating(true);
-      setActiveTab("activity");
-      
-      // Create a new draft article - using proper literal type for status
-      const newArticle: Article = {
-        id: `article-${Date.now()}`,
-        keywords: mockKeywords,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        workspaceId: "workspace-1", // Hardcoded for demo
-        campaignId: campaignId || "campaign-1",
-        status: 'in-progress', // Using literal type from Article interface
-      };
-      
-      // Add the article to the list
-      setArticles(prev => [newArticle, ...prev]);
-      
-      // Wait for 2 seconds to simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Use the geminiApi service to generate content (mock for now)
-      const prompt = `Write an SEO article about ${mockKeywords.join(", ")} with these specifications:
-        - Language: ${preferences.language}
-        - Target audience: Readers from ${preferences.targetCountry === 'us' ? 'United States' : 
-          preferences.targetCountry === 'uk' ? 'United Kingdom' : 
-          preferences.targetCountry === 'au' ? 'Australia' : 
-          preferences.targetCountry === 'ca' ? 'Canada' : 
-          preferences.targetCountry === 'br' ? 'Brazil' : 'Other countries'}
-        - Tone of voice: ${preferences.toneOfVoice}
-        - Point of view: ${preferences.pointOfView.replace('_', ' ')}
-        - Formality: ${preferences.formality}
-        
-        Format:
-        Title: [Create a catchy title]
-        Content: [Write 2-3 paragraphs]
-      `;
-      
-      // Since we don't want to make actual API calls in this example,
-      // we'll create a mock response instead of calling generateContent(prompt)
-      const mockTitle = preferences.toneOfVoice === 'funny' 
-        ? "Why Plants Keep Ghosting You: A Beginner's Guide to Gardening"
-        : preferences.toneOfVoice === 'professional'
-        ? "Essential Gardening Techniques for Novice Horticulturists"
-        : "Gardening 101: Getting Started with Your First Plants";
-      
-      const mockContent = `In this guide to ${mockKeywords.join(", ")}, we'll explore how beginners can create a thriving garden without the usual frustrations.
-        
-        ${preferences.formality === 'formal' 
-          ? "It is essential that one understands the fundamental requirements of plant cultivation. The process commences with the selection of appropriate specimens for one's geographical location and available space."
-          : preferences.formality === 'informal'
-          ? "So you wanna grow some plants? Awesome! First thing you gotta do is pick the right plants for where you live and the space you've got."
-          : "To start your gardening journey, first select plants that thrive in your climate and fit your available space."
-        }
-        
-        ${preferences.pointOfView === 'first_person_singular'
-          ? "I've found that the key to successful gardening is consistent care. When I first started, I made the mistake of irregular watering, which led to disappointing results."
-          : preferences.pointOfView === 'first_person_plural'
-          ? "We've found that the key to successful gardening is consistent care. When we first started, we made the mistake of irregular watering, which led to disappointing results."
-          : preferences.pointOfView === 'second_person'
-          ? "You'll find that the key to successful gardening is consistent care. When you first start, you might make the mistake of irregular watering, which leads to disappointing results."
-          : "The key to successful gardening is consistent care. Many beginners make the mistake of irregular watering, which leads to disappointing results."
-        }`;
-      
-      // Update the article with the generated content - making sure to use proper literal type for status
-      const updatedArticles = articles.map(article => 
-        article.id === newArticle.id 
-          ? { 
-              ...article, 
-              title: mockTitle,
-              content: mockContent,
-              status: 'completed' as const, // Using literal type with type assertion
-              updatedAt: new Date().toISOString()
-            } 
-          : article
-      );
-      
-      setArticles(updatedArticles);
-      
-      // Show success toast
-      toast({
-        title: "Article Generated",
-        description: "Your article has been successfully created.",
-      });
-    } catch (error) {
-      console.error("Error generating article:", error);
-      
-      // Update the article with error status - using proper literal type
-      const updatedArticles = articles.map(article => 
-        article.id === articles[0]?.id
-          ? { 
-              ...article, 
-              status: 'draft' as const, // Using literal type with type assertion
-              updatedAt: new Date().toISOString()
-            } 
-          : article
-      );
-      
-      setArticles(updatedArticles);
-      
-      // Show error toast
-      toast({
-        title: "Generation Failed",
-        description: "There was an error generating your article. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
   };
   
   return (
@@ -232,22 +106,13 @@ const CampaignDetail = () => {
               </Typography>
             </div>
             <Button 
-              onClick={handleGenerateArticle}
+              onClick={() => navigate('/dashboard/article-generator')}
               className="mt-4 md:mt-0 bg-gradient-to-r from-blue-600 to-blue-500"
               placeholder={null}
               onPointerEnterCapture={() => {}}
               onPointerLeaveCapture={() => {}}
-              disabled={isGenerating}
             >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Generating...
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" /> Generate Article
-                </>
-              )}
+              <Plus className="mr-2 h-4 w-4" /> Add Article
             </Button>
           </div>
           
@@ -265,15 +130,6 @@ const CampaignDetail = () => {
                 onPointerLeaveCapture={() => {}}
               >
                 Articles
-              </Tab>
-              <Tab 
-                key="activity" 
-                value="activity"
-                placeholder={null}
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-              >
-                Activity
               </Tab>
               <Tab 
                 key="preferences" 
@@ -330,219 +186,28 @@ const CampaignDetail = () => {
                     onPointerEnterCapture={() => {}}
                     onPointerLeaveCapture={() => {}}
                   >
-                    {articles.filter(article => article.status === 'completed').length > 0 ? (
-                      <div className="space-y-4">
-                        {articles
-                          .filter(article => article.status === 'completed')
-                          .map(article => (
-                            <Card key={article.id} className="overflow-hidden"
-                              placeholder={null}
-                              onPointerEnterCapture={() => {}}
-                              onPointerLeaveCapture={() => {}}
-                            >
-                              <CardBody className="p-4"
-                                placeholder={null}
-                                onPointerEnterCapture={() => {}}
-                                onPointerLeaveCapture={() => {}}
-                              >
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <Typography 
-                                      variant="h6" 
-                                      color="blue-gray"
-                                      placeholder={null}
-                                      onPointerEnterCapture={() => {}}
-                                      onPointerLeaveCapture={() => {}}
-                                    >
-                                      {article.title}
-                                    </Typography>
-                                    <div className="flex flex-wrap gap-2 mt-2 mb-3">
-                                      {article.keywords.map(keyword => (
-                                        <Chip 
-                                          key={keyword} 
-                                          value={keyword} 
-                                          size="sm" 
-                                          variant="outlined" 
-                                          color="blue" 
-                                          className="text-xs"
-                                        />
-                                      ))}
-                                    </div>
-                                    <Typography 
-                                      variant="small" 
-                                      color="blue-gray" 
-                                      className="whitespace-pre-line"
-                                      placeholder={null}
-                                      onPointerEnterCapture={() => {}}
-                                      onPointerLeaveCapture={() => {}}
-                                    >
-                                      {article.content?.substring(0, 200)}...
-                                    </Typography>
-                                  </div>
-                                  <Chip 
-                                    value="Completed" 
-                                    size="sm" 
-                                    color="green"
-                                    icon={<Check className="h-3 w-3" />}
-                                  />
-                                </div>
-                              </CardBody>
-                            </Card>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <FileText className="h-16 w-16 text-blue-500/30 mb-4" />
-                        <Typography 
-                          variant="h6" 
-                          color="blue-gray"
-                          placeholder={null}
-                          onPointerEnterCapture={() => {}}
-                          onPointerLeaveCapture={() => {}}
-                        >
-                          No Articles Yet
-                        </Typography>
-                        <Typography 
-                          variant="small" 
-                          color="blue-gray" 
-                          className="mt-1 max-w-xs"
-                          placeholder={null}
-                          onPointerEnterCapture={() => {}}
-                          onPointerLeaveCapture={() => {}}
-                        >
-                          Click on "Generate Article" to create your first article for this campaign.
-                        </Typography>
-                      </div>
-                    )}
-                  </CardBody>
-                </Card>
-              </TabPanel>
-              
-              <TabPanel key="activity" value="activity">
-                <Card
-                  placeholder={null}
-                  onPointerEnterCapture={() => {}}
-                  onPointerLeaveCapture={() => {}}
-                >
-                  <CardHeader
-                    variant="gradient"
-                    color="blue"
-                    className="mb-2 p-4"
-                    placeholder={null}
-                    onPointerEnterCapture={() => {}}
-                    onPointerLeaveCapture={() => {}}
-                  >
-                    <Typography 
-                      variant="h5" 
-                      color="white"
-                      placeholder={null}
-                      onPointerEnterCapture={() => {}}
-                      onPointerLeaveCapture={() => {}}
-                    >
-                      Activity Feed
-                    </Typography>
-                    <Typography 
-                      variant="small" 
-                      color="white" 
-                      className="opacity-80"
-                      placeholder={null}
-                      onPointerEnterCapture={() => {}}
-                      onPointerLeaveCapture={() => {}}
-                    >
-                      Recent article generation activity
-                    </Typography>
-                  </CardHeader>
-                  <CardBody
-                    placeholder={null}
-                    onPointerEnterCapture={() => {}}
-                    onPointerLeaveCapture={() => {}}
-                  >
-                    {articles.length > 0 ? (
-                      <div className="space-y-4">
-                        {articles.map(article => (
-                          <Card key={article.id} className="overflow-hidden"
-                            placeholder={null}
-                            onPointerEnterCapture={() => {}}
-                            onPointerLeaveCapture={() => {}}
-                          >
-                            <CardBody className="p-4"
-                              placeholder={null}
-                              onPointerEnterCapture={() => {}}
-                              onPointerLeaveCapture={() => {}}
-                            >
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center">
-                                  {article.status === 'in-progress' ? (
-                                    <RefreshCw className="h-5 w-5 text-blue-500 mr-3 animate-spin" />
-                                  ) : article.status === 'completed' ? (
-                                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                                  ) : (
-                                    <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
-                                  )}
-                                  <div>
-                                    <Typography 
-                                      variant="h6" 
-                                      color="blue-gray"
-                                      placeholder={null}
-                                      onPointerEnterCapture={() => {}}
-                                      onPointerLeaveCapture={() => {}}
-                                    >
-                                      {article.title || 'Article Generation'}
-                                    </Typography>
-                                    <div className="flex items-center">
-                                      <Clock className="h-3 w-3 text-blue-gray-500 mr-1" />
-                                      <Typography 
-                                        variant="small" 
-                                        color="blue-gray"
-                                        placeholder={null}
-                                        onPointerEnterCapture={() => {}}
-                                        onPointerLeaveCapture={() => {}}
-                                      >
-                                        {new Date(article.updatedAt).toLocaleString()}
-                                      </Typography>
-                                    </div>
-                                  </div>
-                                </div>
-                                <Chip 
-                                  value={
-                                    article.status === 'in-progress' ? 'Generating' :
-                                    article.status === 'completed' ? 'Completed' : 'Failed'
-                                  } 
-                                  size="sm" 
-                                  color={
-                                    article.status === 'in-progress' ? 'blue' :
-                                    article.status === 'completed' ? 'green' : 'red'
-                                  }
-                                />
-                              </div>
-                            </CardBody>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <Clock className="h-16 w-16 text-blue-500/30 mb-4" />
-                        <Typography 
-                          variant="h6" 
-                          color="blue-gray"
-                          placeholder={null}
-                          onPointerEnterCapture={() => {}}
-                          onPointerLeaveCapture={() => {}}
-                        >
-                          No Activity Yet
-                        </Typography>
-                        <Typography 
-                          variant="small" 
-                          color="blue-gray" 
-                          className="mt-1 max-w-xs"
-                          placeholder={null}
-                          onPointerEnterCapture={() => {}}
-                          onPointerLeaveCapture={() => {}}
-                        >
-                          When you generate articles, your activity will appear here.
-                        </Typography>
-                      </div>
-                    )}
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <FileText className="h-16 w-16 text-blue-500/30 mb-4" />
+                      <Typography 
+                        variant="h6" 
+                        color="blue-gray"
+                        placeholder={null}
+                        onPointerEnterCapture={() => {}}
+                        onPointerLeaveCapture={() => {}}
+                      >
+                        No Articles Yet
+                      </Typography>
+                      <Typography 
+                        variant="small" 
+                        color="blue-gray" 
+                        className="mt-1 max-w-xs"
+                        placeholder={null}
+                        onPointerEnterCapture={() => {}}
+                        onPointerLeaveCapture={() => {}}
+                      >
+                        Click on "Add Article" to create your first article for this campaign.
+                      </Typography>
+                    </div>
                   </CardBody>
                 </Card>
               </TabPanel>

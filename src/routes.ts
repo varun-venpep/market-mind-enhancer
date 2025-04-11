@@ -1,71 +1,106 @@
 
-import { RouteObject } from 'react-router-dom';
-import { Main } from "./pages/Main";
-import Login from "./pages/Login";
-import { Register } from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import ContentBrief from "./pages/ContentBrief";
-import ContentBriefList from "./pages/ContentBriefList";
-import RelatedKeywords from "./pages/RelatedKeywords";
-import ContentBriefEditor from "./pages/ContentBriefEditor";
-import { Settings } from "./pages/Settings";
-import ArticleGenerator from "./pages/ArticleGenerator";
-import Campaigns from "./pages/Campaigns";
-import CampaignDetail from "./pages/CampaignDetail";
-import ActivityFeed from './pages/ActivityFeed';
+import Dashboard from "@/pages/Dashboard";
+import Login from "@/pages/Login";
+import Research from "@/pages/Research";
+import ShopifyStores from "@/pages/ShopifyStores";
+import ShopifyStore from "@/pages/ShopifyStore";
+import ShopifyCallback from "@/pages/ShopifyCallback";
+import Integrations from "@/pages/Integrations";
+import ContentBriefs from "@/pages/ContentBriefs";
+import Index from "@/pages/Index";
+import ApiIntegrations from "@/pages/ApiIntegrations";
+import CustomSiteIntegration from "@/pages/CustomSiteIntegration";
+import Workspaces from "@/pages/Workspaces";
+import ArticleGenerator from "@/pages/ArticleGenerator";
+import Campaigns from "@/pages/Campaigns";
+import CampaignDetail from "@/pages/CampaignDetail";
 
-// Define routes for the application
-export const routes = [
+const routes = [
   {
-    path: '/',
-    element: Main
+    path: "/",
+    component: Index,
+    protected: false
   },
   {
-    path: '/login',
-    element: Login
+    path: "/dashboard",
+    component: Dashboard,
+    protected: true
   },
   {
-    path: '/register',
-    element: Register
+    path: "/login",
+    component: Login,
+    protected: false
   },
   {
-    path: '/dashboard',
-    element: Dashboard
+    path: "/register",
+    component: Login,
+    protected: false
   },
   {
-    path: '/dashboard/content-brief/:id',
-    element: ContentBrief
+    path: "/password-reset",
+    component: Login,
+    protected: false
   },
   {
-    path: '/dashboard/content-brief-list',
-    element: ContentBriefList
+    path: "/dashboard/research",
+    component: Research,
+    protected: true
   },
   {
-    path: '/dashboard/related-keywords',
-    element: RelatedKeywords
+    path: "/dashboard/shopify",
+    component: ShopifyStores,
+    protected: true
   },
   {
-    path: '/dashboard/content-brief-editor',
-    element: ContentBriefEditor
+    path: "/dashboard/shopify/:storeId",
+    component: ShopifyStore,
+    protected: true
   },
   {
-    path: '/dashboard/settings',
-    element: Settings
+    path: "/shopify-callback",
+    component: ShopifyCallback, 
+    protected: false
   },
   {
-    path: '/dashboard/article-generator',
-    element: ArticleGenerator
+    path: "/dashboard/integrations",
+    component: Integrations,
+    protected: true
   },
   {
-    path: '/dashboard/campaigns',
-    element: Campaigns
+    path: "/dashboard/api-integrations",
+    component: ApiIntegrations,
+    protected: true
   },
   {
-    path: '/dashboard/campaigns/:campaignId',
-    element: CampaignDetail
+    path: "/dashboard/custom-site",
+    component: CustomSiteIntegration,
+    protected: true
   },
   {
-    path: '/dashboard/activity',
-    element: ActivityFeed
+    path: "/dashboard/content-briefs",
+    component: ContentBriefs,
+    protected: true
+  },
+  {
+    path: "/dashboard/workspaces",
+    component: Workspaces,
+    protected: true
+  },
+  {
+    path: "/dashboard/article-generator",
+    component: ArticleGenerator,
+    protected: true
+  },
+  {
+    path: "/dashboard/campaigns",
+    component: Campaigns,
+    protected: true
+  },
+  {
+    path: "/dashboard/campaigns/:campaignId",
+    component: CampaignDetail,
+    protected: true
   }
 ];
+
+export default routes;
