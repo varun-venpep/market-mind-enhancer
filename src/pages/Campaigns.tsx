@@ -1,28 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import DashboardLayout from "@/components/Dashboard/DashboardLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import { ArrowLeft, FileText, Plus, Search } from "lucide-react";
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Campaign } from '@/types';
-
-// Import wrapped Material Tailwind components
-import {
-  MTCard as Card,
-  MTCardBody as CardBody,
-  MTCardHeader as CardHeader,
-  MTTypography as Typography,
-  MTButton as Button,
-  MTInput as Input,
-  MTChip as Chip,
-} from "@/components/MaterialTailwindWrapper";
-
-// Icons
-import {
-  ArrowLeftIcon,
-  DocumentTextIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
 
 const Campaigns = () => {
   const navigate = useNavigate();
@@ -61,48 +48,42 @@ const Campaigns = () => {
   );
   
   return (
-    <div className="min-h-screen bg-dark-950 text-white">
+    <DashboardLayout>
       <div className="container mx-auto py-8">
         <div className="flex flex-col gap-6">
           <div className="flex items-center">
             <Button 
-              variant="text" 
+              variant="ghost" 
               size="sm" 
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2 text-white hover:bg-primary-500/10"
+              className="mr-4"
             >
-              <ArrowLeftIcon className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 mr-1" />
               Back to Dashboard
             </Button>
           </div>
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <Typography variant="h2" color="white" className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
-                Campaigns
-              </Typography>
-              <Typography variant="paragraph" color="blue-gray" className="mt-1">
+              <h1 className="text-3xl font-bold gradient-text">Campaigns</h1>
+              <p className="text-muted-foreground mt-1">
                 Manage your article campaigns and track your SEO progress
-              </Typography>
+              </p>
             </div>
             <Button 
               onClick={() => navigate('/dashboard/article-generator')}
-              className="mt-4 md:mt-0 flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:shadow-lg hover:shadow-primary-500/20 transition-all"
+              className="gradient-button mt-4 md:mt-0"
             >
-              <PlusIcon className="h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" />
               New Article
             </Button>
           </div>
           
-          <div className="relative max-w-md mb-6">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-blue-gray-400" />
-            </div>
-            <Input
-              type="search"
-              label="Search campaigns..."
-              className="pl-10 border-dark-700 bg-dark-800 text-white"
-              containerProps={{ className: "min-w-[288px]" }}
+          <div className="relative w-full max-w-md mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search campaigns..." 
+              className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -111,13 +92,15 @@ const Campaigns = () => {
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array(3).fill(0).map((_, i) => (
-                <Card key={i} className="bg-dark-800 border border-dark-700 animate-pulse">
-                  <CardHeader className="h-16 bg-dark-700">
+                <Card key={i} className="animate-pulse">
+                  <CardHeader>
+                    <div className="h-6 bg-muted rounded-md w-3/4"></div>
+                    <div className="h-4 bg-muted rounded-md w-1/2 mt-2"></div>
                   </CardHeader>
-                  <CardBody>
-                    <div className="h-4 bg-dark-700 rounded-md w-3/4 mb-2"></div>
-                    <div className="h-4 bg-dark-700 rounded-md w-1/2"></div>
-                  </CardBody>
+                  <CardContent>
+                    <div className="h-4 bg-muted rounded-md w-full mb-2"></div>
+                    <div className="h-4 bg-muted rounded-md w-3/4"></div>
+                  </CardContent>
                 </Card>
               ))}
             </div>
@@ -126,67 +109,54 @@ const Campaigns = () => {
               {filteredCampaigns.map((campaign) => (
                 <Card 
                   key={campaign.id}
-                  className="bg-dark-800 border border-dark-700 hover:shadow-md hover:shadow-primary-500/10 transition-all cursor-pointer"
+                  className="hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => navigate(`/dashboard/campaigns/${campaign.id}`)}
                 >
-                  <CardHeader
-                    color="transparent"
-                    floated={false}
-                    shadow={false}
-                    className="px-6 pt-6 pb-0"
-                  >
-                    <Typography variant="h5" color="white" className="mb-1">
-                      {campaign.name}
-                    </Typography>
-                    <Typography variant="small" color="blue-gray">
-                      {campaign.description}
-                    </Typography>
+                  <CardHeader>
+                    <CardTitle>{campaign.name}</CardTitle>
+                    <CardDescription>{campaign.description}</CardDescription>
                   </CardHeader>
-                  <CardBody className="px-6 pt-4">
+                  <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <DocumentTextIcon className="h-4 w-4 text-blue-gray-400" />
-                        <Typography variant="small" color="blue-gray">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
                           {campaign.articleCount || 0} Articles
-                        </Typography>
+                        </span>
                       </div>
-                      <Chip
-                        value={new Date(campaign.createdAt).toLocaleDateString()}
-                        variant="outlined"
-                        className="border-dark-600 text-blue-gray-400 text-xs"
-                      />
+                      <Badge variant="outline">
+                        {new Date(campaign.createdAt).toLocaleDateString()}
+                      </Badge>
                     </div>
-                  </CardBody>
+                  </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <Card className="bg-dark-800 border border-dark-700 shadow-lg">
-              <CardBody className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="rounded-full bg-dark-700 p-3 mb-4">
-                  <DocumentTextIcon className="h-6 w-6 text-blue-gray-400" />
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="rounded-full bg-muted/60 p-3 mb-4">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <Typography variant="h4" color="white" className="mb-2">
-                  No campaigns found
-                </Typography>
-                <Typography color="blue-gray" className="mb-4 max-w-md">
+                <h3 className="text-lg font-medium">No campaigns found</h3>
+                <p className="text-muted-foreground mt-2 mb-4 max-w-md">
                   {searchTerm 
                     ? `We couldn't find any campaigns matching "${searchTerm}". Try a different search term.`
                     : "You don't have any campaigns yet. Create your first article to get started."}
-                </Typography>
+                </p>
                 <Button 
                   onClick={() => navigate('/dashboard/article-generator')}
-                  className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:shadow-lg hover:shadow-primary-500/20 transition-all"
+                  className="gradient-button"
                 >
-                  <PlusIcon className="h-4 w-4" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Article
                 </Button>
-              </CardBody>
+              </CardContent>
             </Card>
           )}
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
