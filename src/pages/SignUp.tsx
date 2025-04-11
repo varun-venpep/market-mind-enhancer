@@ -171,44 +171,18 @@ const SignUp = () => {
       transition={{ duration: 0.5 }}
       className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950"
     >
-      <Card 
-        className="w-full max-w-md shadow-xl"
-        placeholder={null}
-        onPointerEnterCapture={() => {}}
-        onPointerLeaveCapture={() => {}}
-      >
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader
           variant="gradient"
           color="blue"
           className="mb-4 grid h-20 place-items-center"
-          placeholder={null}
-          onPointerEnterCapture={() => {}}
-          onPointerLeaveCapture={() => {}}
         >
-          <Typography 
-            variant="h3" 
-            color="white"
-            placeholder={null}
-            onPointerEnterCapture={() => {}}
-            onPointerLeaveCapture={() => {}}
-          >
+          <Typography variant="h3" color="white">
             Join MarketMind
           </Typography>
         </CardHeader>
-        <CardBody 
-          className="flex flex-col gap-4"
-          placeholder={null}
-          onPointerEnterCapture={() => {}}
-          onPointerLeaveCapture={() => {}}
-        >
-          <Typography 
-            variant="paragraph" 
-            color="blue-gray" 
-            className="text-center"
-            placeholder={null}
-            onPointerEnterCapture={() => {}}
-            onPointerLeaveCapture={() => {}}
-          >
+        <CardBody className="flex flex-col gap-4">
+          <Typography variant="paragraph" color="blue-gray" className="text-center">
             Create your account and start optimizing your content strategy
           </Typography>
           
@@ -220,16 +194,9 @@ const SignUp = () => {
             fullWidth
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isLoading}
-            placeholder={null}
-            onPointerEnterCapture={() => {}}
-            onPointerLeaveCapture={() => {}}
           >
             {isGoogleLoading ? (
-              <Spinner 
-                className="h-4 w-4" 
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-              />
+              <Spinner className="h-4 w-4" />
             ) : (
               <FaGoogle className="h-4 w-4 text-red-500" />
             )}
@@ -238,15 +205,7 @@ const SignUp = () => {
 
           <div className="relative flex py-3">
             <div className="flex-grow border-t my-auto"></div>
-            <Typography 
-              variant="small" 
-              className="mx-4"
-              placeholder={null}
-              onPointerEnterCapture={() => {}}
-              onPointerLeaveCapture={() => {}}
-            >
-              Or continue with email
-            </Typography>
+            <Typography variant="small" className="mx-4">Or continue with email</Typography>
             <div className="flex-grow border-t my-auto"></div>
           </div>
 
@@ -260,20 +219,9 @@ const SignUp = () => {
                 value={formData.email}
                 onChange={handleInputChange}
                 error={!!emailError}
-                crossOrigin={undefined}
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-                shrink={false}
               />
               {emailError && (
-                <Typography 
-                  variant="small" 
-                  color="red" 
-                  className="mt-1"
-                  placeholder={null}
-                  onPointerEnterCapture={() => {}}
-                  onPointerLeaveCapture={() => {}}
-                >
+                <Typography variant="small" color="red" className="mt-1">
                   {emailError}
                 </Typography>
               )}
@@ -288,20 +236,9 @@ const SignUp = () => {
                 value={formData.password}
                 onChange={handleInputChange}
                 error={!!passwordError}
-                crossOrigin={undefined}
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-                shrink={false}
               />
               {passwordError && (
-                <Typography 
-                  variant="small" 
-                  color="red" 
-                  className="mt-1"
-                  placeholder={null}
-                  onPointerEnterCapture={() => {}}
-                  onPointerLeaveCapture={() => {}}
-                >
+                <Typography variant="small" color="red" className="mt-1">
                   {passwordError}
                 </Typography>
               )}
@@ -316,20 +253,9 @@ const SignUp = () => {
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 error={!!confirmPasswordError}
-                crossOrigin={undefined}
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-                shrink={false}
               />
               {confirmPasswordError && (
-                <Typography 
-                  variant="small" 
-                  color="red" 
-                  className="mt-1"
-                  placeholder={null}
-                  onPointerEnterCapture={() => {}}
-                  onPointerLeaveCapture={() => {}}
-                >
+                <Typography variant="small" color="red" className="mt-1">
                   {confirmPasswordError}
                 </Typography>
               )}
@@ -342,19 +268,8 @@ const SignUp = () => {
                 onChange={handleInputChange}
                 color="blue"
                 className="rounded-sm"
-                crossOrigin={undefined}
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-                iconProps={{}}
               />
-              <Typography 
-                variant="small" 
-                color="blue-gray" 
-                className="font-medium"
-                placeholder={null}
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-              >
+              <Typography variant="small" color="blue-gray" className="font-medium">
                 I agree to the{" "}
                 <Link to="/terms" className="text-blue-500 hover:underline">
                   terms of service
@@ -366,13 +281,7 @@ const SignUp = () => {
               </Typography>
             </div>
             {termsError && (
-              <Typography 
-                variant="small" 
-                color="red"
-                placeholder={null}
-                onPointerEnterCapture={() => {}}
-                onPointerLeaveCapture={() => {}}
-              >
+              <Typography variant="small" color="red">
                 {termsError}
               </Typography>
             )}
@@ -382,17 +291,10 @@ const SignUp = () => {
               className="mt-4 bg-gradient-to-r from-blue-600 to-blue-500"
               fullWidth
               disabled={isLoading || isGoogleLoading}
-              placeholder={null}
-              onPointerEnterCapture={() => {}}
-              onPointerLeaveCapture={() => {}}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
-                  <Spinner 
-                    className="h-4 w-4" 
-                    onPointerEnterCapture={() => {}}
-                    onPointerLeaveCapture={() => {}}
-                  />
+                  <Spinner className="h-4 w-4" />
                   <span>Processing...</span>
                 </div>
               ) : (
@@ -401,19 +303,8 @@ const SignUp = () => {
             </Button>
           </form>
         </CardBody>
-        <CardFooter 
-          className="pt-0"
-          placeholder={null}
-          onPointerEnterCapture={() => {}}
-          onPointerLeaveCapture={() => {}}
-        >
-          <Typography 
-            variant="small" 
-            className="text-center mt-4"
-            placeholder={null}
-            onPointerEnterCapture={() => {}}
-            onPointerLeaveCapture={() => {}}
-          >
+        <CardFooter className="pt-0">
+          <Typography variant="small" className="text-center mt-4">
             Already have an account?{" "}
             <Link to="/login" className="text-blue-500 font-medium hover:underline">
               Sign in
