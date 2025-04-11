@@ -1,9 +1,9 @@
 
 import React from "react";
-import { ThemeProvider } from "@material-tailwind/react";
+import { ThemeProvider, MaterialTailwindTheme } from "@material-tailwind/react";
 
 // Define custom theme with all the required properties for Material Tailwind components
-const theme = {
+const theme: MaterialTailwindTheme = {
   typography: {
     defaultProps: {
       placeholder: undefined,
