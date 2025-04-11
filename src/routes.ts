@@ -1,14 +1,14 @@
 
 import { RouteObject } from 'react-router-dom';
 import { Main } from "./pages/Main";
-import { Login } from "./pages/Login";
+import Login from "./pages/Login";
 import { Register } from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ContentBrief from "./pages/ContentBrief";
 import ContentBriefList from "./pages/ContentBriefList";
 import RelatedKeywords from "./pages/RelatedKeywords";
 import ContentBriefEditor from "./pages/ContentBriefEditor";
-import Settings from "./pages/Settings";
+import { Settings } from "./pages/Settings";
 import ArticleGenerator from "./pages/ArticleGenerator";
 import Campaigns from "./pages/Campaigns";
 import CampaignDetail from "./pages/CampaignDetail";
