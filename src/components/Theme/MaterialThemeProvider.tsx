@@ -243,7 +243,6 @@ const theme = {
       suppressContentEditableWarning: undefined,
       form: undefined,
       pattern: undefined,
-      placeholder: undefined,
     },
     styles: {
       variants: {}
@@ -274,7 +273,6 @@ const theme = {
       role: undefined,
       tabIndex: undefined,
       clipPath: undefined,
-      placeholder: undefined,
     },
   },
   checkbox: {
@@ -306,7 +304,6 @@ const theme = {
       suppressContentEditableWarning: undefined,
       form: undefined,
       pattern: undefined,
-      placeholder: undefined,
     },
     styles: {
       variants: {}
