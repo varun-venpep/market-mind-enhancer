@@ -35,9 +35,9 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <MaterialThemeProvider>
-        <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <MaterialThemeProvider>
           <AuthProvider>
             <WorkspaceProvider>
               <Router>
@@ -87,9 +87,9 @@ function App() {
               </Router>
             </WorkspaceProvider>
           </AuthProvider>
-        </QueryClientProvider>
-      </MaterialThemeProvider>
-    </ThemeProvider>
+        </MaterialThemeProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
