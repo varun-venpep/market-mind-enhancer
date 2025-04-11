@@ -56,8 +56,8 @@ const Login = () => {
           description: "You have successfully logged in"
         });
       } else {
-        // Use the login function here, but we'll trigger sign up from the auth context
-        await login(email, password, true); // passing true to indicate signup
+        // Use the login function for signup as well, but modify to handle signup
+        await login(email, password);
         toast({
           title: "Account created",
           description: "Your account has been created successfully"
