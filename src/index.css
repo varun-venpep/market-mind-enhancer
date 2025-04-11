@@ -5,13 +5,13 @@
 
 @layer base {
   :root {
-    --background: 0 0% 10%; /* Slightly lighter background */
+    --background: 0 0% 15%; /* Lighter background for visibility */
     --foreground: 0 0% 100%;
 
-    --card: 0 0% 15%; /* Lighter card background */
+    --card: 0 0% 20%; /* Lighter card background for better contrast */
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 15%;
+    --popover: 0 0% 20%;
     --popover-foreground: 0 0% 100%;
 
     --primary: 162 75% 46%;
@@ -20,17 +20,17 @@
     --secondary: 173 75% 35%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 25%; /* Lighter muted background */
-    --muted-foreground: 215 20.2% 75%; /* Brighter muted text */
+    --muted: 217.2 32.6% 30%; /* Lighter muted background */
+    --muted-foreground: 215 20.2% 80%; /* Brighter muted text */
 
-    --accent: 217.2 32.6% 25%; /* Lighter accent */
+    --accent: 217.2 32.6% 30%; /* Lighter accent */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 40%; /* Brighter destructive */
+    --destructive: 0 62.8% 45%; /* Brighter destructive */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%; /* More visible border */
-    --input: 0 0% 20%;
+    --border: 0 0% 30%; /* More visible border */
+    --input: 0 0% 30%;
     --ring: 162 75% 46%;
     
     --radius: 0.5rem;
@@ -43,7 +43,7 @@
   }
 
   body {
-    @apply bg-zinc-900 text-foreground; /* Now zinc-900 will be properly recognized */
+    @apply bg-dark-900 text-foreground; /* Lightened background */
   }
 }
 

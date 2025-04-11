@@ -34,9 +34,9 @@ export const theme = {
       "500": "#64748b",
       "600": "#475569",
       "700": "#334155",
-      "800": "#222222",
-      "900": "#1a202c",
-      "950": "#000000",
+      "800": "#262626", // Lightened for better visibility
+      "900": "#171717", // Lightened for better visibility
+      "950": "#121212", // Lightened slightly
     },
   },
   fontFamily: {

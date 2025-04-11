@@ -54,9 +54,9 @@ export default withMT({
 					"500": "#6b7280",
 					"600": "#4b5563",
 					"700": "#374151",
-					"800": "#1e1e1e", /* Slightly lighter */
-					"900": "#111827",
-					"950": "#0a0a0a", /* Not pure black */
+					"800": "#262626", /* Lightened for better visibility */
+					"900": "#171717", /* Lightened for better visibility */
+					"950": "#121212", /* Lightened slightly from pure black */
 				},
 				zinc: {
 					"50": "#fafafa",
@@ -71,10 +71,10 @@ export default withMT({
 					"900": "#18181b",
 					"950": "#09090b",
 				},
-				border: "#3A3A3A", /* Lighter border */
-				input: "#3A3A3A",
+				border: "#3f3f46", /* Lighter border for visibility */
+				input: "#3f3f46",
 				ring: "#1DCD9F",
-				background: "#121212",
+				background: "#171717", /* Lightened background */
 				foreground: "#FFFFFF",
 			},
 			borderRadius: {
