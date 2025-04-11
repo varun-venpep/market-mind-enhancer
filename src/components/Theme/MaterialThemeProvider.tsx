@@ -10,6 +10,11 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       textGradient: undefined,
+      color: undefined,
+      variant: undefined,
+      className: undefined,
+      children: undefined,
+      as: undefined,
     },
     styles: {
       variants: {}
@@ -20,6 +25,8 @@ const theme = {
       placeholder: undefined,
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
+      className: undefined,
+      children: undefined,
     },
     styles: {
       variants: {}
@@ -31,6 +38,10 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       floated: false,
+      className: undefined,
+      children: undefined,
+      variant: undefined,
+      color: undefined,
     },
     styles: {
       variants: {}
@@ -41,6 +52,8 @@ const theme = {
       placeholder: undefined,
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
+      className: undefined,
+      children: undefined,
     },
     styles: {
       variants: {}
@@ -52,6 +65,8 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       divider: false,
+      className: undefined,
+      children: undefined,
     },
     styles: {
       variants: {}
@@ -63,6 +78,14 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       fullWidth: false,
+      className: undefined,
+      children: undefined,
+      type: undefined,
+      variant: undefined,
+      color: undefined,
+      onClick: undefined,
+      disabled: undefined,
+      size: undefined,
     },
     styles: {
       variants: {}
@@ -74,6 +97,12 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       fullWidth: false,
+      className: undefined,
+      children: undefined,
+      variant: undefined,
+      color: undefined,
+      size: undefined,
+      onClick: undefined,
     },
     styles: {
       variants: {}
@@ -86,6 +115,16 @@ const theme = {
       onPointerLeaveCapture: undefined,
       shrink: false,
       error: false,
+      className: undefined,
+      label: undefined,
+      type: undefined,
+      value: undefined,
+      onChange: undefined,
+      containerProps: undefined,
+      required: undefined,
+      icon: undefined,
+      size: undefined,
+      name: undefined,
     },
     styles: {
       variants: {}
@@ -95,6 +134,8 @@ const theme = {
     defaultProps: {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
+      className: undefined,
+      color: undefined,
     },
   },
   checkbox: {
@@ -103,6 +144,11 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       iconProps: {},
+      name: undefined,
+      checked: undefined,
+      onChange: undefined,
+      color: undefined,
+      className: undefined,
     },
     styles: {
       variants: {}
