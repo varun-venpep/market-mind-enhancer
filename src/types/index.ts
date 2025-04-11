@@ -76,4 +76,14 @@ export interface Campaign {
   updatedAt: string;
   workspaceId: string;
   articleCount?: number;
+  preferences?: ArticlePreferences;
+}
+
+// New interface for article generation preferences
+export interface ArticlePreferences {
+  language: string;
+  targetCountry: string;
+  toneOfVoice: string;
+  pointOfView: string;
+  formality: string;
 }
