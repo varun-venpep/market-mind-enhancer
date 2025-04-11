@@ -29,6 +29,9 @@ const theme = {
       defaultChecked: undefined,
       defaultValue: undefined,
       suppressContentEditableWarning: undefined,
+      form: undefined,
+      pattern: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
