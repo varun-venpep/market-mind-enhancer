@@ -6,40 +6,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { ArrowLeft, FileText, Plus, Search } from "lucide-react";
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Campaign } from '@/types';
+import { fetchUserCampaigns, createCampaign } from '@/services/articleService';
+import { CreateCampaignDialog } from '@/components/Dashboard/CreateCampaignDialog';
 
 const Campaigns = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { currentWorkspace } = useWorkspace();
   const [isLoading, setIsLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   useEffect(() => {
-    // Simulate loading campaigns from database
-    setIsLoading(true);
-    
-    // In a real app, this would fetch from Supabase
-    setTimeout(() => {
-      // For demo, create a default campaign if none exists
-      const defaultCampaign: Campaign = {
-        id: "default-campaign",
-        name: "Default Campaign",
-        description: "Automatically created campaign for keyword articles",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        workspaceId: currentWorkspace?.id || "",
-        articleCount: 3
-      };
-      
-      setCampaigns([defaultCampaign]);
-      setIsLoading(false);
-    }, 1000);
+    loadCampaigns();
   }, [currentWorkspace]);
+  
+  const loadCampaigns = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchUserCampaigns();
+      setCampaigns(data);
+    } catch (error) {
+      console.error("Error loading campaigns:", error);
+      toast.error("Failed to load campaigns");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleCreateCampaign = async (name: string, description: string) => {
+    try {
+      toast.loading("Creating campaign...");
+      const campaign = await createCampaign(name, description);
+      setCampaigns(prev => [campaign, ...prev]);
+      toast.success("Campaign created successfully");
+      setIsCreateDialogOpen(false);
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      toast.error("Failed to create campaign");
+    }
+  };
   
   // Filter campaigns based on search term
   const filteredCampaigns = campaigns.filter(campaign => 
@@ -70,13 +82,23 @@ const Campaigns = () => {
                 Manage your article campaigns and track your SEO progress
               </p>
             </div>
-            <Button 
-              onClick={() => navigate('/dashboard/article-generator')}
-              className="gradient-button mt-4 md:mt-0"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Article
-            </Button>
+            <div className="flex gap-2 mt-4 md:mt-0">
+              <Button 
+                onClick={() => setIsCreateDialogOpen(true)}
+                variant="outline"
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                New Campaign
+              </Button>
+              <Button 
+                onClick={() => navigate('/dashboard/article-generator')}
+                className="gradient-button"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Article
+              </Button>
+            </div>
           </div>
           
           <div className="relative w-full max-w-md mb-6">
@@ -94,12 +116,14 @@ const Campaigns = () => {
               {Array(3).fill(0).map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardHeader>
-                    <div className="h-6 bg-muted rounded-md w-3/4"></div>
-                    <div className="h-4 bg-muted rounded-md w-1/2 mt-2"></div>
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
                   </CardHeader>
                   <CardContent>
-                    <div className="h-4 bg-muted rounded-md w-full mb-2"></div>
-                    <div className="h-4 bg-muted rounded-md w-3/4"></div>
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -121,11 +145,12 @@ const Campaigns = () => {
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-muted-foreground">
-                          {campaign.articleCount || 0} Articles
+                          {/* We'll fetch the article count in a later update */}
+                          0 Articles
                         </span>
                       </div>
                       <Badge variant="outline">
-                        {new Date(campaign.createdAt).toLocaleDateString()}
+                        {new Date(campaign.created_at).toLocaleDateString()}
                       </Badge>
                     </div>
                   </CardContent>
@@ -142,20 +167,26 @@ const Campaigns = () => {
                 <p className="text-muted-foreground mt-2 mb-4 max-w-md">
                   {searchTerm 
                     ? `We couldn't find any campaigns matching "${searchTerm}". Try a different search term.`
-                    : "You don't have any campaigns yet. Create your first article to get started."}
+                    : "You don't have any campaigns yet. Create your first campaign to organize your content."}
                 </p>
                 <Button 
-                  onClick={() => navigate('/dashboard/article-generator')}
+                  onClick={() => setIsCreateDialogOpen(true)}
                   className="gradient-button"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Article
+                  Create Campaign
                 </Button>
               </CardContent>
             </Card>
           )}
         </div>
       </div>
+
+      <CreateCampaignDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateCampaign}
+      />
     </DashboardLayout>
   );
 };

@@ -1,24 +1,27 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, FileText, Import, PlusCircle } from "lucide-react";
+import { ArrowLeft, FileText, Import, PlusCircle, Sparkles, Loader2 } from "lucide-react";
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { v4 as uuidv4 } from 'uuid';
-import { Campaign, Article } from '@/types';
+import { fetchUserCampaigns, createArticle, generateArticleContent, generateArticleThumbnail, calculateSEOScore } from '@/services/articleService';
+import { Article, Campaign } from '@/types';
+import { supabase } from "@/integrations/supabase/client";
 
 // Form schema for article generation
 const formSchema = z.object({
+  campaignId: z.string().min(1, "Please select a campaign"),
   keywords: z.string().min(1, {
     message: "Please enter at least one keyword."
   }),
@@ -29,75 +32,129 @@ type FormValues = z.infer<typeof formSchema>;
 
 const ArticleGenerator = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
   const { currentWorkspace } = useWorkspace();
   const [activeTab, setActiveTab] = useState("manual");
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const initialCampaignId = location.state?.campaignId || "";
   
   // Setup form with validation
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      campaignId: initialCampaignId,
       keywords: "",
       title: ""
     }
   });
 
-  const onSubmit = (values: FormValues) => {
+  useEffect(() => {
+    const loadCampaigns = async () => {
+      try {
+        const data = await fetchUserCampaigns();
+        setCampaigns(data);
+        
+        // If we don't have an initial campaign and there are campaigns available,
+        // set the first one as default
+        if (!initialCampaignId && data.length > 0 && !form.getValues().campaignId) {
+          form.setValue('campaignId', data[0].id);
+        }
+      } catch (error) {
+        console.error("Error loading campaigns:", error);
+        toast.error("Failed to load campaigns");
+      }
+    };
+    
+    loadCampaigns();
+  }, [initialCampaignId, form]);
+
+  const onSubmit = async (values: FormValues) => {
     try {
+      setIsGenerating(true);
+      
       // Process the keywords
       const keywordArray = values.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
       
       if (keywordArray.length === 0) {
-        toast({
-          title: "No keywords provided",
-          description: "Please enter at least one keyword",
-          variant: "destructive"
-        });
+        toast.error("Please enter at least one keyword");
+        setIsGenerating(false);
         return;
       }
       
-      // Create a default campaign if none exists
-      // In a real app, this would interact with Supabase
-      const defaultCampaign: Campaign = {
-        id: uuidv4(),
-        name: "Default Campaign",
-        description: "Automatically created campaign for keyword articles",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        workspaceId: currentWorkspace?.id || ""
-      };
+      // Generate a title if not provided
+      let title = values.title;
+      if (!title) {
+        // Use the first keyword as the title or generate one
+        title = keywordArray[0].charAt(0).toUpperCase() + keywordArray[0].slice(1);
+      }
       
-      // Create the article
-      const newArticle: Article = {
-        id: uuidv4(),
-        title: values.title || keywordArray[0],
+      toast.loading("Generating article...");
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("You must be logged in to create articles");
+        setIsGenerating(false);
+        return;
+      }
+      
+      // Start with a basic article object
+      const articleData: Partial<Article> = {
+        title,
         keywords: keywordArray,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        workspaceId: currentWorkspace?.id || "",
-        campaignId: defaultCampaign.id,
-        status: 'draft'
+        campaign_id: values.campaignId,
+        status: 'in-progress',
+        user_id: user.id
       };
       
-      // In a real app, this would save to Supabase
-      console.log("Created campaign:", defaultCampaign);
-      console.log("Created article:", newArticle);
+      // Create the article in the database
+      const article = await createArticle(articleData);
       
-      // Show success message
-      toast({
-        title: "Keywords Added",
-        description: `Added ${keywordArray.length} keywords to Default Campaign`
+      // Generate content and thumbnail in parallel
+      const [{ content, wordCount }, thumbnailUrl] = await Promise.all([
+        generateArticleContent(title, keywordArray),
+        generateArticleThumbnail(title, keywordArray)
+      ]);
+      
+      // Calculate the SEO score
+      const score = await calculateSEOScore(content, keywordArray);
+      
+      // Update the article with generated content
+      await updateArticle(article.id, {
+        content,
+        word_count: wordCount,
+        thumbnail_url: thumbnailUrl,
+        score,
+        status: 'completed'
       });
       
-      // Navigate to the campaigns page
-      navigate('/dashboard/campaigns');
+      toast.success("Article generated successfully");
+      
+      // Navigate to the article editor
+      navigate(`/dashboard/article-editor/${article.id}`);
     } catch (error) {
-      console.error("Error creating article:", error);
-      toast({
-        title: "Error Adding Keywords",
-        description: "There was a problem adding your keywords. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Error generating article:", error);
+      toast.error("Failed to generate article. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  // Helper function to update article
+  const updateArticle = async (id: string, data: Partial<Article>) => {
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update(data)
+        .eq('id', id);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error updating article:", error);
+      throw error;
     }
   };
 
@@ -156,6 +213,40 @@ const ArticleGenerator = () => {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       <FormField
                         control={form.control}
+                        name="campaignId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Campaign</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a campaign" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {campaigns.map((campaign) => (
+                                  <SelectItem key={campaign.id} value={campaign.id}>
+                                    {campaign.name}
+                                  </SelectItem>
+                                ))}
+                                {campaigns.length === 0 && (
+                                  <SelectItem value="none" disabled>
+                                    No campaigns available
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
                         name="keywords"
                         render={({ field }) => (
                           <FormItem>
@@ -193,9 +284,19 @@ const ArticleGenerator = () => {
                         <Button 
                           type="submit" 
                           className="gradient-button"
+                          disabled={isGenerating}
                         >
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add Keywords
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating Article...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Generate Article
+                            </>
+                          )}
                         </Button>
                       </div>
                     </form>
@@ -209,18 +310,27 @@ const ArticleGenerator = () => {
                 <CardHeader>
                   <CardTitle>Import Keywords</CardTitle>
                   <CardDescription>
-                    Import keywords from CSV, Excel or other sources (coming soon)
+                    Import keywords from CSV, Excel or other sources
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Import className="h-16 w-16 text-blue-500/30 mb-4" />
-                    <p className="text-muted-foreground">Import Feature Coming Soon</p>
+                    <p className="text-muted-foreground font-medium">Import Feature Coming Soon</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-xs">
                       This feature is under development and will be available soon.
+                      For now, please use the manual entry method.
                     </p>
                   </div>
                 </CardContent>
+                <CardFooter className="justify-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setActiveTab("manual")}
+                  >
+                    Switch to Manual Entry
+                  </Button>
+                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>
