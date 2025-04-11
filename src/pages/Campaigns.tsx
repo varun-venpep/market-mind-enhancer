@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { ArrowLeft, FileText, Plus, Search } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Search, Activity } from "lucide-react";
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Campaign } from '@/types';
 
@@ -20,12 +19,9 @@ const Campaigns = () => {
   const [searchTerm, setSearchTerm] = useState("");
   
   useEffect(() => {
-    // Simulate loading campaigns from database
     setIsLoading(true);
     
-    // In a real app, this would fetch from Supabase
     setTimeout(() => {
-      // For demo, create a default campaign if none exists
       const defaultCampaign: Campaign = {
         id: "default-campaign",
         name: "Default Campaign",
@@ -41,7 +37,6 @@ const Campaigns = () => {
     }, 1000);
   }, [currentWorkspace]);
   
-  // Filter campaigns based on search term
   const filteredCampaigns = campaigns.filter(campaign => 
     campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (campaign.description && campaign.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -70,13 +65,23 @@ const Campaigns = () => {
                 Manage your article campaigns and track your SEO progress
               </p>
             </div>
-            <Button 
-              onClick={() => navigate('/dashboard/article-generator')}
-              className="gradient-button mt-4 md:mt-0"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Article
-            </Button>
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 mt-4 md:mt-0">
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/dashboard/activity')}
+                className="flex items-center"
+              >
+                <Activity className="mr-2 h-4 w-4" />
+                Activity Feed
+              </Button>
+              <Button 
+                onClick={() => navigate('/dashboard/article-generator')}
+                className="gradient-button"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Article
+              </Button>
+            </div>
           </div>
           
           <div className="relative w-full max-w-md mb-6">

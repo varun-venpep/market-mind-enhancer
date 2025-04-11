@@ -1,4 +1,3 @@
-
 export interface ContentBrief {
   id: string;
   title: string;
@@ -54,7 +53,7 @@ export interface Workspace {
   isDefault?: boolean;
 }
 
-// New Article interface for SEO article generation
+// Add articleType field to Article interface
 export interface Article {
   id: string;
   title?: string;
@@ -65,6 +64,8 @@ export interface Article {
   campaignId: string;
   status: 'draft' | 'in-progress' | 'completed';
   content?: string;
+  articleType?: 'SEO' | 'Blog' | 'Product';
+  campaignName?: string; // To help with filtering
 }
 
 // New Campaign interface to group articles
