@@ -22,7 +22,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { login, signInWithGoogle, user } = useAuth();
+  const { login, signInWithGoogle, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -56,8 +56,7 @@ const Login = () => {
           description: "You have successfully logged in"
         });
       } else {
-        const { error } = await signUp(email, password);
-        if (error) throw error;
+        await signUp(email, password);
         toast({
           title: "Account created",
           description: "Your account has been created successfully"
@@ -119,10 +118,6 @@ const Login = () => {
     } finally {
       setIsGoogleLoading(false);
     }
-  };
-
-  const signUp = async (email: string, password: string) => {
-    return await user.signUp(email, password);
   };
 
   return (
