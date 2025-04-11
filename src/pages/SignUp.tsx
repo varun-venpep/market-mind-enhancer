@@ -4,14 +4,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   Card,
   CardHeader,
-  CardBody,
+  CardContent,
   CardFooter,
-  Button,
-  Input,
-  Checkbox,
-  Typography,
-  Spinner
-} from "@material-tailwind/react";
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -172,31 +172,25 @@ const SignUp = () => {
       className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950"
     >
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader
-          variant="gradient"
-          color="blue"
-          className="mb-4 grid h-20 place-items-center"
-        >
-          <Typography variant="h3" color="white">
+        <CardHeader className="bg-primary text-primary-foreground space-y-1 p-6">
+          <CardTitle className="text-2xl font-bold">
             Join MarketMind
-          </Typography>
+          </CardTitle>
         </CardHeader>
-        <CardBody className="flex flex-col gap-4">
-          <Typography variant="paragraph" color="blue-gray" className="text-center">
+        <CardContent className="space-y-4 pt-6">
+          <CardDescription className="text-center">
             Create your account and start optimizing your content strategy
-          </Typography>
+          </CardDescription>
           
           <Button
             size="lg"
-            variant="outlined"
-            color="blue-gray"
-            className="flex items-center justify-center gap-3 normal-case"
-            fullWidth
+            variant="outline"
+            className="w-full flex items-center justify-center gap-3"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading || isLoading}
           >
             {isGoogleLoading ? (
-              <Spinner className="h-4 w-4" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <FaGoogle className="h-4 w-4 text-red-500" />
             )}
@@ -205,25 +199,24 @@ const SignUp = () => {
 
           <div className="relative flex py-3">
             <div className="flex-grow border-t my-auto"></div>
-            <Typography variant="small" className="mx-4">Or continue with email</Typography>
+            <span className="mx-4 text-sm text-muted-foreground">Or continue with email</span>
             <div className="flex-grow border-t my-auto"></div>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Input
                 type="email"
                 name="email"
-                label="Email"
-                size="lg"
+                placeholder="Email"
                 value={formData.email}
                 onChange={handleInputChange}
-                error={!!emailError}
+                className={emailError ? "border-red-500" : ""}
               />
               {emailError && (
-                <Typography variant="small" color="red" className="mt-1">
+                <p className="text-sm text-red-500 mt-1">
                   {emailError}
-                </Typography>
+                </p>
               )}
             </div>
             
@@ -231,16 +224,15 @@ const SignUp = () => {
               <Input
                 type="password"
                 name="password"
-                label="Password"
-                size="lg"
+                placeholder="Password"
                 value={formData.password}
                 onChange={handleInputChange}
-                error={!!passwordError}
+                className={passwordError ? "border-red-500" : ""}
               />
               {passwordError && (
-                <Typography variant="small" color="red" className="mt-1">
+                <p className="text-sm text-red-500 mt-1">
                   {passwordError}
-                </Typography>
+                </p>
               )}
             </div>
             
@@ -248,53 +240,57 @@ const SignUp = () => {
               <Input
                 type="password"
                 name="confirmPassword"
-                label="Confirm Password"
-                size="lg"
+                placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                error={!!confirmPasswordError}
+                className={confirmPasswordError ? "border-red-500" : ""}
               />
               {confirmPasswordError && (
-                <Typography variant="small" color="red" className="mt-1">
+                <p className="text-sm text-red-500 mt-1">
                   {confirmPasswordError}
-                </Typography>
+                </p>
               )}
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Checkbox
+                id="terms"
                 name="terms"
                 checked={formData.terms}
-                onChange={handleInputChange}
-                color="blue"
-                className="rounded-sm"
+                onCheckedChange={(checked) => {
+                  setFormData({
+                    ...formData,
+                    terms: checked === true
+                  });
+                  setTermsError("");
+                }}
+                className={termsError ? "border-red-500" : ""}
               />
-              <Typography variant="small" color="blue-gray" className="font-medium">
+              <label htmlFor="terms" className="text-sm">
                 I agree to the{" "}
-                <Link to="/terms" className="text-blue-500 hover:underline">
+                <Link to="/terms" className="text-primary hover:underline">
                   terms of service
                 </Link>{" "}
                 and{" "}
-                <Link to="/privacy" className="text-blue-500 hover:underline">
+                <Link to="/privacy" className="text-primary hover:underline">
                   privacy policy
                 </Link>
-              </Typography>
+              </label>
             </div>
             {termsError && (
-              <Typography variant="small" color="red">
+              <p className="text-sm text-red-500">
                 {termsError}
-              </Typography>
+              </p>
             )}
             
             <Button
               type="submit"
-              className="mt-4 bg-gradient-to-r from-blue-600 to-blue-500"
-              fullWidth
+              className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500"
               disabled={isLoading || isGoogleLoading}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
-                  <Spinner className="h-4 w-4" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Processing...</span>
                 </div>
               ) : (
@@ -302,14 +298,14 @@ const SignUp = () => {
               )}
             </Button>
           </form>
-        </CardBody>
-        <CardFooter className="pt-0">
-          <Typography variant="small" className="text-center mt-4">
+        </CardContent>
+        <CardFooter>
+          <div className="text-center w-full text-sm">
             Already have an account?{" "}
-            <Link to="/login" className="text-blue-500 font-medium hover:underline">
+            <Link to="/login" className="text-primary font-medium hover:underline">
               Sign in
             </Link>
-          </Typography>
+          </div>
         </CardFooter>
       </Card>
     </motion.div>

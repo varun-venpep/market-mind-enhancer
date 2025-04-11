@@ -9,7 +9,6 @@ import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
 import { ThemeProvider } from './components/Theme/ThemeProvider';
-import MaterialThemeProvider from './components/Theme/MaterialThemeProvider';
 import routes from './routes';
 import './App.css';
 
@@ -37,57 +36,55 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <MaterialThemeProvider>
-          <AuthProvider>
-            <WorkspaceProvider>
-              <Router>
-                <div className="app-container full-width full-height">
-                  <Routes>
-                    {routes.map((route) => {
-                      if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:storeId') {
-                        return (
-                          <Route
-                            key={route.path}
-                            path={route.path}
-                            element={
-                              <ProtectedRoute>
-                                <ShopifyProtected>
-                                  <route.component />
-                                </ShopifyProtected>
-                              </ProtectedRoute>
-                            }
-                          />
-                        );
-                      } else if (route.protected) {
-                        return (
-                          <Route
-                            key={route.path}
-                            path={route.path}
-                            element={
-                              <ProtectedRoute>
+        <AuthProvider>
+          <WorkspaceProvider>
+            <Router>
+              <div className="app-container full-width full-height">
+                <Routes>
+                  {routes.map((route) => {
+                    if (route.path === '/dashboard/shopify' || route.path === '/dashboard/shopify/:storeId') {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={
+                            <ProtectedRoute>
+                              <ShopifyProtected>
                                 <route.component />
-                              </ProtectedRoute>
-                            }
-                          />
-                        );
-                      } else {
-                        return (
-                          <Route
-                            key={route.path}
-                            path={route.path}
-                            element={<route.component />}
-                          />
-                        );
-                      }
-                    })}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                  <Toaster richColors closeButton position="top-right" />
-                </div>
-              </Router>
-            </WorkspaceProvider>
-          </AuthProvider>
-        </MaterialThemeProvider>
+                              </ShopifyProtected>
+                            </ProtectedRoute>
+                          }
+                        />
+                      );
+                    } else if (route.protected) {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={
+                            <ProtectedRoute>
+                              <route.component />
+                            </ProtectedRoute>
+                          }
+                        />
+                      );
+                    } else {
+                      return (
+                        <Route
+                          key={route.path}
+                          path={route.path}
+                          element={<route.component />}
+                        />
+                      );
+                    }
+                  })}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                <Toaster richColors closeButton position="top-right" />
+              </div>
+            </Router>
+          </WorkspaceProvider>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
