@@ -22,7 +22,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { login, signInWithGoogle, signUp, user } = useAuth();
+  const { login, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -56,7 +56,8 @@ const Login = () => {
           description: "You have successfully logged in"
         });
       } else {
-        await signUp(email, password);
+        // Use the login function here, but we'll trigger sign up from the auth context
+        await login(email, password, true); // passing true to indicate signup
         toast({
           title: "Account created",
           description: "Your account has been created successfully"

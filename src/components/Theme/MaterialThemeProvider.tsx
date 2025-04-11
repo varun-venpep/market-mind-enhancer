@@ -11,12 +11,18 @@ const theme = {
       onPointerLeaveCapture: undefined,
       textGradient: undefined,
     },
+    styles: {
+      variants: {}
+    },
   },
   card: {
     defaultProps: {
       placeholder: undefined,
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
+    },
+    styles: {
+      variants: {}
     },
   },
   cardHeader: {
@@ -26,12 +32,18 @@ const theme = {
       onPointerLeaveCapture: undefined,
       floated: false,
     },
+    styles: {
+      variants: {}
+    },
   },
   cardBody: {
     defaultProps: {
       placeholder: undefined,
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
+    },
+    styles: {
+      variants: {}
     },
   },
   cardFooter: {
@@ -41,6 +53,9 @@ const theme = {
       onPointerLeaveCapture: undefined,
       divider: false,
     },
+    styles: {
+      variants: {}
+    },
   },
   button: {
     defaultProps: {
@@ -48,6 +63,9 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       fullWidth: false,
+    },
+    styles: {
+      variants: {}
     },
   },
   iconButton: {
@@ -57,6 +75,9 @@ const theme = {
       onPointerLeaveCapture: undefined,
       fullWidth: false,
     },
+    styles: {
+      variants: {}
+    },
   },
   input: {
     defaultProps: {
@@ -64,6 +85,10 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       shrink: false,
+      error: false,
+    },
+    styles: {
+      variants: {}
     },
   },
   spinner: {
@@ -78,6 +103,9 @@ const theme = {
       onPointerEnterCapture: undefined,
       onPointerLeaveCapture: undefined,
       iconProps: {},
+    },
+    styles: {
+      variants: {}
     },
   },
 };
