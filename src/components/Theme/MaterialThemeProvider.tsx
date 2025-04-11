@@ -22,8 +22,8 @@ const MaterialThemeProvider = ({ children }: { children: React.ReactNode }) => {
       input: { defaultProps: { ...eventHandlerProps, shrink: false } },
       button: { defaultProps: eventHandlerProps },
       iconButton: { defaultProps: eventHandlerProps },
-      checkbox: { defaultProps: eventHandlerProps },
-      spinner: { defaultProps: eventHandlerProps }
+      checkbox: { defaultProps: { ...eventHandlerProps, iconProps: {} } },
+      spinner: { defaultProps: { ...eventHandlerProps } }
     }}>
       {children}
     </ThemeProvider>

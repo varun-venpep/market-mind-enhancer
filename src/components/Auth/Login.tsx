@@ -91,19 +91,45 @@ export default function Login() {
 
   return (
     <div className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950">
-      <Card className="w-full max-w-md shadow-xl">
+      <Card 
+        className="w-full max-w-md shadow-xl"
+        placeholder={null}
+        onPointerEnterCapture={() => {}}
+        onPointerLeaveCapture={() => {}}
+      >
         <CardHeader
           variant="gradient"
           color="blue"
           className="mb-4 grid h-20 place-items-center"
+          placeholder={null}
+          onPointerEnterCapture={() => {}}
+          onPointerLeaveCapture={() => {}}
         >
-          <Typography variant="h3" color="white">
+          <Typography 
+            variant="h3" 
+            color="white"
+            placeholder={null}
+            onPointerEnterCapture={() => {}}
+            onPointerLeaveCapture={() => {}}
+          >
             {mode === 'login' ? 'Welcome Back' : 'Create an Account'}
           </Typography>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardBody className="flex flex-col gap-4">
-            <Typography variant="paragraph" color="blue-gray" className="mb-2 font-medium">
+          <CardBody 
+            className="flex flex-col gap-4"
+            placeholder={null}
+            onPointerEnterCapture={() => {}}
+            onPointerLeaveCapture={() => {}}
+          >
+            <Typography 
+              variant="paragraph" 
+              color="blue-gray" 
+              className="mb-2 font-medium"
+              placeholder={null}
+              onPointerEnterCapture={() => {}}
+              onPointerLeaveCapture={() => {}}
+            >
               {mode === 'login' 
                 ? 'Enter your credentials to access your account' 
                 : 'Fill in your details to create a new account'}
@@ -121,6 +147,10 @@ export default function Login() {
                 className="pl-10"
                 containerProps={{ className: "min-w-0" }}
                 required
+                crossOrigin={undefined}
+                onPointerEnterCapture={() => {}}
+                onPointerLeaveCapture={() => {}}
+                shrink={false}
               />
             </div>
             <div className="relative">
@@ -136,6 +166,10 @@ export default function Login() {
                 className="pl-10"
                 containerProps={{ className: "min-w-0" }}
                 required
+                crossOrigin={undefined}
+                onPointerEnterCapture={() => {}}
+                onPointerLeaveCapture={() => {}}
+                shrink={false}
                 icon={
                   <div 
                     onClick={() => setShowPassword(!showPassword)} 
@@ -153,21 +187,36 @@ export default function Login() {
                 variant="small"
                 color="blue"
                 className="text-right font-medium"
+                placeholder={null}
+                onPointerEnterCapture={() => {}}
+                onPointerLeaveCapture={() => {}}
               >
                 Forgot password?
               </Typography>
             )}
           </CardBody>
-          <CardFooter className="pt-0 flex flex-col gap-4">
+          <CardFooter 
+            className="pt-0 flex flex-col gap-4"
+            placeholder={null}
+            onPointerEnterCapture={() => {}}
+            onPointerLeaveCapture={() => {}}
+          >
             <Button 
               type="submit" 
               fullWidth
               disabled={isLoading}
               className="flex items-center justify-center gap-2"
+              placeholder={null}
+              onPointerEnterCapture={() => {}}
+              onPointerLeaveCapture={() => {}}
             >
               {isLoading ? (
                 <>
-                  <Spinner className="h-4 w-4" />
+                  <Spinner 
+                    className="h-4 w-4" 
+                    onPointerEnterCapture={() => {}}
+                    onPointerLeaveCapture={() => {}}
+                  />
                   <span>Processing...</span>
                 </>
               ) : (
@@ -183,11 +232,20 @@ export default function Login() {
               fullWidth
               onClick={handleDemoLogin}
               disabled={isLoading}
+              placeholder={null}
+              onPointerEnterCapture={() => {}}
+              onPointerLeaveCapture={() => {}}
             >
               Quick Demo Access
             </Button>
             
-            <Typography variant="small" className="text-center mt-2">
+            <Typography 
+              variant="small" 
+              className="text-center mt-2"
+              placeholder={null}
+              onPointerEnterCapture={() => {}}
+              onPointerLeaveCapture={() => {}}
+            >
               {mode === 'login' ? (
                 <>
                   Don't have an account?{' '}
@@ -197,6 +255,9 @@ export default function Login() {
                     color="blue"
                     className="font-medium cursor-pointer"
                     onClick={() => setMode('signup')}
+                    placeholder={null}
+                    onPointerEnterCapture={() => {}}
+                    onPointerLeaveCapture={() => {}}
                   >
                     Sign up
                   </Typography>
@@ -210,6 +271,9 @@ export default function Login() {
                     color="blue"
                     className="font-medium cursor-pointer"
                     onClick={() => setMode('login')}
+                    placeholder={null}
+                    onPointerEnterCapture={() => {}}
+                    onPointerLeaveCapture={() => {}}
                   >
                     Sign in
                   </Typography>
