@@ -148,8 +148,8 @@ const ContentBriefEditor = () => {
                 </CardHeader>
                 <CardContent>
                   <ContentOutline 
-                    items={outlineItems} 
-                    onChange={handleOutlineChange} 
+                    outline={outlineItems} 
+                    onUpdate={handleOutlineChange} 
                   />
                 </CardContent>
               </Card>

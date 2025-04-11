@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -127,7 +128,16 @@ const RelatedKeywords = () => {
           {isSearching ? (
             <KeywordSkeletonLoader />
           ) : hasSearched ? (
-            <KeywordAnalysisResults keywords={relatedKeywords} mainKeyword={keyword} />
+            <KeywordAnalysisResults keyword={keyword} results={
+              relatedKeywords.map(kw => ({
+                id: kw.id,
+                title: kw.keyword,
+                url: `https://example.com/search?q=${encodeURIComponent(kw.keyword)}`,
+                snippet: `This is a search result for ${kw.keyword}. It shows information about ${keyword} and related topics.`,
+                position: parseInt(kw.id),
+                wordCount: Math.floor(Math.random() * 1000) + 500
+              }))
+            } />
           ) : (
             <Card className="p-10 text-center">
               <div className="flex flex-col items-center justify-center">
