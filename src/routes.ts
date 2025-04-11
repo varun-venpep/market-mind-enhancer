@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { RouteObject } from 'react-router-dom';
 import { Main } from "./pages/Main";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
@@ -14,57 +14,58 @@ import Campaigns from "./pages/Campaigns";
 import CampaignDetail from "./pages/CampaignDetail";
 import ActivityFeed from './pages/ActivityFeed';
 
+// Define routes for the application
 export const routes = [
   {
     path: '/',
-    element: <Main />
+    element: Main
   },
   {
     path: '/login',
-    element: <Login />
+    element: Login
   },
   {
     path: '/register',
-    element: <Register />
+    element: Register
   },
   {
     path: '/dashboard',
-    element: <Dashboard />
+    element: Dashboard
   },
   {
     path: '/dashboard/content-brief/:id',
-    element: <ContentBrief />
+    element: ContentBrief
   },
   {
     path: '/dashboard/content-brief-list',
-    element: <ContentBriefList />
+    element: ContentBriefList
   },
   {
     path: '/dashboard/related-keywords',
-    element: <RelatedKeywords />
+    element: RelatedKeywords
   },
   {
     path: '/dashboard/content-brief-editor',
-    element: <ContentBriefEditor />
+    element: ContentBriefEditor
   },
   {
     path: '/dashboard/settings',
-    element: <Settings />
+    element: Settings
   },
   {
     path: '/dashboard/article-generator',
-    element: <ArticleGenerator />
+    element: ArticleGenerator
   },
   {
     path: '/dashboard/campaigns',
-    element: <Campaigns />
+    element: Campaigns
   },
   {
     path: '/dashboard/campaigns/:campaignId',
-    element: <CampaignDetail />
+    element: CampaignDetail
   },
   {
     path: '/dashboard/activity',
-    element: <ActivityFeed />
+    element: ActivityFeed
   }
 ];
