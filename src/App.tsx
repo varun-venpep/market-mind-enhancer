@@ -8,7 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
-import MaterialThemeProvider from './components/Theme/MaterialThemeProvider';
+import { ThemeProvider } from './components/Theme/ThemeProvider';
 import routes from './routes';
 import './App.css';
 
@@ -34,7 +34,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 function App() {
   return (
-    <MaterialThemeProvider>
+    <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <WorkspaceProvider>
@@ -86,7 +86,7 @@ function App() {
           </WorkspaceProvider>
         </AuthProvider>
       </QueryClientProvider>
-    </MaterialThemeProvider>
+    </ThemeProvider>
   );
 }
 
