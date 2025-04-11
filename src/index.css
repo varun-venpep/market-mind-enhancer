@@ -97,7 +97,7 @@
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-primary/80 text-transparent bg-clip-text;
+    @apply bg-gradient-to-r from-blue-600 to-blue-500 text-transparent bg-clip-text;
   }
   
   .card-glass {
@@ -105,6 +105,15 @@
   }
   
   .hover-card {
-    @apply transition-all hover:shadow-md hover:shadow-primary/10;
+    @apply transition-all hover:shadow-md hover:shadow-blue-500/10;
+  }
+  
+  /* Material Tailwind specific styles */
+  .material-shadow {
+    @apply shadow-md shadow-blue-gray-500/10;
+  }
+  
+  .material-gradient {
+    @apply bg-gradient-to-tr from-blue-600 to-blue-400;
   }
 }

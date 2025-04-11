@@ -1,11 +1,17 @@
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Button,
+  Input,
+  Checkbox,
+  Typography,
+  Spinner
+} from "@material-tailwind/react";
 import { useToast } from "@/components/ui/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -37,15 +43,15 @@ const SignUp = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
-  const form = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-      terms: false,
-    },
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [termsError, setTermsError] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    terms: false,
   });
 
   // If the user is already logged in, redirect to dashboard
@@ -55,10 +61,63 @@ const SignUp = () => {
     }
   }, [user, navigate]);
 
-  const onSubmit = async (data: SignUpFormValues) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: name === 'terms' ? checked : value
+    });
+    
+    // Clear errors when user types
+    if (name === 'email') setEmailError("");
+    if (name === 'password') setPasswordError("");
+    if (name === 'confirmPassword') setConfirmPasswordError("");
+    if (name === 'terms') setTermsError("");
+  };
+
+  const validateForm = () => {
+    let isValid = true;
+    
+    if (!formData.email) {
+      setEmailError("Email is required");
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      setEmailError("Please enter a valid email");
+      isValid = false;
+    }
+    
+    if (!formData.password) {
+      setPasswordError("Password is required");
+      isValid = false;
+    } else if (formData.password.length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+      isValid = false;
+    }
+    
+    if (!formData.confirmPassword) {
+      setConfirmPasswordError("Please confirm your password");
+      isValid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      setConfirmPasswordError("Passwords do not match");
+      isValid = false;
+    }
+    
+    if (!formData.terms) {
+      setTermsError("You must agree to the terms and conditions");
+      isValid = false;
+    }
+    
+    return isValid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsLoading(true);
     try {
-      const result = await signUp(data.email, data.password);
+      const result = await signUp(formData.email, formData.password);
       if (result.error) {
         toast({
           title: "Sign Up Failed",
@@ -110,150 +169,147 @@ const SignUp = () => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950"
     >
-      <Card className="w-full shadow-xl border-2 bg-white/90 backdrop-blur-sm">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center gradient-text">Join MarketMind</CardTitle>
-          <CardDescription className="text-center">
-            Create your account and start optimizing your content strategy
-          </CardDescription>
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader
+          variant="gradient"
+          color="blue"
+          className="mb-4 grid h-20 place-items-center"
+        >
+          <Typography variant="h3" color="white">
+            Join MarketMind
+          </Typography>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+        <CardBody className="flex flex-col gap-4">
+          <Typography variant="paragraph" color="blue-gray" className="text-center">
+            Create your account and start optimizing your content strategy
+          </Typography>
+          
+          <Button
+            size="lg"
+            variant="outlined"
+            color="blue-gray"
+            className="flex items-center justify-center gap-3 normal-case"
+            fullWidth
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading || isLoading}
           >
-            <Button 
-              className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 hover:border-gray-300 bg-white text-gray-800 hover:bg-gray-50 transition-all font-medium shadow-sm" 
-              variant="outline" 
-              onClick={handleGoogleSignIn} 
-              disabled={isGoogleLoading || isLoading}
-            >
-              {isGoogleLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FaGoogle className="h-4 w-4 text-red-500" />
-              )}
-              Sign up with Google
-            </Button>
-          </motion.div>
+            {isGoogleLoading ? (
+              <Spinner className="h-4 w-4" />
+            ) : (
+              <FaGoogle className="h-4 w-4 text-red-500" />
+            )}
+            Sign up with Google
+          </Button>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with email
-              </span>
-            </div>
+          <div className="relative flex py-3">
+            <div className="flex-grow border-t my-auto"></div>
+            <Typography variant="small" className="mx-4">Or continue with email</Typography>
+            <div className="flex-grow border-t my-auto"></div>
           </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <Input
+                type="email"
                 name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="name@example.com" 
-                        {...field} 
-                        className="bg-white/50 border-2 focus-visible:ring-brand-600"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Email"
+                size="lg"
+                value={formData.email}
+                onChange={handleInputChange}
+                error={!!emailError}
               />
-              <FormField
-                control={form.control}
+              {emailError && (
+                <Typography variant="small" color="red" className="mt-1">
+                  {emailError}
+                </Typography>
+              )}
+            </div>
+            
+            <div>
+              <Input
+                type="password"
                 name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Create a strong password" 
-                        {...field}
-                        className="bg-white/50 border-2 focus-visible:ring-brand-600"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Password"
+                size="lg"
+                value={formData.password}
+                onChange={handleInputChange}
+                error={!!passwordError}
               />
-              <FormField
-                control={form.control}
+              {passwordError && (
+                <Typography variant="small" color="red" className="mt-1">
+                  {passwordError}
+                </Typography>
+              )}
+            </div>
+            
+            <div>
+              <Input
+                type="password"
                 name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Confirm your password" 
-                        {...field}
-                        className="bg-white/50 border-2 focus-visible:ring-brand-600"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Confirm Password"
+                size="lg"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                error={!!confirmPasswordError}
               />
-              <FormField
-                control={form.control}
+              {confirmPasswordError && (
+                <Typography variant="small" color="red" className="mt-1">
+                  {confirmPasswordError}
+                </Typography>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Checkbox
                 name="terms"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm">
-                        I agree to the{" "}
-                        <Link to="/terms" className="text-brand-600 underline hover:text-brand-700">
-                          terms of service
-                        </Link>{" "}
-                        and{" "}
-                        <Link to="/privacy" className="text-brand-600 underline hover:text-brand-700">
-                          privacy policy
-                        </Link>
-                      </FormLabel>
-                      <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
+                checked={formData.terms}
+                onChange={handleInputChange}
+                color="blue"
+                className="rounded-sm"
               />
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button 
-                  type="submit" 
-                  className="w-full gradient-button shadow-md hover:shadow-lg transition-all" 
-                  disabled={isLoading || isGoogleLoading}
-                >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign Up
-                </Button>
-              </motion.div>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4 pt-0">
-          <div className="text-center text-sm">
+              <Typography variant="small" color="blue-gray" className="font-medium">
+                I agree to the{" "}
+                <Link to="/terms" className="text-blue-500 hover:underline">
+                  terms of service
+                </Link>{" "}
+                and{" "}
+                <Link to="/privacy" className="text-blue-500 hover:underline">
+                  privacy policy
+                </Link>
+              </Typography>
+            </div>
+            {termsError && (
+              <Typography variant="small" color="red">
+                {termsError}
+              </Typography>
+            )}
+            
+            <Button
+              type="submit"
+              className="mt-4 bg-gradient-to-r from-blue-600 to-blue-500"
+              fullWidth
+              disabled={isLoading || isGoogleLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Spinner className="h-4 w-4" />
+                  <span>Processing...</span>
+                </div>
+              ) : (
+                "Sign Up"
+              )}
+            </Button>
+          </form>
+        </CardBody>
+        <CardFooter className="pt-0">
+          <Typography variant="small" className="text-center mt-4">
             Already have an account?{" "}
-            <Link to="/login" className="underline text-brand-600 hover:text-brand-700 transition-colors">
+            <Link to="/login" className="text-blue-500 font-medium hover:underline">
               Sign in
             </Link>
-          </div>
+          </Typography>
         </CardFooter>
       </Card>
     </motion.div>

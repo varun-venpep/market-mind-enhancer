@@ -2,13 +2,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { ThemeProvider } from "@/components/theme-provider"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { supabase } from './integrations/supabase/client';
 import { AuthProvider } from './contexts/AuthContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
+import MaterialThemeProvider from './components/Theme/MaterialThemeProvider';
 import routes from './routes';
 import './App.css';
 
@@ -34,7 +34,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="seo-wizard-ui-theme">
+    <MaterialThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <WorkspaceProvider>
@@ -86,7 +86,7 @@ function App() {
           </WorkspaceProvider>
         </AuthProvider>
       </QueryClientProvider>
-    </ThemeProvider>
+    </MaterialThemeProvider>
   );
 }
 

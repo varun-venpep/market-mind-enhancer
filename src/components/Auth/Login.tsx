@@ -2,12 +2,18 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { 
+  Card, 
+  CardBody, 
+  CardFooter, 
+  CardHeader,
+  Typography,
+  Button,
+  Input,
+  Spinner
+} from "@material-tailwind/react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -48,7 +54,7 @@ export default function Login() {
         });
       }
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Authentication error:', error);
       toast({
         title: "Authentication Failed",
@@ -71,7 +77,7 @@ export default function Login() {
         description: "Logged in with demo account"
       });
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Demo login error:', error);
       toast({
         title: "Demo Login Failed",
@@ -85,128 +91,131 @@ export default function Login() {
 
   return (
     <div className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950">
-      <Card className="w-full max-w-md border-0 shadow-xl bg-white/90 backdrop-blur-sm dark:bg-gray-950/90">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader
+          variant="gradient"
+          color="blue"
+          className="mb-4 grid h-20 place-items-center"
+        >
+          <Typography variant="h3" color="white">
             {mode === 'login' ? 'Welcome Back' : 'Create an Account'}
-          </CardTitle>
-          <p className="text-center text-muted-foreground">
-            {mode === 'login' 
-              ? 'Enter your credentials to access your account' 
-              : 'Fill in your details to create a new account'}
-          </p>
+          </Typography>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 py-6 text-base"
-                  required
-                  autoFocus
-                />
+          <CardBody className="flex flex-col gap-4">
+            <Typography variant="paragraph" color="blue-gray" className="mb-2 font-medium">
+              {mode === 'login' 
+                ? 'Enter your credentials to access your account' 
+                : 'Fill in your details to create a new account'}
+            </Typography>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <Mail className="h-5 w-5 text-blue-gray-300" />
               </div>
+              <Input
+                type="email"
+                label="Email"
+                size="lg"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10"
+                containerProps={{ className: "min-w-0" }}
+                required
+              />
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                {mode === 'login' && (
-                  <Link 
-                    to="/reset-password" 
-                    className="text-sm text-primary hover:underline"
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-blue-gray-300" />
+              </div>
+              <Input
+                type={showPassword ? "text" : "password"}
+                label="Password"
+                size="lg"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10"
+                containerProps={{ className: "min-w-0" }}
+                required
+                icon={
+                  <div 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="cursor-pointer"
                   >
-                    Forgot password?
-                  </Link>
-                )}
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder={mode === 'login' ? "Enter your password" : "Create a password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 py-6 text-base"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 h-10 w-10"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </Button>
-              </div>
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </div>
+                }
+              />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+            {mode === 'login' && (
+              <Typography
+                as="a"
+                href="/reset-password"
+                variant="small"
+                color="blue"
+                className="text-right font-medium"
+              >
+                Forgot password?
+              </Typography>
+            )}
+          </CardBody>
+          <CardFooter className="pt-0 flex flex-col gap-4">
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-all duration-300 py-6 text-base"
+              fullWidth
               disabled={isLoading}
+              className="flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <>
+                  <Spinner className="h-4 w-4" />
                   <span>Processing...</span>
-                </div>
+                </>
               ) : (
-                <div className="flex items-center justify-center">
+                <>
                   <span>{mode === 'login' ? 'Sign In' : 'Sign Up'}</span>
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </div>
+                  <ArrowRight className="h-5 w-5" />
+                </>
               )}
             </Button>
             
             <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full py-6 text-base"
+              variant="outlined"
+              fullWidth
               onClick={handleDemoLogin}
               disabled={isLoading}
             >
               Quick Demo Access
             </Button>
             
-            <div className="text-center text-sm">
+            <Typography variant="small" className="text-center mt-2">
               {mode === 'login' ? (
-                <p>
+                <>
                   Don't have an account?{' '}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto font-semibold" 
+                  <Typography
+                    as="span"
+                    variant="small"
+                    color="blue"
+                    className="font-medium cursor-pointer"
                     onClick={() => setMode('signup')}
                   >
                     Sign up
-                  </Button>
-                </p>
+                  </Typography>
+                </>
               ) : (
-                <p>
+                <>
                   Already have an account?{' '}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto font-semibold" 
+                  <Typography
+                    as="span"
+                    variant="small"
+                    color="blue"
+                    className="font-medium cursor-pointer"
                     onClick={() => setMode('login')}
                   >
                     Sign in
-                  </Button>
-                </p>
+                  </Typography>
+                </>
               )}
-            </div>
+            </Typography>
           </CardFooter>
         </form>
       </Card>
