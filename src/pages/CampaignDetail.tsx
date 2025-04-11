@@ -76,7 +76,7 @@ const CampaignDetail = () => {
       setIsGenerating(true);
       setActiveTab("activity");
       
-      // Create a new draft article
+      // Create a new draft article - using proper literal type for status
       const newArticle: Article = {
         id: `article-${Date.now()}`,
         keywords: mockKeywords,
@@ -84,7 +84,7 @@ const CampaignDetail = () => {
         updatedAt: new Date().toISOString(),
         workspaceId: "workspace-1", // Hardcoded for demo
         campaignId: campaignId || "campaign-1",
-        status: 'in-progress',
+        status: 'in-progress', // Using literal type from Article interface
       };
       
       // Add the article to the list
@@ -136,14 +136,14 @@ const CampaignDetail = () => {
           : "The key to successful gardening is consistent care. Many beginners make the mistake of irregular watering, which leads to disappointing results."
         }`;
       
-      // Update the article with the generated content
+      // Update the article with the generated content - making sure to use proper literal type for status
       const updatedArticles = articles.map(article => 
         article.id === newArticle.id 
           ? { 
               ...article, 
               title: mockTitle,
               content: mockContent,
-              status: 'completed',
+              status: 'completed' as const, // Using literal type with type assertion
               updatedAt: new Date().toISOString()
             } 
           : article
@@ -159,12 +159,12 @@ const CampaignDetail = () => {
     } catch (error) {
       console.error("Error generating article:", error);
       
-      // Update the article with error status
+      // Update the article with error status - using proper literal type
       const updatedArticles = articles.map(article => 
         article.id === articles[0]?.id
           ? { 
               ...article, 
-              status: 'draft',
+              status: 'draft' as const, // Using literal type with type assertion
               updatedAt: new Date().toISOString()
             } 
           : article
