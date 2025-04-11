@@ -2,14 +2,8 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { 
-  Card, 
-  CardBody, 
-  CardHeader, 
-  Typography, 
-  Button,
-  IconButton
-} from "@material-tailwind/react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, Plus } from "lucide-react";
 
 const CampaignDetail = () => {
@@ -21,25 +15,25 @@ const CampaignDetail = () => {
       <div className="container mx-auto py-8">
         <div className="flex flex-col gap-6">
           <div className="flex items-center">
-            <IconButton
-              variant="text"
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => navigate('/dashboard/campaigns')}
-              className="mr-4"
+              className="mr-4 p-2"
             >
               <ArrowLeft className="h-4 w-4" />
-            </IconButton>
-            <Typography variant="lead">Back to Campaigns</Typography>
+            </Button>
+            <p className="text-lg font-medium">Back to Campaigns</p>
           </div>
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <Typography variant="h2" className="bg-gradient-to-r from-blue-600 to-blue-500 text-transparent bg-clip-text">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 text-transparent bg-clip-text">
                 Campaign Details
-              </Typography>
-              <Typography variant="paragraph" color="blue-gray" className="mt-1">
+              </h2>
+              <p className="text-muted-foreground mt-1">
                 Articles in this campaign
-              </Typography>
+              </p>
             </div>
             <Button 
               onClick={() => navigate('/dashboard/article-generator')}
@@ -50,29 +44,23 @@ const CampaignDetail = () => {
           </div>
           
           <Card>
-            <CardHeader
-              variant="gradient"
-              color="blue"
-              className="mb-2 p-4"
-            >
-              <Typography variant="h5" color="white">
-                Articles in this Campaign
-              </Typography>
-              <Typography variant="small" color="white" className="opacity-80">
+            <CardHeader className="bg-primary text-primary-foreground">
+              <CardTitle>Articles in this Campaign</CardTitle>
+              <CardDescription className="text-primary-foreground/80">
                 All articles created for this campaign
-              </Typography>
+              </CardDescription>
             </CardHeader>
-            <CardBody>
+            <CardContent>
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <FileText className="h-16 w-16 text-blue-500/30 mb-4" />
-                <Typography variant="h6" color="blue-gray">
+                <h3 className="text-lg font-semibold text-gray-700">
                   Campaign Detail Coming Soon
-                </Typography>
-                <Typography variant="small" color="blue-gray" className="mt-1 max-w-xs">
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
                   This feature is under development and will be available soon.
-                </Typography>
+                </p>
               </div>
-            </CardBody>
+            </CardContent>
           </Card>
         </div>
       </div>

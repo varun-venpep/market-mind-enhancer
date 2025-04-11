@@ -1,7 +1,7 @@
 
 import React from "react";
 
-// Simple pass-through provider since we're removing Material Tailwind theme
+// Simple pass-through provider now that we're using shadcn/ui exclusively
 const MaterialThemeProvider = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
