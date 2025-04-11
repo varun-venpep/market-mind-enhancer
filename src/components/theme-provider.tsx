@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { ThemeProvider as MaterialThemeProvider } from "@material-tailwind/react";
-import { theme } from "@/theme";
 
 type Theme = "dark" | "light" | "system";
 
@@ -66,7 +65,7 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
-      <MaterialThemeProvider theme={theme}>
+      <MaterialThemeProvider>
         {children}
       </MaterialThemeProvider>
     </ThemeProviderContext.Provider>
