@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
 import { Keyword } from '@/types';
-import KeywordSkeletonLoader from '@/components/Research/KeywordSkeletonLoader';
-import KeywordAnalysisResults from '@/components/Research/KeywordAnalysisResults';
+import { KeywordSkeletonLoader } from '@/components/Research/KeywordSkeletonLoader';
+import { KeywordAnalysisResults } from '@/components/Research/KeywordAnalysisResults';
 
 const RelatedKeywords = () => {
   const [keyword, setKeyword] = useState('');

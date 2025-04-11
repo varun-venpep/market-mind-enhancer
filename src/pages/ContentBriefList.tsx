@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Plus, Search, FileText } from "lucide-react";
-import ContentBriefCard from "@/components/Dashboard/ContentBriefCard";
-import ContentBriefSkeleton from "@/components/Dashboard/ContentBriefSkeleton";
+import { ContentBriefCard } from "@/components/Dashboard/ContentBriefCard";
+import { ContentBriefSkeleton } from "@/components/Dashboard/ContentBriefSkeleton";
 import { ContentBrief } from '@/types';
 
 const ContentBriefList = () => {

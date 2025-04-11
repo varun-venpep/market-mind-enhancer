@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Save, ArrowLeft, List, Target, Users } from "lucide-react";
-import ContentOutline from '@/components/ContentBrief/ContentOutline';
+import { ContentOutline } from '@/components/ContentBrief/ContentOutline';
 import { OutlineItem } from '@/types';
 
 const ContentBriefEditor = () => {
