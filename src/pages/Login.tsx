@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -27,7 +26,6 @@ const Login = () => {
   const { toast } = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
 
-  // If the user is already logged in, redirect to dashboard
   useEffect(() => {
     if (user) {
       navigate("/dashboard");
@@ -56,7 +54,6 @@ const Login = () => {
           description: "You have successfully logged in"
         });
       } else {
-        // Use the login function for signup as well, but modify to handle signup
         await login(email, password);
         toast({
           title: "Account created",
@@ -76,7 +73,6 @@ const Login = () => {
     }
   };
 
-  // For demo purposes to simplify testing
   const handleDemoLogin = async () => {
     setIsLoading(true);
     
