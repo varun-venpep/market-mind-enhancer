@@ -174,6 +174,7 @@ const theme = {
       suppressContentEditableWarning: undefined,
       form: undefined,
       pattern: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
@@ -205,6 +206,7 @@ const theme = {
       defaultChecked: undefined,
       defaultValue: undefined,
       suppressContentEditableWarning: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
@@ -247,6 +249,7 @@ const theme = {
       form: undefined,
       pattern: undefined,
       placeholder: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
@@ -278,6 +281,7 @@ const theme = {
       tabIndex: undefined,
       clipPath: undefined,
       placeholder: undefined,
+      "aria-activedescendant": undefined,
     },
   },
   checkbox: {
@@ -310,6 +314,7 @@ const theme = {
       form: undefined,
       pattern: undefined,
       placeholder: undefined,
+      "aria-activedescendant": undefined,
     },
     styles: {
       variants: {}
