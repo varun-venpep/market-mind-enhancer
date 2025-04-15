@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Loader2, Share, Trash, Bookmark } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Share, Trash, Bookmark, FileText, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { fetchArticle, deleteArticle, updateArticle } from '@/services/articleService';
 import { Article } from '@/types';
@@ -201,7 +200,7 @@ const ArticleDetail = () => {
             )}
             {article.score && (
               <div className="flex items-center gap-1">
-                <Icon className="h-4 w-4" />
+                <Bookmark className="h-4 w-4" />
                 <span>SEO Score: {article.score}/100</span>
               </div>
             )}
@@ -218,11 +217,6 @@ const ArticleDetail = () => {
       </div>
     </DashboardLayout>
   );
-};
-
-// Helper components
-const Icon = ({ className }: { className: string }) => {
-  return <Bookmark className={className} />;
 };
 
 const StatusIcon = ({ status }: { status: string }) => {
