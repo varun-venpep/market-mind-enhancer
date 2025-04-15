@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authInitialized, setAuthInitialized] = useState(false);
+  
   // Only show one toast per session
   const [authToastShown, setAuthToastShown] = useState(false);
 
@@ -177,9 +178,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         options: {
           redirectTo,
           queryParams: {
-            // For sign-in flow, only prompt if necessary
-            prompt: 'none',
-            access_type: 'online'
+            // For sign-in flow, use select_account to force account selection
+            // This ensures users always select which account to use
+            prompt: 'select_account',
+            access_type: 'offline'
           }
         }
       });
@@ -210,8 +212,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         options: {
           redirectTo,
           queryParams: {
-            // For sign-up, always ask for Google account selection
-            prompt: 'select_account',
+            // For sign-up, always ask for Google account selection and consent
+            prompt: 'consent select_account',
             access_type: 'offline'
           }
         }

@@ -107,6 +107,7 @@ const Login = () => {
       } else {
         console.log('Google sign-in initiated successfully');
         // We'll keep redirectInProgress true to prevent redirect loops
+        // The redirect to Google OAuth will happen automatically
       }
     } catch (error: any) {
       console.error('Error in Google sign-in handler:', error);

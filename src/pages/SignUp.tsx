@@ -140,7 +140,7 @@ const SignUp = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignUp = async () => {
     if (isGoogleLoading) return;
     
     setIsGoogleLoading(true);
@@ -155,6 +155,8 @@ const SignUp = () => {
           variant: "destructive",
         });
         setRedirectInProgress(false);
+      } else {
+        console.log('Google sign-up initiated successfully');
       }
     } catch (error: any) {
       toast({
@@ -190,7 +192,7 @@ const SignUp = () => {
             size="lg"
             variant="outline"
             className="w-full flex items-center justify-center gap-3"
-            onClick={handleGoogleSignIn}
+            onClick={handleGoogleSignUp}
             disabled={isGoogleLoading || isLoading || redirectInProgress}
           >
             {isGoogleLoading ? (
