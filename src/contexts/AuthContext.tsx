@@ -150,17 +150,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithGoogle = async (): Promise<AuthResult> => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
+    try {
+      console.log('Starting Google sign-in process...');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            prompt: 'select_account'
+          }
         }
+      });
+      
+      if (error) {
+        console.error('Google sign-in error:', error);
+        toast.error(`Authentication failed: ${error.message}`);
       }
-    });
-    return { error };
+      
+      return { error };
+    } catch (err) {
+      console.error('Unexpected error during Google sign-in:', err);
+      toast.error('An unexpected error occurred during authentication');
+      return { error: err as AuthError };
+    }
   };
 
   const logout = async () => {

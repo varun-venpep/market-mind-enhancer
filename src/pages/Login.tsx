@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
-import AuthLayout from "@/components/Auth/AuthLayout";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -99,15 +98,21 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
+      console.log('Initiating Google sign-in...');
       const { error } = await signInWithGoogle();
       if (error) {
+        console.error('Google sign-in failed:', error);
         toast({
           title: "Google Sign In Failed",
           description: error.message || "Please check your internet connection and try again",
           variant: "destructive",
         });
+      } else {
+        console.log('Google sign-in initiated successfully');
+        // Don't navigate here - let the OAuth redirect happen
       }
     } catch (error: any) {
+      console.error('Error in Google sign-in handler:', error);
       toast({
         title: "Google Sign In Failed",
         description: error.message || "An error occurred during Google sign in",
@@ -208,6 +213,7 @@ const Login = () => {
               className="w-full flex items-center justify-center gap-2"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading || isLoading}
+              type="button"
             >
               {isGoogleLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
