@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Article, Campaign } from "@/types";
 import { generateContent, generateImage } from "@/services/geminiApi";
@@ -99,7 +98,14 @@ export async function fetchArticle(id: string): Promise<Article | null> {
 }
 
 // Create a new article
-export async function createArticle(articleData: Partial<Article>): Promise<Article> {
+export async function createArticle(articleData: { 
+  title: string; 
+  keywords?: string[]; 
+  campaign_id?: string;
+  status?: 'draft' | 'in-progress' | 'completed';
+  content?: string;
+  user_id: string;
+}): Promise<Article> {
   try {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
@@ -116,7 +122,7 @@ export async function createArticle(articleData: Partial<Article>): Promise<Arti
     
     const { data, error } = await supabase
       .from('articles')
-      .insert([articleWithUserId])
+      .insert(articleWithUserId)
       .select()
       .single();
       
@@ -129,7 +135,17 @@ export async function createArticle(articleData: Partial<Article>): Promise<Arti
 }
 
 // Update an existing article
-export async function updateArticle(id: string, articleData: Partial<Article>): Promise<Article> {
+export async function updateArticle(id: string, articleData: Partial<{
+  title: string;
+  content?: string;
+  keywords?: string[];
+  status?: 'draft' | 'in-progress' | 'completed';
+  campaign_id?: string;
+  updated_at?: string; 
+  thumbnail_url?: string;
+  word_count?: number;
+  score?: number;
+}>): Promise<Article> {
   try {
     const { data, error } = await supabase
       .from('articles')

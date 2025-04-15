@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -99,11 +100,11 @@ const ArticleGenerator = () => {
       }
       
       // Start with a basic article object
-      const articleData: Partial<Article> = {
+      const articleData = {
         title,
         keywords: keywordArray,
         campaign_id: values.campaignId,
-        status: 'in-progress',
+        status: 'in-progress' as const,
         user_id: user.id
       };
       

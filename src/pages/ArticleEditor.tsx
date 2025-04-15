@@ -13,24 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Check,
-  Edit,
-  Eye,
-  FileText,
-  Image,
-  Loader2,
-  Save,
-  Sparkles,
-  Undo2,
-  X,
-  AlertCircle,
-  HelpCircle
-} from "lucide-react";
-
 import { Article } from "@/types";
 import { fetchArticle, updateArticle, optimizeArticleContent, optimizeArticleSection, calculateSEOScore, generateArticleThumbnail } from '@/services/articleService';
+import { ArrowLeft, Check, Edit, Eye, FileText, Image, Loader2, Save, Sparkles, Undo2, X, AlertCircle, HelpCircle } from "lucide-react";
 
 const ArticleEditor = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -80,7 +65,6 @@ const ArticleEditor = () => {
   const getSections = () => {
     if (!content) return [];
     
-    // Extract headings from markdown content
     const headingRegex = /^(#{1,3})\s+(.+)$/gm;
     const matches = [...content.matchAll(headingRegex)];
     
@@ -99,10 +83,8 @@ const ArticleEditor = () => {
       const optimizedContent = await optimizeArticleContent(content, keywords);
       setContent(optimizedContent);
       
-      // Calculate new SEO score
       const newScore = await calculateSEOScore(optimizedContent, keywords);
       
-      // Update the article in the database
       const updatedArticle = await updateArticle(articleId!, {
         content: optimizedContent,
         score: newScore,
@@ -128,10 +110,8 @@ const ArticleEditor = () => {
       const optimizedContent = await optimizeArticleSection(content, section, keywords);
       setContent(optimizedContent);
       
-      // Calculate new SEO score
       const newScore = await calculateSEOScore(optimizedContent, keywords);
       
-      // Update the article in the database
       const updatedArticle = await updateArticle(articleId!, {
         content: optimizedContent,
         score: newScore,
@@ -156,7 +136,6 @@ const ArticleEditor = () => {
       
       const thumbnailUrl = await generateArticleThumbnail(title, keywords);
       
-      // Update the article in the database
       const updatedArticle = await updateArticle(articleId!, {
         thumbnail_url: thumbnailUrl,
         updated_at: new Date().toISOString()
@@ -181,7 +160,6 @@ const ArticleEditor = () => {
       const wordCount = content.split(/\s+/).filter(Boolean).length;
       const newScore = await calculateSEOScore(content, keywords);
       
-      // Update the article in the database
       const updatedArticle = await updateArticle(articleId!, {
         title,
         content,
@@ -215,7 +193,6 @@ const ArticleEditor = () => {
     try {
       toast.loading("Updating keywords...");
       
-      // Update the article in the database
       const updatedArticle = await updateArticle(articleId!, {
         keywords: newKeywords,
         updated_at: new Date().toISOString()
@@ -231,7 +208,6 @@ const ArticleEditor = () => {
     }
   };
 
-  // Format markdown content to render as HTML
   const renderContent = (markdown: string) => {
     if (!markdown) return "";
     
