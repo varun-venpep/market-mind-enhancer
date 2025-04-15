@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PublishScheduler } from "@/components/Articles/PublishScheduler";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ChevronRight, ExternalLink, Info, Loader2, Send } from "lucide-react";
-import { fetchArticleById } from "@/services/articleService";
+import { fetchArticle } from "@/services/articleService";
 import { Article } from "@/types";
 import { formatDate } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ export default function ArticlePublisher() {
       
       try {
         setLoading(true);
-        const fetchedArticle = await fetchArticleById(articleId);
+        const fetchedArticle = await fetchArticle(articleId);
         setArticle(fetchedArticle);
       } catch (error) {
         console.error("Error loading article:", error);
