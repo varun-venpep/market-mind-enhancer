@@ -31,10 +31,10 @@ serve(async (req) => {
       console.error("Error parsing request body:", error);
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          content: "Failed to parse request. Please try again." 
+          success: false, 
+          error: "Failed to parse request. Please try again." 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
@@ -43,10 +43,10 @@ serve(async (req) => {
     if (!prompt) {
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          content: "No prompt was provided. Please specify what content you'd like to generate." 
+          success: false, 
+          error: "No prompt was provided. Please specify what content you'd like to generate." 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
@@ -59,7 +59,7 @@ serve(async (req) => {
         const maxWords = 500;
         const topics = prompt.split(' ').filter(word => word.length > 5);
         
-        const intro = `# Introduction to ${topics[0] || 'the Topic'}\n\nWelcome to this comprehensive guide about ${topics[0] || 'this topic'}. In this article, we'll explore various aspects and provide valuable insights.\n\n`;
+        const intro = `# ${topics[0] || 'Introduction'}: A Complete Guide\n\nWelcome to this comprehensive guide about ${topics[0] || 'this topic'}. In this article, we'll explore various aspects and provide valuable insights.\n\n`;
         
         const sections = topics.slice(0, 3).map((topic, index) => 
           `## Section ${index + 1}: Understanding ${topic}\n\nThis section covers important details about ${topic}. It's essential to understand these concepts before moving forward.\n\n* Key point 1 about ${topic}\n* Key point 2 about ${topic}\n* Key point 3 about ${topic}\n\n`
@@ -90,10 +90,11 @@ serve(async (req) => {
     console.error('Unhandled error in content generation:', error.message);
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        content: `# Error Occurred\n\nWe encountered an issue while generating your content. Here's some placeholder text instead.\n\nError details: ${error.message || 'Unknown error'}` 
+        success: false, 
+        error: `Error generating content: ${error.message || 'Unknown error'}`,
+        fallbackContent: `# Error Occurred\n\nWe encountered an issue while generating your content. Here's some placeholder text instead.\n\nError details: ${error.message || 'Unknown error'}` 
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });

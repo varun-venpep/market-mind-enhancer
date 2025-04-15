@@ -41,7 +41,13 @@ export async function generateContent(
       throw new Error("Received invalid response from Gemini API");
     }
 
-    const { success, error, content } = response.data;
+    const { success, error, content, fallbackContent } = response.data;
+
+    // If there's an error but we have fallback content, use it
+    if (!success && fallbackContent) {
+      console.warn("Using fallback content due to error:", error);
+      return fallbackContent;
+    }
 
     // Check Edge Function response
     if (!success) {
@@ -75,7 +81,7 @@ export async function generateImage(
     
     console.log("Calling gemini-image edge function with prompt:", prompt.substring(0, 50) + "...");
     
-    // Set a random fallback image URL
+    // Set a reliable fallback image URL
     const randomSeed = Math.floor(Math.random() * 1000);
     const fallbackImageUrl = `https://picsum.photos/800/600?random=${randomSeed}`;
     
