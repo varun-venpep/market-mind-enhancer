@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Fallback image sources with different styles
+const FALLBACK_IMAGES = [
+  "https://picsum.photos/800/600?random=1",
+  "https://source.unsplash.com/random/800x600",
+  "https://placehold.co/800x600/667eea/ffffff?text=AI+Generated+Image",
+  "https://placehold.co/800x600/764ba2/ffffff?text=AI+Generated+Image",
+  "https://placehold.co/800x600/3cba92/ffffff?text=AI+Generated+Image",
+];
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,12 +23,15 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Image generation request received");
+    
     // Verify authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Authorization header is required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      console.warn("Missing Authorization header");
+      return getSuccessResponseWithFallbackImage(
+        "Authentication required", 
+        "Missing Authorization header"
       );
     }
 
@@ -29,56 +41,47 @@ serve(async (req) => {
       requestBody = await req.json();
     } catch (error) {
       console.error('Error parsing request body:', error);
-      // Return a fallback image instead of an error
-      const fallbackImageUrl = getFallbackImageUrl();
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          imageUrl: fallbackImageUrl,
-          note: "Used fallback image due to request parsing error" 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return getSuccessResponseWithFallbackImage(
+        "Request parsing error", 
+        "Invalid JSON in request body"
       );
     }
 
     const { prompt } = requestBody;
     if (!prompt) {
-      // Return a fallback image instead of an error
-      const fallbackImageUrl = getFallbackImageUrl();
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          imageUrl: fallbackImageUrl,
-          note: "Used fallback image due to missing prompt" 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      console.warn("Missing prompt in request");
+      return getSuccessResponseWithFallbackImage(
+        "Missing prompt", 
+        "No image prompt provided"
       );
     }
 
     console.log(`Generating image for prompt: ${prompt.substring(0, 100)}...`);
 
     // Generate a reliable image URL based on the prompt
-    const imageURL = await generateImageUrl(prompt);
-    
-    console.log('Successfully generated image URL:', imageURL);
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        imageUrl: imageURL 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    try {
+      const imageURL = await generateImageUrl(prompt);
+      console.log('Successfully generated image URL:', imageURL);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          imageUrl: imageURL 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (error) {
+      console.error("Error in image URL generation:", error);
+      return getSuccessResponseWithFallbackImage(
+        "Image generation failed", 
+        error.message
+      );
+    }
   } catch (error) {
     console.error('Unhandled error in image generation edge function:', error);
-    // Always provide a fallback image if all else fails
-    const fallbackImageUrl = getFallbackImageUrl();
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        imageUrl: fallbackImageUrl,
-        note: "Used emergency fallback image due to server error" 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    return getSuccessResponseWithFallbackImage(
+      "Server error", 
+      error.message
     );
   }
 });
@@ -86,22 +89,25 @@ serve(async (req) => {
 // Helper function to generate an image URL based on prompt
 async function generateImageUrl(prompt: string): Promise<string> {
   try {
-    // First try to use Unsplash with a search term based on the prompt
+    // Clean and encode the prompt for use in URLs
+    const cleanPrompt = prompt.replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 50);
     const searchTerm = encodeURIComponent(prompt.split(' ').slice(0, 3).join(' '));
-    const randomSeed = Math.floor(Math.random() * 1000);
+    const randomSeed = Math.floor(Math.random() * 10000);
     
     // Different image sources for variety and reliability
     const sources = [
-      `https://source.unsplash.com/random/800x600/?${searchTerm}&${randomSeed}`,
-      `https://picsum.photos/seed/${searchTerm.replace(/[^a-zA-Z0-9]/g, '')}/800/600`,
+      `https://source.unsplash.com/featured/?${searchTerm}&${randomSeed}`,
+      `https://picsum.photos/seed/${cleanPrompt}-${randomSeed}/800/600`,
       `https://loremflickr.com/800/600/${searchTerm}?random=${randomSeed}`
     ];
     
-    // Try the first source
+    // Try the first source with a HEAD request to validate it
     const response = await fetch(sources[0], { method: 'HEAD' });
     
     if (response.ok) {
-      return sources[0];
+      return response.url; // Use the redirected URL from Unsplash
     }
     
     // If first source fails, try the second
@@ -114,6 +120,28 @@ async function generateImageUrl(prompt: string): Promise<string> {
 
 // Helper function to get a reliable fallback image URL
 function getFallbackImageUrl(): string {
-  const randomSeed = Math.floor(Math.random() * 1000);
-  return `https://picsum.photos/800/600?random=${randomSeed}`;
+  const randomIndex = Math.floor(Math.random() * FALLBACK_IMAGES.length);
+  const randomSeed = Math.floor(Math.random() * 10000);
+  const baseUrl = FALLBACK_IMAGES[randomIndex];
+  
+  // Add random parameter to avoid caching issues
+  return baseUrl.includes('?') 
+    ? `${baseUrl}&t=${randomSeed}`
+    : `${baseUrl}?t=${randomSeed}`;
+}
+
+// Helper function to return a response with a fallback image
+function getSuccessResponseWithFallbackImage(reason: string, details: string): Response {
+  const fallbackImageUrl = getFallbackImageUrl();
+  console.log(`Using fallback image due to: ${reason} - ${details}`);
+  
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      imageUrl: fallbackImageUrl,
+      note: `Used fallback image: ${reason}`,
+      details: details
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }

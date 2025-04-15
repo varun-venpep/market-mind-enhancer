@@ -17,6 +17,7 @@ import { ArrowLeft, Edit, Eye, FileText, Import, Loader2, Save, Sparkles } from 
 import { fetchUserCampaigns, createArticle, generateArticleContent, generateArticleThumbnail, calculateSEOScore, updateArticle } from '@/services/articleService';
 import { Article, Campaign } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
+import ArticlePreview from "@/components/Articles/ArticlePreview";
 
 // Form schema for article generation
 const formSchema = z.object({
@@ -123,6 +124,7 @@ const ArticleGenerator = () => {
       let article;
       try {
         article = await createArticle(articleData);
+        console.log("Created article:", article);
       } catch (createError) {
         console.error("Error creating article:", createError);
         toast.dismiss(toastId);
@@ -151,6 +153,8 @@ const ArticleGenerator = () => {
           score,
           status: 'completed'
         });
+        
+        console.log("Updated article:", updatedArticle);
         
         // Set the generated article for preview
         setGeneratedArticle(updatedArticle);
@@ -199,6 +203,8 @@ const ArticleGenerator = () => {
         word_count: editableContent.split(/\s+/).length,
         updated_at: new Date().toISOString()
       });
+      
+      console.log("Saved edited article:", updatedArticle);
       
       // Update the local state
       setGeneratedArticle(updatedArticle);
@@ -253,11 +259,11 @@ const ArticleGenerator = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/dashboard/campaigns')}
                 className="mr-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Back
+                Back to Campaigns
               </Button>
             </div>
             

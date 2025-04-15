@@ -1,10 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Article } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Edit, Eye, Trash } from 'lucide-react';
+import { Edit, Eye, Trash, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { deleteArticle } from '@/services/articleService';
 
@@ -20,22 +20,26 @@ export default function ArticlePreview({
   showActions = true 
 }: ArticlePreviewProps) {
   const navigate = useNavigate();
-  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Calculate truncated content
   const truncatedContent = article.content 
     ? article.content.substring(0, 200) + (article.content.length > 200 ? '...' : '')
     : 'No content available';
   
-  const handleEdit = () => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
     navigate(`/dashboard/article-editor/${article.id}`);
   };
   
-  const handleView = () => {
+  const handleView = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
     navigate(`/dashboard/articles/${article.id}`);
   };
   
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    
     if (window.confirm('Are you sure you want to delete this article?')) {
       setIsDeleting(true);
       try {
@@ -51,8 +55,12 @@ export default function ArticlePreview({
     }
   };
   
+  const handleCardClick = () => {
+    navigate(`/dashboard/articles/${article.id}`);
+  };
+  
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col hover:shadow-md transition-all cursor-pointer" onClick={handleCardClick}>
       <CardContent className="p-4 flex flex-col h-full">
         {article.thumbnail_url && (
           <div className="aspect-video mb-4 overflow-hidden rounded-md">
@@ -60,13 +68,15 @@ export default function ArticlePreview({
               src={article.thumbnail_url} 
               alt={article.title} 
               className="w-full h-full object-cover transition-transform hover:scale-105"
-              onClick={handleView}
-              style={{ cursor: 'pointer' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleView(e);
+              }}
             />
           </div>
         )}
         
-        <h3 className="text-xl font-semibold mb-2 line-clamp-2 hover:text-primary cursor-pointer" onClick={handleView}>
+        <h3 className="text-xl font-semibold mb-2 line-clamp-2 hover:text-primary">
           {article.title}
         </h3>
         
@@ -100,7 +110,7 @@ export default function ArticlePreview({
           </div>
           
           {showActions && (
-            <div className="flex gap-1">
+            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" onClick={handleView} title="View">
                 <Eye className="h-4 w-4" />
               </Button>
@@ -108,7 +118,11 @@ export default function ArticlePreview({
                 <Edit className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleDelete} disabled={isDeleting} title="Delete">
-                <Trash className="h-4 w-4 text-destructive" />
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+                ) : (
+                  <Trash className="h-4 w-4 text-destructive" />
+                )}
               </Button>
             </div>
           )}

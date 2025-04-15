@@ -10,6 +10,7 @@ export function useArticleEditor(article: Article | null) {
   const [keywords, setKeywords] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   
   // Initialize the editor with article data
   useEffect(() => {
@@ -18,6 +19,7 @@ export function useArticleEditor(article: Article | null) {
       setContent(article.content || "");
       setKeywords(article.keywords || []);
       setIsDirty(false);
+      setSaveError(null);
     }
   }, [article]);
   
@@ -34,9 +36,10 @@ export function useArticleEditor(article: Article | null) {
   
   // Save changes
   const saveChanges = async () => {
-    if (!article || !isDirty) return;
+    if (!article || !isDirty) return null;
     
     setIsSaving(true);
+    setSaveError(null);
     const toastId = toast.loading("Saving article...");
     
     try {
@@ -59,6 +62,8 @@ export function useArticleEditor(article: Article | null) {
       return updatedArticle;
     } catch (error) {
       console.error("Error saving article:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setSaveError(errorMessage);
       toast.dismiss(toastId);
       toast.error("Failed to save article. Please try again.");
       return null;
@@ -90,6 +95,7 @@ export function useArticleEditor(article: Article | null) {
     removeKeyword,
     isSaving,
     isDirty,
-    saveChanges
+    saveChanges,
+    saveError
   };
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
@@ -9,9 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, FileText, Plus, Edit, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { Article, Campaign } from "@/types";
+import ArticlePreview from '@/components/Articles/ArticlePreview';
 
 const CampaignDetail = () => {
-  const { campaignId } = useParams<{ campaignId: string }>();
+  const { id: campaignId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
@@ -56,17 +58,32 @@ const CampaignDetail = () => {
     fetchCampaignDetails();
   }, [campaignId]);
   
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return <Badge variant="outline" className="flex items-center gap-1"><Clock className="h-3 w-3" /> Draft</Badge>;
-      case 'in-progress':
-        return <Badge variant="secondary" className="flex items-center gap-1"><AlertCircle className="h-3 w-3" /> In Progress</Badge>;
-      case 'completed':
-        return <Badge variant="outline" className="flex items-center gap-1 bg-green-500/10 text-green-500 border-green-500/20"><CheckCircle className="h-3 w-3" /> Completed</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const handleDeleteArticle = () => {
+    // Refresh the articles list
+    fetchCampaignDetails();
+  };
+  
+  const fetchCampaignDetails = async () => {
+    if (!campaignId) return;
+    
+    try {
+      // Fetch articles for this campaign
+      const { data: articlesData, error: articlesError } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('created_at', { ascending: false });
+      
+      if (articlesError) throw articlesError;
+      
+      setArticles(articlesData as Article[] || []);
+    } catch (error) {
+      console.error('Error refreshing articles:', error);
     }
+  };
+  
+  const handleCreateArticle = () => {
+    navigate('/dashboard/article-generator', { state: { campaignId } });
   };
   
   if (loading) {
@@ -100,16 +117,9 @@ const CampaignDetail = () => {
                 <Skeleton className="h-4 w-72" />
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex flex-col border rounded-lg p-4">
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2 mb-4" />
-                      <div className="flex justify-between">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-8 w-24" />
-                      </div>
-                    </div>
+                    <Skeleton key={i} className="h-64 w-full" />
                   ))}
                 </div>
               </CardContent>
@@ -146,7 +156,7 @@ const CampaignDetail = () => {
               </p>
             </div>
             <Button 
-              onClick={() => navigate('/dashboard/article-generator', { state: { campaignId } })}
+              onClick={handleCreateArticle}
               className="mt-4 md:mt-0 bg-gradient-to-r from-blue-600 to-blue-500"
             >
               <Plus className="mr-2 h-4 w-4" /> Add Article
@@ -162,34 +172,13 @@ const CampaignDetail = () => {
             </CardHeader>
             <CardContent>
               {articles.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                   {articles.map((article) => (
-                    <div 
+                    <ArticlePreview 
                       key={article.id} 
-                      className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/dashboard/article-editor/${article.id}`)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-lg">{article.title}</h3>
-                          <div className="text-muted-foreground text-sm mt-1">
-                            Keywords: {article.keywords?.join(', ') || 'None'}
-                          </div>
-                        </div>
-                        {getStatusBadge(article.status)}
-                      </div>
-                      
-                      <div className="flex justify-between items-center mt-4">
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(article.created_at).toLocaleDateString()}
-                          {article.word_count ? ` • ${article.word_count} words` : ''}
-                          {article.score ? ` • Score: ${article.score}` : ''}
-                        </div>
-                        <Button variant="outline" size="sm" className="flex items-center gap-1">
-                          <Edit className="h-3 w-3" /> Edit
-                        </Button>
-                      </div>
-                    </div>
+                      article={article} 
+                      onDeleted={handleDeleteArticle}
+                    />
                   ))}
                 </div>
               ) : (
@@ -202,7 +191,7 @@ const CampaignDetail = () => {
                     Start creating content by adding your first article to this campaign.
                   </p>
                   <Button 
-                    onClick={() => navigate('/dashboard/article-generator', { state: { campaignId } })}
+                    onClick={handleCreateArticle}
                     className="mt-6 bg-gradient-to-r from-blue-600 to-blue-500"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Create Article

@@ -4,9 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Loader2, Share, Trash } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Share, Trash, Bookmark } from "lucide-react";
 import { toast } from "sonner";
-import { fetchArticle, deleteArticle } from '@/services/articleService';
+import { fetchArticle, deleteArticle, updateArticle } from '@/services/articleService';
 import { Article } from '@/types';
 
 const ArticleDetail = () => {
@@ -23,6 +23,7 @@ const ArticleDetail = () => {
       try {
         setIsLoading(true);
         const data = await fetchArticle(id);
+        console.log("Loaded article:", data);
         setArticle(data);
       } catch (error) {
         console.error("Error loading article:", error);
@@ -48,11 +49,15 @@ const ArticleDetail = () => {
     try {
       await deleteArticle(article.id);
       toast.success("Article deleted successfully");
-      navigate("/dashboard/campaigns");
+      
+      if (article.campaign_id) {
+        navigate(`/dashboard/campaigns/${article.campaign_id}`);
+      } else {
+        navigate("/dashboard/campaigns");
+      }
     } catch (error) {
       console.error("Error deleting article:", error);
       toast.error("Failed to delete article");
-    } finally {
       setIsDeleting(false);
     }
   };
@@ -61,6 +66,14 @@ const ArticleDetail = () => {
     if (article) {
       navigator.clipboard.writeText(window.location.href);
       toast.success("Link copied to clipboard");
+    }
+  };
+  
+  const handleGoToCampaign = () => {
+    if (article && article.campaign_id) {
+      navigate(`/dashboard/campaigns/${article.campaign_id}`);
+    } else {
+      navigate('/dashboard/campaigns');
     }
   };
 
@@ -82,11 +95,11 @@ const ArticleDetail = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/dashboard/campaigns')}
               className="mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
+              Back to Campaigns
             </Button>
           </div>
           
@@ -112,11 +125,11 @@ const ArticleDetail = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate(-1)}
+              onClick={handleGoToCampaign}
               className="mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back
+              Back to Campaign
             </Button>
           </div>
           
@@ -164,7 +177,7 @@ const ArticleDetail = () => {
             </div>
           </div>
           
-          <Card>
+          <Card className="overflow-hidden">
             <CardContent className="p-6">
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 {article.thumbnail_url && (
@@ -174,23 +187,63 @@ const ArticleDetail = () => {
                     className="w-full h-64 object-cover rounded-lg mb-6"
                   />
                 )}
-                <div dangerouslySetInnerHTML={{ __html: article.content?.replace(/\n/g, '<br/>') || '' }} />
+                <div dangerouslySetInnerHTML={{ __html: article.content?.replace(/\n/g, '<br/>') || 'No content available.' }} />
               </div>
             </CardContent>
           </Card>
           
-          {article.word_count && article.score && (
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <div>Word Count: {article.word_count}</div>
-              <div>SEO Score: {article.score}/100</div>
-              <div>Status: {article.status}</div>
-              <div>Last Updated: {new Date(article.updated_at).toLocaleDateString()}</div>
+          <div className="flex gap-4 flex-wrap text-sm text-muted-foreground">
+            {article.word_count && (
+              <div className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                <span>{article.word_count} words</span>
+              </div>
+            )}
+            {article.score && (
+              <div className="flex items-center gap-1">
+                <Icon className="h-4 w-4" />
+                <span>SEO Score: {article.score}/100</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <StatusIcon status={article.status} />
+              <span>Status: {article.status}</span>
             </div>
-          )}
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              <span>Last Updated: {new Date(article.updated_at).toLocaleDateString()}</span>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>
   );
+};
+
+// Helper components
+const Icon = ({ className }: { className: string }) => {
+  return <Bookmark className={className} />;
+};
+
+const StatusIcon = ({ status }: { status: string }) => {
+  switch(status) {
+    case 'completed':
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case 'draft':
+      return <Edit className="h-4 w-4" />;
+    case 'in-progress':
+      return <Loader2 className="h-4 w-4" />;
+    default:
+      return <Circle className="h-4 w-4" />;
+  }
+};
+
+const CheckCircle = ({ className }: { className: string }) => {
+  return <div className={className}>✓</div>;
+};
+
+const Circle = ({ className }: { className: string }) => {
+  return <div className={className}>○</div>;
 };
 
 export default ArticleDetail;
