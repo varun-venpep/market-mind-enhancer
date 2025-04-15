@@ -29,7 +29,7 @@ export async function generateContent(
       }
     });
 
-    // Check for errors
+    // Check for errors in the response
     if (response.error) {
       console.error("Gemini API Error:", response.error);
       throw new Error(response.error.message || "Failed to generate content");
@@ -47,6 +47,11 @@ export async function generateContent(
     if (!success) {
       console.error("Gemini API returned an error:", error || "Unknown error");
       throw new Error(error || "Failed to generate content");
+    }
+
+    // If content is empty or invalid, throw an error
+    if (!content || typeof content !== 'string') {
+      throw new Error("Received empty or invalid content from Gemini API");
     }
 
     return content;
@@ -92,6 +97,11 @@ export async function generateImage(
     if (!success) {
       console.error("Image Generation API returned an error:", error || "Unknown error");
       throw new Error(error || "Failed to generate image");
+    }
+
+    // If imageUrl is empty or invalid, throw an error
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      throw new Error("Received empty or invalid image URL from image generation API");
     }
 
     return imageUrl;

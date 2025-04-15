@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -14,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { ArrowLeft, FileText, Import, Loader2, Sparkles } from "lucide-react";
-import { fetchUserCampaigns, createArticle, generateArticleContent, generateArticleThumbnail, calculateSEOScore } from '@/services/articleService';
+import { fetchUserCampaigns, createArticle, generateArticleContent, generateArticleThumbnail, calculateSEOScore, updateArticle } from '@/services/articleService';
 import { Article, Campaign } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -37,6 +36,7 @@ const ArticleGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const initialCampaignId = location.state?.campaignId || "";
+  const [toastId, setToastId] = useState<string | number | null>(null);
   
   // Setup form with validation
   const form = useForm<FormValues>({
@@ -68,6 +68,15 @@ const ArticleGenerator = () => {
     loadCampaigns();
   }, [initialCampaignId, form]);
 
+  // Clean up any lingering toast when component unmounts
+  useEffect(() => {
+    return () => {
+      if (toastId) {
+        toast.dismiss(toastId);
+      }
+    };
+  }, [toastId]);
+
   const onSubmit = async (values: FormValues) => {
     try {
       setIsGenerating(true);
@@ -88,12 +97,15 @@ const ArticleGenerator = () => {
         title = keywordArray[0].charAt(0).toUpperCase() + keywordArray[0].slice(1);
       }
       
-      toast.loading("Generating article...");
+      // Create a dismissible toast and store its ID
+      const id = toast.loading("Generating article...");
+      setToastId(id);
       
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        toast.dismiss(id);
         toast.error("You must be logged in to create articles");
         setIsGenerating(false);
         return;
@@ -105,54 +117,64 @@ const ArticleGenerator = () => {
         keywords: keywordArray,
         campaign_id: values.campaignId,
         status: 'in-progress' as const,
-        user_id: user.id
       };
       
       // Create the article in the database
       const article = await createArticle(articleData);
       
-      // Generate content and thumbnail in parallel
-      const [{ content, wordCount }, thumbnailUrl] = await Promise.all([
-        generateArticleContent(title, keywordArray),
-        generateArticleThumbnail(title, keywordArray)
-      ]);
-      
-      // Calculate the SEO score
-      const score = await calculateSEOScore(content, keywordArray);
-      
-      // Update the article with generated content
-      await updateArticle(article.id, {
-        content,
-        word_count: wordCount,
-        thumbnail_url: thumbnailUrl,
-        score,
-        status: 'completed'
-      });
-      
-      toast.success("Article generated successfully");
-      
-      // Navigate to the article editor
-      navigate(`/dashboard/article-editor/${article.id}`);
+      try {
+        // Generate content and thumbnail in parallel
+        const [contentResult, thumbnailUrl] = await Promise.all([
+          generateArticleContent(title, keywordArray),
+          generateArticleThumbnail(title, keywordArray)
+        ]);
+        
+        const { content, wordCount } = contentResult;
+        
+        // Calculate the SEO score
+        const score = await calculateSEOScore(content, keywordArray);
+        
+        // Update the article with generated content
+        await updateArticle(article.id, {
+          content,
+          word_count: wordCount,
+          thumbnail_url: thumbnailUrl,
+          score,
+          status: 'completed'
+        });
+        
+        // Clear the loading toast and show success
+        toast.dismiss(id);
+        setToastId(null);
+        toast.success("Article generated successfully");
+        
+        // Navigate to the article editor
+        navigate(`/dashboard/article-editor/${article.id}`);
+      } catch (error) {
+        console.error("Error during content generation:", error);
+        
+        // Update the article status to 'failed'
+        await updateArticle(article.id, {
+          status: 'failed'
+        });
+        
+        // Clear the loading toast and show error
+        toast.dismiss(id);
+        setToastId(null);
+        toast.error("Failed to generate article content. Please try again.");
+      }
     } catch (error) {
-      console.error("Error generating article:", error);
-      toast.error("Failed to generate article. Please try again.");
+      console.error("Error creating article:", error);
+      
+      // Clear any loading toast if it exists
+      if (toastId) {
+        toast.dismiss(toastId);
+        setToastId(null);
+      }
+      
+      toast.error("Failed to create article. Please try again.");
     } finally {
       setIsGenerating(false);
-    }
-  };
-  
-  // Helper function to update article
-  const updateArticle = async (id: string, data: Partial<Article>) => {
-    try {
-      const { error } = await supabase
-        .from('articles')
-        .update(data)
-        .eq('id', id);
-        
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error updating article:", error);
-      throw error;
     }
   };
 
