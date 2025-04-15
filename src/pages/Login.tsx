@@ -25,12 +25,14 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
+  // Add a flag to avoid duplicate redirects
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && !redirectInProgress) {
       navigate("/dashboard");
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirectInProgress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,16 +51,10 @@ const Login = () => {
     try {
       if (mode === 'login') {
         await login(email, password);
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in"
-        });
+        // Toast is now handled in AuthContext
       } else {
         await login(email, password);
-        toast({
-          title: "Account created",
-          description: "Your account has been created successfully"
-        });
+        // Toast is now handled in AuthContext
       }
       navigate('/dashboard');
     } catch (error: any) {
@@ -78,10 +74,7 @@ const Login = () => {
     
     try {
       await login('demo@example.com', 'demo12345');
-      toast({
-        title: "Demo Login",
-        description: "Logged in with demo account"
-      });
+      // Toast is handled in AuthContext
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Demo login error:', error);
@@ -96,10 +89,15 @@ const Login = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    if (isGoogleLoading) return; // Prevent multiple clicks
+    
     setIsGoogleLoading(true);
+    setRedirectInProgress(true);
+    
     try {
       console.log('Initiating Google sign-in...');
       const { error } = await signInWithGoogle();
+      
       if (error) {
         console.error('Google sign-in failed:', error);
         toast({
@@ -107,9 +105,11 @@ const Login = () => {
           description: error.message || "Please check your internet connection and try again",
           variant: "destructive",
         });
+        setRedirectInProgress(false);
       } else {
         console.log('Google sign-in initiated successfully');
         // Don't navigate here - let the OAuth redirect happen
+        // Don't reset redireclnProgress - we want to prevent redirect loops
       }
     } catch (error: any) {
       console.error('Error in Google sign-in handler:', error);
@@ -118,8 +118,11 @@ const Login = () => {
         description: error.message || "An error occurred during Google sign in",
         variant: "destructive",
       });
+      setRedirectInProgress(false);
     } finally {
       setIsGoogleLoading(false);
+      // Note: We deliberately don't reset redirectInProgress on success
+      // It will stay true until the OAuth redirect happens
     }
   };
 
@@ -212,7 +215,7 @@ const Login = () => {
               variant="outline"
               className="w-full flex items-center justify-center gap-2"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading || isLoading}
+              disabled={isGoogleLoading || isLoading || redirectInProgress}
               type="button"
             >
               {isGoogleLoading ? (
@@ -226,7 +229,7 @@ const Login = () => {
                   <path d="M1 1h22v22H1z" fill="none"/>
                 </svg>
               )}
-              <span>Sign in with Google</span>
+              <span>{redirectInProgress ? "Redirecting to Google..." : "Sign in with Google"}</span>
             </Button>
             
             <div className="text-center mt-2 text-sm">

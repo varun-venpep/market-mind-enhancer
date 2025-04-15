@@ -37,12 +37,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authInitialized, setAuthInitialized] = useState(false);
+  // Track if we've shown the login toast
+  const [loginToastShown, setLoginToastShown] = useState(false);
 
   // Configure persistent session
   useEffect(() => {
+    // Track auth state changes
+    let authStateChangeCount = 0;
+    
     // Set session persistence to localStorage for better persistence
     supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log('Auth state changed:', event, !!currentSession);
+      authStateChangeCount++;
       
       // Only update synchronously in the callback
       setSession(currentSession);
@@ -51,18 +57,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Store session data in localStorage for backup persistence
       if (currentSession) {
         localStorage.setItem('supabase.auth.token', JSON.stringify(currentSession));
+        
+        // Only show the success toast once, and only after initial load (not on page refresh)
+        if (event === 'SIGNED_IN' && !loginToastShown && authStateChangeCount > 1) {
+          toast.success("Successfully signed in");
+          setLoginToastShown(true);
+        }
       } else {
         localStorage.removeItem('supabase.auth.token');
-      }
-      
-      // If user signs in, show a success toast
-      if (event === 'SIGNED_IN') {
-        toast.success("Successfully signed in");
-      }
-      
-      // If user signs out, show info toast
-      if (event === 'SIGNED_OUT') {
-        toast.info("You have been signed out");
+        
+        // If user signs out, show info toast - but only for explicit sign outs
+        if (event === 'SIGNED_OUT' && authStateChangeCount > 1) {
+          toast.info("You have been signed out");
+          setLoginToastShown(false);
+        }
       }
     });
 
@@ -74,6 +82,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         setSession(data.session);
         setUser(data.session?.user ?? null);
+        
+        // If we have a valid session at initialization, mark that we've shown the login toast
+        if (data.session) {
+          setLoginToastShown(true);
+        }
         
         // If no session from API but we have one in localStorage, try to restore it
         if (!data.session) {
@@ -91,6 +104,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.log('Successfully restored session from localStorage');
                 setSession(refreshData.session);
                 setUser(refreshData.session.user);
+                setLoginToastShown(true);
               } else {
                 // Invalid local session, remove it
                 localStorage.removeItem('supabase.auth.token');
@@ -132,7 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [loginToastShown]);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -152,12 +166,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithGoogle = async (): Promise<AuthResult> => {
     try {
       console.log('Starting Google sign-in process...');
+      // Check if user might exist already
+      const currentSession = await supabase.auth.getSession();
+      const currentUser = currentSession.data?.session?.user;
+      
+      // Get origin for proper redirect
+      const origin = window.location.origin;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${origin}/dashboard`,
           queryParams: {
-            prompt: 'select_account'
+            // Skip the Google account selection if user is already logged in
+            prompt: currentUser ? 'none' : 'select_account',
+            // Use consent authorization flow to ensure we can detect if user is new or existing
+            access_type: 'offline'
           }
         }
       });

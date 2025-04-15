@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -47,6 +46,7 @@ const SignUp = () => {
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [termsError, setTermsError] = useState("");
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -54,12 +54,11 @@ const SignUp = () => {
     terms: false,
   });
 
-  // If the user is already logged in, redirect to dashboard
   useEffect(() => {
-    if (user) {
+    if (user && !redirectInProgress) {
       navigate("/dashboard");
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirectInProgress]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked } = e.target;
@@ -68,7 +67,6 @@ const SignUp = () => {
       [name]: name === 'terms' ? checked : value
     });
     
-    // Clear errors when user types
     if (name === 'email') setEmailError("");
     if (name === 'password') setPasswordError("");
     if (name === 'confirmPassword') setConfirmPasswordError("");
@@ -143,8 +141,14 @@ const SignUp = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    if (isGoogleLoading) return;
+    
     setIsGoogleLoading(true);
+    setRedirectInProgress(true);
+    
     try {
+      const origin = window.location.origin;
+      
       const result = await signInWithGoogle();
       if (result.error) {
         toast({
@@ -152,6 +156,7 @@ const SignUp = () => {
           description: result.error.message,
           variant: "destructive",
         });
+        setRedirectInProgress(false);
       }
     } catch (error: any) {
       toast({
@@ -159,6 +164,7 @@ const SignUp = () => {
         description: error.message || "An error occurred during Google sign in",
         variant: "destructive",
       });
+      setRedirectInProgress(false);
     } finally {
       setIsGoogleLoading(false);
     }
@@ -187,14 +193,14 @@ const SignUp = () => {
             variant="outline"
             className="w-full flex items-center justify-center gap-3"
             onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading || isLoading}
+            disabled={isGoogleLoading || isLoading || redirectInProgress}
           >
             {isGoogleLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <FaGoogle className="h-4 w-4 text-red-500" />
             )}
-            Sign up with Google
+            {redirectInProgress ? "Redirecting to Google..." : "Sign up with Google"}
           </Button>
 
           <div className="relative flex py-3">
@@ -286,7 +292,7 @@ const SignUp = () => {
             <Button
               type="submit"
               className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500"
-              disabled={isLoading || isGoogleLoading}
+              disabled={isLoading || isGoogleLoading || redirectInProgress}
             >
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2">
