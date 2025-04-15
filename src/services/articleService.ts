@@ -11,7 +11,7 @@ export async function fetchUserCampaigns(): Promise<Campaign[]> {
       .order('created_at', { ascending: false });
       
     if (error) throw error;
-    return data || [];
+    return data as Campaign[];
   } catch (error) {
     console.error('Error fetching campaigns:', error);
     throw error;
@@ -28,7 +28,7 @@ export async function fetchCampaign(id: string): Promise<Campaign | null> {
       .maybeSingle();
       
     if (error) throw error;
-    return data;
+    return data as Campaign;
   } catch (error) {
     console.error('Error fetching campaign:', error);
     throw error;
@@ -38,7 +38,6 @@ export async function fetchCampaign(id: string): Promise<Campaign | null> {
 // Create a new campaign
 export async function createCampaign(name: string, description?: string): Promise<Campaign> {
   try {
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -56,7 +55,7 @@ export async function createCampaign(name: string, description?: string): Promis
       .single();
       
     if (error) throw error;
-    return data;
+    return data as Campaign;
   } catch (error) {
     console.error('Error creating campaign:', error);
     throw error;
@@ -73,7 +72,7 @@ export async function fetchCampaignArticles(campaignId: string): Promise<Article
       .order('created_at', { ascending: false });
       
     if (error) throw error;
-    return data || [];
+    return data as Article[];
   } catch (error) {
     console.error('Error fetching campaign articles:', error);
     throw error;
@@ -90,7 +89,7 @@ export async function fetchArticle(id: string): Promise<Article | null> {
       .maybeSingle();
       
     if (error) throw error;
-    return data;
+    return data as Article;
   } catch (error) {
     console.error('Error fetching article:', error);
     throw error;
@@ -98,36 +97,33 @@ export async function fetchArticle(id: string): Promise<Article | null> {
 }
 
 // Create a new article
-export async function createArticle(articleData: { 
-  title: string; 
-  keywords?: string[]; 
+export async function createArticle(articleData: {
+  title: string; // Make title required
+  keywords?: string[];
   campaign_id?: string;
   status?: 'draft' | 'in-progress' | 'completed';
   content?: string;
   user_id: string;
 }): Promise<Article> {
   try {
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       throw new Error('You must be logged in to create an article');
     }
     
-    // Ensure user_id is set
-    const articleWithUserId = {
-      ...articleData,
-      user_id: user.id
-    };
-    
     const { data, error } = await supabase
       .from('articles')
-      .insert(articleWithUserId)
+      .insert({
+        ...articleData,
+        user_id: user.id,
+        status: articleData.status || 'draft' // Provide default status
+      })
       .select()
       .single();
       
     if (error) throw error;
-    return data;
+    return data as Article;
   } catch (error) {
     console.error('Error creating article:', error);
     throw error;
@@ -135,27 +131,24 @@ export async function createArticle(articleData: {
 }
 
 // Update an existing article
-export async function updateArticle(id: string, articleData: Partial<{
-  title: string;
-  content?: string;
-  keywords?: string[];
-  status?: 'draft' | 'in-progress' | 'completed';
-  campaign_id?: string;
-  updated_at?: string; 
-  thumbnail_url?: string;
-  word_count?: number;
-  score?: number;
-}>): Promise<Article> {
+export async function updateArticle(id: string, 
+  articleData: Partial<Omit<Article, 'id' | 'user_id' | 'created_at'>> & { 
+    status?: 'draft' | 'in-progress' | 'completed' 
+  }
+): Promise<Article> {
   try {
     const { data, error } = await supabase
       .from('articles')
-      .update(articleData)
+      .update({
+        ...articleData,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
       
     if (error) throw error;
-    return data;
+    return data as Article;
   } catch (error) {
     console.error('Error updating article:', error);
     throw error;
