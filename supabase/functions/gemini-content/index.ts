@@ -38,7 +38,7 @@ serve(async (req) => {
       );
     }
 
-    const { prompt, temperature = 0.7, maxOutputTokens = 1024 } = requestBody;
+    const { prompt, temperature = 0.7, maxOutputTokens = 4096 } = requestBody;
     
     if (!prompt) {
       return new Response(
@@ -52,40 +52,91 @@ serve(async (req) => {
 
     console.log(`Generating content with prompt of length: ${prompt.length} characters`);
 
-    // In a real implementation, we would call the Gemini API here
-    // For now, we'll generate some placeholder content based on the prompt
-    const generatePlaceholderContent = (prompt: string) => {
-      try {
-        const maxWords = 500;
-        const topics = prompt.split(' ').filter(word => word.length > 5);
-        
-        const intro = `# ${topics[0] || 'Introduction'}: A Complete Guide\n\nWelcome to this comprehensive guide about ${topics[0] || 'this topic'}. In this article, we'll explore various aspects and provide valuable insights.\n\n`;
-        
-        const sections = topics.slice(0, 3).map((topic, index) => 
-          `## Section ${index + 1}: Understanding ${topic}\n\nThis section covers important details about ${topic}. It's essential to understand these concepts before moving forward.\n\n* Key point 1 about ${topic}\n* Key point 2 about ${topic}\n* Key point 3 about ${topic}\n\n`
-        ).join('');
-        
-        const tips = `## Tips and Best Practices\n\n1. First tip related to ${topics[0] || 'the topic'}\n2. Second tip for better results\n3. Third important consideration\n\n`;
-        
-        const conclusion = `## Conclusion\n\nIn this article, we've covered ${topics[0] || 'the main topic'} in detail. Remember the key points discussed and apply them to achieve better results.`;
-        
-        return intro + sections + tips + conclusion;
-      } catch (error) {
-        console.error('Error generating placeholder content:', error);
-        return `# Generated Content\n\nThis is placeholder content for "${prompt.substring(0, 50)}..."`;
+    // Get the API key from environment variables
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!geminiApiKey) {
+      console.error("GEMINI_API_KEY is not set in environment variables");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "API configuration error. Please contact the administrator.",
+          fallbackContent: `# Generated Content\n\nWe're experiencing some technical difficulties with our AI service.\n\nThis is placeholder content related to: "${prompt.substring(0, 50)}..."`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
+    // Call the Gemini API
+    try {
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`;
+      
+      const apiResponse = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: temperature,
+            maxOutputTokens: maxOutputTokens,
+            topP: 0.9,
+            topK: 40
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
+        })
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        console.error("Gemini API Error:", errorData);
+        throw new Error(`Gemini API returned status ${apiResponse.status}: ${JSON.stringify(errorData)}`);
       }
-    };
 
-    const content = generatePlaceholderContent(prompt);
-    console.log(`Generated content of length: ${content.length} characters`);
+      const data = await apiResponse.json();
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        content 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      // Extract the content from the response
+      if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
+        const content = data.candidates[0].content.parts.map(part => part.text).join('');
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            content 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        throw new Error("Unexpected response structure from Gemini API");
+      }
+    } catch (apiError) {
+      console.error("Error calling Gemini API:", apiError);
+      
+      // Generate fallback content in case of API failure
+      const fallbackContent = `# ${prompt.substring(0, 50)}...\n\nWe apologize, but we couldn't generate the content you requested due to a technical issue. Please try again later.`;
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: apiError.message || "Failed to generate content with Gemini API",
+          fallbackContent 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Unhandled error in content generation:', error.message);
     return new Response(

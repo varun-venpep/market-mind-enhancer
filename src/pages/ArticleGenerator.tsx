@@ -3,17 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, Edit, Eye, FileText, Import, Loader2, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Edit, Eye, FileText, Import, Loader2, Save, Sparkles, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
 import { fetchUserCampaigns, createArticle, generateArticleContent, generateArticleThumbnail, calculateSEOScore, updateArticle } from '@/services/articleService';
 import { Article, Campaign } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +43,7 @@ const ArticleGenerator = () => {
   const [editableContent, setEditableContent] = useState("");
   const [editableTitle, setEditableTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   
   // Setup form with validation
   const form = useForm<FormValues>({
@@ -82,6 +83,7 @@ const ArticleGenerator = () => {
       if (isGenerating) return; // Prevent multiple submissions
       
       setIsGenerating(true);
+      setGenerationError(null);
       
       // Process the keywords
       const keywordArray = values.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
@@ -100,7 +102,7 @@ const ArticleGenerator = () => {
       }
       
       // Create a dismissible toast for the generation process
-      const toastId = toast.loading("Generating article...");
+      const toastId = toast.loading("Initiating article generation...");
       
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -123,6 +125,7 @@ const ArticleGenerator = () => {
       // Create the article in the database
       let article;
       try {
+        toast.loading("Creating article draft...", { id: toastId });
         article = await createArticle(articleData);
         console.log("Created article:", article);
       } catch (createError) {
@@ -135,17 +138,22 @@ const ArticleGenerator = () => {
       
       try {
         // Generate content and thumbnail in parallel
-        const [contentResult, thumbnailUrl] = await Promise.all([
-          generateArticleContent(title, keywordArray),
-          generateArticleThumbnail(title, keywordArray)
-        ]);
+        toast.loading("Generating SEO content and thumbnail...", { id: toastId });
+        
+        const contentPromise = generateArticleContent(title, keywordArray);
+        const thumbnailPromise = generateArticleThumbnail(title, keywordArray);
+        
+        // Handle both promises
+        const [contentResult, thumbnailUrl] = await Promise.all([contentPromise, thumbnailPromise]);
         
         const { content, wordCount } = contentResult;
         
         // Calculate the SEO score
+        toast.loading("Calculating SEO score...", { id: toastId });
         const score = await calculateSEOScore(content, keywordArray);
         
         // Update the article with generated content
+        toast.loading("Saving article...", { id: toastId });
         const updatedArticle = await updateArticle(article.id, {
           content,
           word_count: wordCount,
@@ -169,11 +177,12 @@ const ArticleGenerator = () => {
         setViewMode('preview');
       } catch (error) {
         console.error("Error during content generation:", error);
+        setGenerationError(error instanceof Error ? error.message : "Unknown error occurred");
         
-        // Update the article status to 'failed'
+        // Update the article status to 'draft' instead of 'failed'
         if (article) {
           await updateArticle(article.id, {
-            status: 'failed'
+            status: 'draft'
           });
         }
         
@@ -196,11 +205,14 @@ const ArticleGenerator = () => {
     const toastId = toast.loading("Saving article...");
     
     try {
+      // Calculate word count
+      const wordCount = editableContent.split(/\s+/).filter(Boolean).length;
+      
       // Update the article with edited content
       const updatedArticle = await updateArticle(generatedArticle.id, {
         content: editableContent,
         title: editableTitle,
-        word_count: editableContent.split(/\s+/).length,
+        word_count: wordCount,
         updated_at: new Date().toISOString()
       });
       
@@ -245,6 +257,12 @@ const ArticleGenerator = () => {
     }
   };
 
+  const handleViewArticleDetails = () => {
+    if (generatedArticle) {
+      navigate(`/dashboard/articles/${generatedArticle.id}`);
+    }
+  };
+
   const handleBackToForm = () => {
     setViewMode('form');
   };
@@ -269,167 +287,136 @@ const ArticleGenerator = () => {
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
               <div>
-                <h1 className="text-3xl font-bold gradient-text">Generate SEO Articles</h1>
+                <h1 className="text-3xl font-bold gradient-text">AI Article Generator</h1>
                 <p className="text-muted-foreground mt-1">
                   Create high-quality, SEO-optimized articles based on keywords
                 </p>
               </div>
             </div>
             
-            <Tabs 
-              defaultValue="manual" 
-              value={activeTab} 
-              onValueChange={setActiveTab}
-              className="mb-8"
-            >
-              <TabsList className="mb-6">
-                <TabsTrigger value="manual" className="flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
-                  <span>Manual</span>
-                </TabsTrigger>
-                <TabsTrigger value="import" className="flex items-center gap-1">
-                  <Import className="h-4 w-4" />
-                  <span>Import</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="manual">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Create SEO Article</CardTitle>
-                    <CardDescription>
-                      Enter keywords for your article. You can add an optional title or we'll generate one for you.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <FormField
-                          control={form.control}
-                          name="campaignId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Campaign</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                                value={field.value}
-                                disabled={isLoading || isGenerating}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a campaign" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {campaigns.map((campaign) => (
-                                    <SelectItem key={campaign.id} value={campaign.id}>
-                                      {campaign.name}
-                                    </SelectItem>
-                                  ))}
-                                  {campaigns.length === 0 && (
-                                    <SelectItem value="none" disabled>
-                                      No campaigns available
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="keywords"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Keywords</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Enter keywords separated by commas (e.g., 'gardening for beginners, best tools for gardeners')"
-                                  className="min-h-[100px]"
-                                  disabled={isGenerating}
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="title"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Title (Optional)</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="Leave blank to generate from keywords"
-                                  disabled={isGenerating}
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div className="flex justify-end">
-                          <Button 
-                            type="submit" 
-                            className="gradient-button"
-                            disabled={isGenerating || isLoading}
+            {generationError && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-2 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-medium text-red-800">Generation Error</h3>
+                    <p className="text-sm text-red-700 mt-1">{generationError}</p>
+                    <p className="text-sm text-red-600 mt-2">Please try again or adjust your keywords.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle>Create SEO Article</CardTitle>
+                <CardDescription>
+                  Enter keywords for your article. Our AI will generate SEO-optimized content based on your input.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="campaignId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Campaign</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            value={field.value}
+                            disabled={isLoading || isGenerating}
                           >
-                            {isGenerating ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generating Article...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                Generate Article
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="import">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Import Keywords</CardTitle>
-                    <CardDescription>
-                      Import keywords from CSV, Excel or other sources
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <Import className="h-16 w-16 text-blue-500/30 mb-4" />
-                      <p className="text-muted-foreground font-medium">Import Feature Coming Soon</p>
-                      <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                        This feature is under development and will be available soon.
-                        For now, please use the manual entry method.
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="justify-center">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setActiveTab("manual")}
-                    >
-                      Switch to Manual Entry
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a campaign" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {campaigns.map((campaign) => (
+                                <SelectItem key={campaign.id} value={campaign.id}>
+                                  {campaign.name}
+                                </SelectItem>
+                              ))}
+                              {campaigns.length === 0 && (
+                                <SelectItem value="none" disabled>
+                                  No campaigns available
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="keywords"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Keywords</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Enter keywords separated by commas (e.g., 'gardening for beginners, best tools for gardeners')"
+                              className="min-h-[100px]"
+                              disabled={isGenerating}
+                              {...field}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            These keywords will be used to optimize your article for search engines.
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Leave blank to generate from keywords"
+                              disabled={isGenerating}
+                              {...field}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            If left blank, we'll generate a title based on your keywords.
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </form>
+                </Form>
+              </CardContent>
+              <CardFooter className="flex justify-end">
+                <Button 
+                  onClick={form.handleSubmit(onSubmit)} 
+                  className="gradient-button"
+                  disabled={isGenerating || isLoading}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Article...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Article
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
         </div>
       </DashboardLayout>
@@ -454,64 +441,126 @@ const ArticleGenerator = () => {
               </Button>
             </div>
             
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div>
-                <h1 className="text-3xl font-bold">{generatedArticle.title}</h1>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold">{generatedArticle.title}</h1>
+                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                    <CheckCircle className="h-3 w-3 mr-1" /> Generated
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-1">
                   {generatedArticle.keywords?.map((keyword, index) => (
-                    <span key={index} className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full text-xs">
+                    <Badge key={index} variant="secondary">
                       {keyword}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               </div>
-              <div className="flex gap-2 mt-4 md:mt-0">
-                <Button 
-                  variant="outline" 
-                  onClick={handleViewInCampaign}
-                >
-                  View in Campaign
-                </Button>
+              <div className="flex gap-2 mt-2 md:mt-0">
                 <Button 
                   variant="outline"
                   onClick={handleEditMode}
-                  className="flex gap-1"
                 >
-                  <Edit className="h-4 w-4" />
+                  <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
-                <Button 
-                  variant="outline"
-                  onClick={handleNavigateToEditor}
-                  className="flex gap-1"
+                <Button
+                  variant="default"
+                  onClick={handleViewArticleDetails}
                 >
-                  <FileText className="h-4 w-4" />
-                  Open in Editor
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Article
                 </Button>
               </div>
             </div>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="prose prose-lg dark:prose-invert max-w-none">
-                  {generatedArticle.thumbnail_url && (
-                    <img 
-                      src={generatedArticle.thumbnail_url} 
-                      alt={generatedArticle.title} 
-                      className="w-full h-64 object-cover rounded-lg mb-6"
-                    />
-                  )}
-                  <div dangerouslySetInnerHTML={{ __html: generatedArticle.content?.replace(/\n/g, '<br/>') || '' }} />
-                </div>
-              </CardContent>
-            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Card className="shadow-md">
+                  <CardHeader>
+                    <CardTitle>Article Preview</CardTitle>
+                  </CardHeader>
+                  <CardContent className="prose dark:prose-invert max-w-none">
+                    {generatedArticle.thumbnail_url && (
+                      <div className="mb-6">
+                        <img 
+                          src={generatedArticle.thumbnail_url} 
+                          alt={generatedArticle.title} 
+                          className="w-full rounded-md border object-cover max-h-[300px]" 
+                        />
+                      </div>
+                    )}
+                    <div dangerouslySetInnerHTML={{ __html: generatedArticle.content?.replace(/\n/g, '<br/>') || 'No content available.' }} />
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div>
+                <Card className="shadow-md">
+                  <CardHeader>
+                    <CardTitle>Article Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium">SEO Score</p>
+                      <div className="flex items-center mt-1">
+                        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-green-500 rounded-full"
+                            style={{ width: `${generatedArticle.score || 0}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm ml-2">{generatedArticle.score || 0}%</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium">Word Count</p>
+                      <p className="text-sm">{generatedArticle.word_count || 0} words</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium">Status</p>
+                      <Badge variant="outline" className="mt-1">
+                        {generatedArticle.status}
+                      </Badge>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium">Campaign</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {campaigns.find(c => c.id === generatedArticle.campaign_id)?.name || 'Unknown Campaign'}
+                      </p>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-2">
+                    <Button 
+                      className="w-full"
+                      onClick={handleNavigateToEditor}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit in Full Editor
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleViewInCampaign}
+                    >
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      Go to Campaign
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  // Edit view for the article
+  // Edit view for generated article
   if (viewMode === 'edit' && generatedArticle) {
     return (
       <DashboardLayout>
@@ -529,78 +578,47 @@ const ArticleGenerator = () => {
               </Button>
             </div>
             
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-              <div className="w-full">
-                <Input
-                  value={editableTitle}
-                  onChange={(e) => setEditableTitle(e.target.value)}
-                  className="text-2xl font-bold border-none shadow-none focus-visible:ring-0 px-0 text-3xl"
-                  placeholder="Article Title"
-                />
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {generatedArticle.keywords?.map((keyword, index) => (
-                    <span key={index} className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full text-xs">
-                      {keyword}
-                    </span>
-                  ))}
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle>Edit Article</CardTitle>
+                <CardDescription>Make changes to your generated article</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Article Title</Label>
+                  <Input 
+                    id="title"
+                    value={editableTitle}
+                    onChange={(e) => setEditableTitle(e.target.value)}
+                    className="mt-1"
+                  />
                 </div>
-              </div>
-              <div className="flex gap-2 mt-4 md:mt-0">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setViewMode('preview')}
-                  className="flex gap-1"
-                >
-                  <Eye className="h-4 w-4" />
-                  Preview
-                </Button>
-                <Button 
-                  className="gradient-button flex gap-1"
-                  onClick={handleSaveEditedArticle}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="prose prose-lg dark:prose-invert max-w-none">
-                  {generatedArticle.thumbnail_url && (
-                    <img 
-                      src={generatedArticle.thumbnail_url} 
-                      alt={editableTitle} 
-                      className="w-full h-64 object-cover rounded-lg mb-6"
-                    />
-                  )}
-                  <Textarea
+                
+                <div>
+                  <Label htmlFor="content">Article Content</Label>
+                  <Textarea 
+                    id="content"
                     value={editableContent}
                     onChange={(e) => setEditableContent(e.target.value)}
-                    className="min-h-[500px] font-mono"
-                    placeholder="Article content..."
+                    className="mt-1 min-h-[400px] font-mono text-sm"
                   />
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-end">
+              <CardFooter className="flex justify-end gap-2">
                 <Button 
-                  className="gradient-button"
+                  variant="outline" 
+                  onClick={() => setViewMode('preview')}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button 
                   onClick={handleSaveEditedArticle}
                   disabled={isSaving}
                 >
                   {isSaving ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Saving...
                     </>
                   ) : (
@@ -618,16 +636,43 @@ const ArticleGenerator = () => {
     );
   }
 
-  // Fallback view
+  // Fallback view (shouldn't happen in normal flow)
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <div className="flex justify-center items-center h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex items-center">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/dashboard/campaigns')}
+            className="mr-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Campaigns
+          </Button>
         </div>
+        
+        <Card className="mt-8 text-center p-8">
+          <CardContent>
+            <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
+            <p className="text-muted-foreground mb-6">
+              We encountered an issue with the article generator.
+            </p>
+            <Button onClick={() => setViewMode('form')}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
 };
+
+// Missing Label component definition
+const Label = ({ htmlFor, children, className = "" }: { htmlFor: string; children: React.ReactNode; className?: string }) => (
+  <label htmlFor={htmlFor} className={`block text-sm font-medium ${className}`}>
+    {children}
+  </label>
+);
 
 export default ArticleGenerator;

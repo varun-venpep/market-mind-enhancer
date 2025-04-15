@@ -11,6 +11,7 @@ export function useArticleEditor(article: Article | null) {
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   
   // Initialize the editor with article data
   useEffect(() => {
@@ -58,7 +59,10 @@ export function useArticleEditor(article: Article | null) {
       toast.dismiss(toastId);
       toast.success("Article saved successfully");
       
+      // Update tracking states
       setIsDirty(false);
+      setLastSavedAt(new Date());
+      
       return updatedArticle;
     } catch (error) {
       console.error("Error saving article:", error);
@@ -84,6 +88,17 @@ export function useArticleEditor(article: Article | null) {
     setKeywords(keywords.filter(k => k !== keyword));
   };
   
+  // Auto-save functionality (can be enabled/disabled)
+  const enableAutoSave = (intervalMs = 30000) => {
+    const interval = setInterval(() => {
+      if (isDirty && !isSaving) {
+        saveChanges();
+      }
+    }, intervalMs);
+    
+    return () => clearInterval(interval);
+  };
+  
   return {
     title,
     setTitle,
@@ -96,6 +111,8 @@ export function useArticleEditor(article: Article | null) {
     isSaving,
     isDirty,
     saveChanges,
-    saveError
+    saveError,
+    lastSavedAt,
+    enableAutoSave
   };
 }

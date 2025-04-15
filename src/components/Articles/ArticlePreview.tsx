@@ -1,133 +1,158 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Article } from '@/types';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Eye, Trash, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { deleteArticle } from '@/services/articleService';
+import { Badge } from "@/components/ui/badge";
+import { Article } from '@/types';
+import { Eye, Edit, Clock } from 'lucide-react';
 
 interface ArticlePreviewProps {
   article: Article;
-  onDeleted?: () => void;
-  showActions?: boolean;
+  onSelect?: (article: Article) => void;
+  compact?: boolean;
 }
 
-export default function ArticlePreview({ 
+const ArticlePreview: React.FC<ArticlePreviewProps> = ({ 
   article, 
-  onDeleted,
-  showActions = true 
-}: ArticlePreviewProps) {
+  onSelect,
+  compact = false
+}) => {
   const navigate = useNavigate();
-  const [isDeleting, setIsDeleting] = useState(false);
   
-  // Calculate truncated content
-  const truncatedContent = article.content 
-    ? article.content.substring(0, 200) + (article.content.length > 200 ? '...' : '')
-    : 'No content available';
-  
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    navigate(`/dashboard/article-editor/${article.id}`);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
   };
   
   const handleView = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.preventDefault();
+    e.stopPropagation();
     navigate(`/dashboard/articles/${article.id}`);
   };
   
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    
-    if (window.confirm('Are you sure you want to delete this article?')) {
-      setIsDeleting(true);
-      try {
-        await deleteArticle(article.id);
-        toast.success('Article deleted successfully');
-        if (onDeleted) onDeleted();
-      } catch (error) {
-        console.error('Error deleting article:', error);
-        toast.error('Failed to delete article');
-      } finally {
-        setIsDeleting(false);
-      }
-    }
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/dashboard/article-editor/${article.id}`);
   };
   
   const handleCardClick = () => {
-    navigate(`/dashboard/articles/${article.id}`);
+    if (onSelect) {
+      onSelect(article);
+    } else {
+      navigate(`/dashboard/articles/${article.id}`);
+    }
   };
   
+  // Extract the first paragraph for the preview
+  const getContentPreview = (content: string | undefined, maxLength = 150) => {
+    if (!content) return 'No content available.';
+    
+    // Get the first paragraph or a snippet
+    const firstParagraph = content.split('\n\n')[0]?.replace(/[#*]/g, '');
+    
+    if (firstParagraph.length <= maxLength) return firstParagraph;
+    return firstParagraph.substring(0, maxLength) + '...';
+  };
+  
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-500/10 text-green-600 border-green-500/20';
+      case 'in-progress':
+        return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+      case 'draft':
+        return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+      default:
+        return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+    }
+  };
+
   return (
-    <Card className="h-full flex flex-col hover:shadow-md transition-all cursor-pointer" onClick={handleCardClick}>
-      <CardContent className="p-4 flex flex-col h-full">
-        {article.thumbnail_url && (
-          <div className="aspect-video mb-4 overflow-hidden rounded-md">
-            <img 
-              src={article.thumbnail_url} 
-              alt={article.title} 
-              className="w-full h-full object-cover transition-transform hover:scale-105"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleView(e);
-              }}
-            />
+    <Card 
+      className={`hover:shadow-md transition-shadow cursor-pointer border overflow-hidden ${compact ? 'h-full' : ''}`}
+      onClick={handleCardClick}
+    >
+      {article.thumbnail_url && (
+        <div className="relative h-40 w-full overflow-hidden">
+          <img 
+            src={article.thumbnail_url} 
+            alt={article.title} 
+            className="w-full h-full object-cover transition-transform hover:scale-105"
+          />
+          <div className="absolute top-2 right-2">
+            <Badge 
+              variant="outline" 
+              className={getStatusBadgeColor(article.status)}
+            >
+              {article.status}
+            </Badge>
           </div>
-        )}
-        
-        <h3 className="text-xl font-semibold mb-2 line-clamp-2 hover:text-primary">
-          {article.title}
-        </h3>
-        
-        <div className="flex flex-wrap gap-1 mb-3">
-          {article.keywords?.slice(0, 3).map((keyword, index) => (
-            <span key={index} className="text-xs bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
-              {keyword}
-            </span>
-          ))}
-          {article.keywords && article.keywords.length > 3 && (
-            <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-              +{article.keywords.length - 3} more
-            </span>
+        </div>
+      )}
+      
+      <CardContent className={`pt-4 ${compact ? 'pb-2' : 'pb-4'}`}>
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-start">
+            <h3 className="font-semibold text-lg line-clamp-2">{article.title}</h3>
+          </div>
+          
+          {!compact && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {getContentPreview(article.content)}
+            </p>
           )}
-        </div>
-        
-        <div className="text-sm text-muted-foreground mb-3 flex-grow">
-          <div dangerouslySetInnerHTML={{ 
-            __html: truncatedContent.replace(/\n/g, '<br/>').replace(/#+ /g, '') 
-          }} />
-        </div>
-        
-        <div className="mt-auto pt-4 flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex gap-3">
-            {article.word_count && (
-              <span>{article.word_count} words</span>
-            )}
-            {article.score && (
-              <span>Score: {article.score}/100</span>
+          
+          <div className="flex flex-wrap gap-2 mt-1">
+            {article.keywords?.slice(0, compact ? 2 : 3).map((keyword, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {keyword}
+              </Badge>
+            ))}
+            {article.keywords && article.keywords.length > (compact ? 2 : 3) && (
+              <Badge variant="outline" className="text-xs">
+                +{article.keywords.length - (compact ? 2 : 3)}
+              </Badge>
             )}
           </div>
           
-          {showActions && (
-            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" onClick={handleView} title="View">
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleEdit} title="Edit">
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleDelete} disabled={isDeleting} title="Delete">
-                {isDeleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-destructive" />
-                ) : (
-                  <Trash className="h-4 w-4 text-destructive" />
-                )}
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center text-xs text-muted-foreground mt-1">
+            <Clock className="h-3 w-3 mr-1" />
+            <span>{formatDate(article.updated_at)}</span>
+            {article.word_count && (
+              <span className="ml-2">{article.word_count} words</span>
+            )}
+          </div>
         </div>
       </CardContent>
+      
+      <CardFooter className={`${compact ? 'pt-0 pb-3' : 'pt-0'} flex gap-2`}>
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          onClick={handleView}
+          className="flex-1 h-8"
+        >
+          <Eye className="h-3.5 w-3.5 mr-1" />
+          <span className="text-xs">View</span>
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost"
+          onClick={handleEdit}
+          className="flex-1 h-8"
+        >
+          <Edit className="h-3.5 w-3.5 mr-1" />
+          <span className="text-xs">Edit</span>
+        </Button>
+      </CardFooter>
     </Card>
   );
-}
+};
+
+export default ArticlePreview;
