@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Article, Campaign } from "@/types";
 import { generateContent, generateImage } from "@/services/geminiApi";
@@ -11,7 +12,7 @@ export async function fetchUserCampaigns(): Promise<Campaign[]> {
       .order('created_at', { ascending: false });
       
     if (error) throw error;
-    return data as Campaign[];
+    return data as Campaign[] || [];
   } catch (error) {
     console.error('Error fetching campaigns:', error);
     throw error;
@@ -28,7 +29,7 @@ export async function fetchCampaign(id: string): Promise<Campaign | null> {
       .maybeSingle();
       
     if (error) throw error;
-    return data as Campaign;
+    return data as Campaign | null;
   } catch (error) {
     console.error('Error fetching campaign:', error);
     throw error;
@@ -49,7 +50,9 @@ export async function createCampaign(name: string, description?: string): Promis
       .insert({
         name,
         description,
-        user_id: user.id
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();
@@ -72,7 +75,7 @@ export async function fetchCampaignArticles(campaignId: string): Promise<Article
       .order('created_at', { ascending: false });
       
     if (error) throw error;
-    return data as Article[];
+    return data as Article[] || [];
   } catch (error) {
     console.error('Error fetching campaign articles:', error);
     throw error;
@@ -89,21 +92,23 @@ export async function fetchArticle(id: string): Promise<Article | null> {
       .maybeSingle();
       
     if (error) throw error;
-    return data as Article;
+    return data as Article | null;
   } catch (error) {
     console.error('Error fetching article:', error);
     throw error;
   }
 }
 
-// Create a new article
+// Create a new article with more flexible typing
 export async function createArticle(articleData: {
-  title: string; // Make title required
+  title: string;
   keywords?: string[];
   campaign_id?: string;
-  status?: 'draft' | 'in-progress' | 'completed';
+  status?: string;
   content?: string;
-  user_id: string;
+  word_count?: number;
+  thumbnail_url?: string;
+  score?: number;
 }): Promise<Article> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -117,7 +122,9 @@ export async function createArticle(articleData: {
       .insert({
         ...articleData,
         user_id: user.id,
-        status: articleData.status || 'draft' // Provide default status
+        status: articleData.status || 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();
@@ -130,12 +137,17 @@ export async function createArticle(articleData: {
   }
 }
 
-// Update an existing article
-export async function updateArticle(id: string, 
-  articleData: Partial<Omit<Article, 'id' | 'user_id' | 'created_at'>> & { 
-    status?: 'draft' | 'in-progress' | 'completed' 
-  }
-): Promise<Article> {
+// Update an existing article with more flexible typing
+export async function updateArticle(id: string, articleData: {
+  title?: string;
+  content?: string;
+  keywords?: string[];
+  status?: string;
+  campaign_id?: string;
+  thumbnail_url?: string;
+  word_count?: number;
+  score?: number;
+}): Promise<Article> {
   try {
     const { data, error } = await supabase
       .from('articles')
