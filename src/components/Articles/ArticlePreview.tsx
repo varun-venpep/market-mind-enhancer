@@ -5,18 +5,20 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Article } from '@/types';
-import { Eye, Edit, Clock } from 'lucide-react';
+import { Eye, Edit, Clock, Trash2 } from 'lucide-react';
 
 interface ArticlePreviewProps {
   article: Article;
   onSelect?: (article: Article) => void;
   compact?: boolean;
+  onDeleted?: () => void;
 }
 
 const ArticlePreview: React.FC<ArticlePreviewProps> = ({ 
   article, 
   onSelect,
-  compact = false
+  compact = false,
+  onDeleted
 }) => {
   const navigate = useNavigate();
   
@@ -39,6 +41,15 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({
     e.preventDefault();
     e.stopPropagation();
     navigate(`/dashboard/article-editor/${article.id}`);
+  };
+  
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onDeleted) {
+      onDeleted();
+    }
   };
   
   const handleCardClick = () => {
@@ -150,6 +161,17 @@ const ArticlePreview: React.FC<ArticlePreviewProps> = ({
           <Edit className="h-3.5 w-3.5 mr-1" />
           <span className="text-xs">Edit</span>
         </Button>
+        {onDeleted && (
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={handleDelete}
+            className="flex-1 h-8 text-red-500 hover:text-red-600"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            <span className="text-xs">Delete</span>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

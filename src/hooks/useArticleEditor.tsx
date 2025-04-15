@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { Article } from "@/types";
 import { updateArticle } from "@/services/articleService";
@@ -12,6 +12,8 @@ export function useArticleEditor(article: Article | null) {
   const [isDirty, setIsDirty] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const [autoSaveInterval, setAutoSaveInterval] = useState<number | null>(null);
   
   // Initialize the editor with article data
   useEffect(() => {
@@ -21,6 +23,7 @@ export function useArticleEditor(article: Article | null) {
       setKeywords(article.keywords || []);
       setIsDirty(false);
       setSaveError(null);
+      console.log("Editor initialized with article:", article.id);
     }
   }, [article]);
   
@@ -36,7 +39,7 @@ export function useArticleEditor(article: Article | null) {
   }, [title, content, keywords, article]);
   
   // Save changes
-  const saveChanges = async () => {
+  const saveChanges = useCallback(async () => {
     if (!article || !isDirty) return null;
     
     setIsSaving(true);
@@ -44,6 +47,8 @@ export function useArticleEditor(article: Article | null) {
     const toastId = toast.loading("Saving article...");
     
     try {
+      console.log("Saving article:", article.id);
+      
       // Calculate word count
       const wordCount = content.split(/\s+/).filter(Boolean).length;
       
@@ -74,30 +79,61 @@ export function useArticleEditor(article: Article | null) {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [article, title, content, keywords, isDirty]);
   
   // Add a keyword
-  const addKeyword = (keyword: string) => {
+  const addKeyword = useCallback((keyword: string) => {
     if (keyword && !keywords.includes(keyword)) {
-      setKeywords([...keywords, keyword]);
+      setKeywords(prev => [...prev, keyword]);
     }
-  };
+  }, [keywords]);
   
   // Remove a keyword
-  const removeKeyword = (keyword: string) => {
-    setKeywords(keywords.filter(k => k !== keyword));
-  };
+  const removeKeyword = useCallback((keyword: string) => {
+    setKeywords(prev => prev.filter(k => k !== keyword));
+  }, []);
   
-  // Auto-save functionality (can be enabled/disabled)
-  const enableAutoSave = (intervalMs = 30000) => {
-    const interval = setInterval(() => {
-      if (isDirty && !isSaving) {
-        saveChanges();
-      }
-    }, intervalMs);
+  // Auto-save functionality
+  const toggleAutoSave = useCallback((enable: boolean, intervalMs = 30000) => {
+    setAutoSaveEnabled(enable);
     
-    return () => clearInterval(interval);
-  };
+    if (enable) {
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+      }
+      
+      const interval = window.setInterval(() => {
+        if (isDirty && !isSaving) {
+          console.log("Auto-saving article...");
+          saveChanges();
+        }
+      }, intervalMs);
+      
+      setAutoSaveInterval(interval);
+      toast.success(`Auto-save enabled (every ${intervalMs / 1000} seconds)`);
+      
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    } else {
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+        setAutoSaveInterval(null);
+      }
+      toast.info("Auto-save disabled");
+    }
+  }, [isDirty, isSaving, saveChanges, autoSaveInterval]);
+  
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+      }
+    };
+  }, [autoSaveInterval]);
   
   return {
     title,
@@ -113,6 +149,7 @@ export function useArticleEditor(article: Article | null) {
     saveChanges,
     saveError,
     lastSavedAt,
-    enableAutoSave
+    autoSaveEnabled,
+    toggleAutoSave
   };
 }

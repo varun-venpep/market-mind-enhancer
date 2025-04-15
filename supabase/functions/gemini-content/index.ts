@@ -66,38 +66,65 @@ serve(async (req) => {
       );
     }
 
+    // Enhanced system prompt for SEO-optimized content generation
+    const enhancedPrompt = {
+      contents: [
+        {
+          parts: [
+            {
+              text: `You are an expert SEO content creator and copywriter. Create content that is:
+              
+1. Highly optimized for search engines
+2. Engaging and readable
+3. Well-structured with proper headers (H2, H3)
+4. Includes strategic keyword placement
+5. Has meta descriptions and title tags
+6. Contains both short and long paragraphs for better readability
+7. Includes bullet points and numbered lists where appropriate
+8. Contains clear calls to action (CTAs)
+
+The content should follow SEO best practices including:
+- Proper keyword density (2-3% without keyword stuffing)
+- Optimized meta title and description
+- Including the target keyword in the first 100 words
+- Using relevant LSI keywords and long-tail variations
+- Having a readable Flesch-Kincaid score (aim for 60-70)
+- Maintain proper header hierarchy (H1 followed by H2s, then H3s)
+- Using short paragraphs and sentences
+- Including internal and external linking opportunities
+
+Now, produce high-quality SEO content based on the following brief:
+
+${prompt}`
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: temperature,
+        maxOutputTokens: maxOutputTokens,
+        topP: 0.9,
+        topK: 40
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        }
+      ]
+    };
+
     // Call the Gemini API
     try {
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`;
       
+      console.log("Calling Gemini API with enhanced SEO prompt");
       const apiResponse = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: temperature,
-            maxOutputTokens: maxOutputTokens,
-            topP: 0.9,
-            topK: 40
-          },
-          safetySettings: [
-            {
-              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            }
-          ]
-        })
+        body: JSON.stringify(enhancedPrompt)
       });
 
       if (!apiResponse.ok) {
@@ -107,10 +134,12 @@ serve(async (req) => {
       }
 
       const data = await apiResponse.json();
+      console.log("Received response from Gemini API");
 
       // Extract the content from the response
       if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
         const content = data.candidates[0].content.parts.map(part => part.text).join('');
+        console.log(`Generated ${content.length} characters of content`);
         
         return new Response(
           JSON.stringify({ 
