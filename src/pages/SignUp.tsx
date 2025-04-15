@@ -37,7 +37,7 @@ const signUpSchema = z
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUp = () => {
-  const { signUp, signInWithGoogle, user } = useAuth();
+  const { signUp, signUpWithGoogle, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -147,10 +147,10 @@ const SignUp = () => {
     setRedirectInProgress(true);
     
     try {
-      const { error } = await signInWithGoogle();
+      const { error } = await signUpWithGoogle();
       if (error) {
         toast({
-          title: "Google Sign In Failed",
+          title: "Google Sign Up Failed",
           description: error.message,
           variant: "destructive",
         });
@@ -158,8 +158,8 @@ const SignUp = () => {
       }
     } catch (error: any) {
       toast({
-        title: "Google Sign In Failed",
-        description: error.message || "An error occurred during Google sign in",
+        title: "Google Sign Up Failed",
+        description: error.message || "An error occurred during Google sign up",
         variant: "destructive",
       });
       setRedirectInProgress(false);

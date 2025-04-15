@@ -231,24 +231,22 @@ const Login = () => {
               {mode === 'login' ? (
                 <>
                   Don't have an account?{' '}
-                  <button
-                    type="button"
+                  <Link
+                    to="/sign-up" 
                     className="font-medium text-primary hover:underline"
-                    onClick={() => setMode('signup')}
                   >
                     Sign up
-                  </button>
+                  </Link>
                 </>
               ) : (
                 <>
                   Already have an account?{' '}
-                  <button
-                    type="button"
+                  <Link
+                    to="/login"
                     className="font-medium text-primary hover:underline"
-                    onClick={() => setMode('login')}
                   >
                     Sign in
-                  </button>
+                  </Link>
                 </>
               )}
             </div>

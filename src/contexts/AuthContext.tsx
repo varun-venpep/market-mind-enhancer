@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +14,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult>;
+  signUpWithGoogle: () => Promise<AuthResult>;
   logout: () => Promise<void>;
   isLoading: boolean;
 }
@@ -26,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
   signInWithGoogle: async () => ({ error: null }),
+  signUpWithGoogle: async () => ({ error: null }),
   logout: async () => {},
   isLoading: true,
 });
@@ -171,21 +172,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const origin = window.location.origin;
       const redirectTo = `${origin}/dashboard`;
       
-      // Check if current URL contains 'login' or 'sign-up' to determine flow
-      const currentPath = window.location.pathname;
-      const isSignUp = currentPath.includes('sign-up');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            // For sign-in flow, only prompt if necessary
+            prompt: 'none',
+            access_type: 'online'
+          }
+        }
+      });
       
-      // Use different Google flow based on path
+      if (error) {
+        console.error('Google auth error:', error);
+        toast.error(`Authentication failed: ${error.message}`);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error('Unexpected error during Google auth:', err);
+      toast.error('An unexpected error occurred during authentication');
+      return { error: err as AuthError };
+    }
+  };
+  
+  const signUpWithGoogle = async (): Promise<AuthResult> => {
+    try {
+      console.log('Starting Google sign-up process...');
+      
+      // Get origin for proper redirect
+      const origin = window.location.origin;
+      const redirectTo = `${origin}/dashboard`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
           queryParams: {
             // For sign-up, always ask for Google account selection
-            // For sign-in, skip account selection if possible
-            prompt: isSignUp ? 'select_account' : 'none',
-            // Different access_type based on flow for better UX
-            access_type: isSignUp ? 'offline' : 'online'
+            prompt: 'select_account',
+            access_type: 'offline'
           }
         }
       });
@@ -223,6 +250,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signIn,
     signUp,
     signInWithGoogle,
+    signUpWithGoogle,
     logout,
     isLoading: isLoading || !authInitialized,
   };
