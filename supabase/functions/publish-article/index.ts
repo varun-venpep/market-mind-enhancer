@@ -119,7 +119,7 @@ serve(async (req) => {
       .from("articles")
       .update({ 
         status: "published",
-        published_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         publish_status: publishResults
       })
       .eq("id", articleId);

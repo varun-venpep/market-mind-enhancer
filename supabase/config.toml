@@ -98,3 +98,5 @@ verify_jwt = true
 verify_jwt = false
 [functions.get-profile]
 verify_jwt = true
+[functions.publish-article]
+verify_jwt = true

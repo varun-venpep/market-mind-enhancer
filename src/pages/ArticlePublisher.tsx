@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PublishScheduler } from "@/components/Articles/PublishScheduler";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ChevronRight, ExternalLink, Info, Loader2, Send } from "lucide-react";
+import { ArrowLeft, ChevronRight, ExternalLink, Info, Loader2 } from "lucide-react";
 import { fetchArticle } from "@/services/articleService";
 import { Article } from "@/types";
 import { formatDate } from "@/lib/utils";
