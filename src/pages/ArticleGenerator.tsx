@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -37,6 +38,8 @@ const ArticleGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const initialCampaignId = location.state?.campaignId || "";
   const [toastId, setToastId] = useState<string | number | null>(null);
+  const [generatedArticle, setGeneratedArticle] = useState<Article | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
   
   // Setup form with validation
   const form = useForm<FormValues>({
@@ -79,6 +82,8 @@ const ArticleGenerator = () => {
 
   const onSubmit = async (values: FormValues) => {
     try {
+      if (isGenerating) return; // Prevent multiple submissions
+      
       setIsGenerating(true);
       
       // Process the keywords
@@ -98,7 +103,9 @@ const ArticleGenerator = () => {
       }
       
       // Create a dismissible toast and store its ID
-      const id = toast.loading("Generating article...");
+      const id = toast.loading("Generating article...", {
+        duration: 60000, // Set a maximum duration just in case
+      });
       setToastId(id);
       
       // Get the current user
@@ -135,7 +142,7 @@ const ArticleGenerator = () => {
         const score = await calculateSEOScore(content, keywordArray);
         
         // Update the article with generated content
-        await updateArticle(article.id, {
+        const updatedArticle = await updateArticle(article.id, {
           content,
           word_count: wordCount,
           thumbnail_url: thumbnailUrl,
@@ -148,8 +155,9 @@ const ArticleGenerator = () => {
         setToastId(null);
         toast.success("Article generated successfully");
         
-        // Navigate to the article editor
-        navigate(`/dashboard/article-editor/${article.id}`);
+        // Set the generated article for preview
+        setGeneratedArticle(updatedArticle);
+        setPreviewMode(true);
       } catch (error) {
         console.error("Error during content generation:", error);
         
@@ -177,6 +185,97 @@ const ArticleGenerator = () => {
       setIsGenerating(false);
     }
   };
+
+  const handleSaveArticle = () => {
+    if (generatedArticle) {
+      toast.success("Article saved successfully");
+      navigate(`/dashboard/article-editor/${generatedArticle.id}`, { replace: true });
+    }
+  };
+
+  const handleEditMore = () => {
+    if (generatedArticle) {
+      navigate(`/dashboard/article-editor/${generatedArticle.id}`, { replace: true });
+    }
+  };
+
+  const handleViewInCampaign = () => {
+    if (generatedArticle && generatedArticle.campaign_id) {
+      navigate(`/dashboard/campaigns/${generatedArticle.campaign_id}`, { replace: true });
+    } else {
+      navigate('/dashboard/campaigns', { replace: true });
+    }
+  };
+  
+  if (previewMode && generatedArticle) {
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto py-8">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setPreviewMode(false)}
+                className="mr-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back to Generator
+              </Button>
+            </div>
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+              <div>
+                <h1 className="text-3xl font-bold">{generatedArticle.title}</h1>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {generatedArticle.keywords?.map((keyword, index) => (
+                    <span key={index} className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full text-xs">
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4 md:mt-0">
+                <Button 
+                  variant="outline" 
+                  onClick={handleViewInCampaign}
+                >
+                  View in Campaign
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={handleEditMore}
+                >
+                  Edit Article
+                </Button>
+                <Button 
+                  className="gradient-button"
+                  onClick={handleSaveArticle}
+                >
+                  Save Article
+                </Button>
+              </div>
+            </div>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="prose prose-lg dark:prose-invert max-w-none">
+                  {generatedArticle.thumbnail_url && (
+                    <img 
+                      src={generatedArticle.thumbnail_url} 
+                      alt={generatedArticle.title} 
+                      className="w-full h-64 object-cover rounded-lg mb-6"
+                    />
+                  )}
+                  <div dangerouslySetInnerHTML={{ __html: generatedArticle.content?.replace(/\n/g, '<br/>') || '' }} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

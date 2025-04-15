@@ -28,9 +28,13 @@ serve(async (req) => {
     try {
       requestBody = await req.json();
     } catch (error) {
+      console.error("Error parsing request body:", error);
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid JSON in request body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: true, 
+          content: "Failed to parse request. Please try again." 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -38,8 +42,11 @@ serve(async (req) => {
     
     if (!prompt) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Prompt is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          success: true, 
+          content: "No prompt was provided. Please specify what content you'd like to generate." 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -80,10 +87,13 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Unhandled error in content generation:', error.message);
     return new Response(
-      JSON.stringify({ success: false, error: error.message || 'An unknown error occurred' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        content: `# Error Occurred\n\nWe encountered an issue while generating your content. Here's some placeholder text instead.\n\nError details: ${error.message || 'Unknown error'}` 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

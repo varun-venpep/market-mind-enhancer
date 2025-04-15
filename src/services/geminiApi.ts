@@ -75,47 +75,53 @@ export async function generateImage(
     
     console.log("Calling gemini-image edge function with prompt:", prompt.substring(0, 50) + "...");
     
-    const response = await supabase.functions.invoke("gemini-image", {
-      body: { prompt },
-      headers: {
-        Authorization: `Bearer ${token}`
+    // Set a random fallback image URL
+    const randomSeed = Math.floor(Math.random() * 1000);
+    const fallbackImageUrl = `https://picsum.photos/800/600?random=${randomSeed}`;
+    
+    try {
+      const response = await supabase.functions.invoke("gemini-image", {
+        body: { prompt },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+  
+      // Check for errors
+      if (response.error) {
+        console.error("Image Generation Error:", response.error);
+        return fallbackImageUrl;
       }
-    });
-
-    // Check for errors
-    if (response.error) {
-      console.error("Image Generation Error:", response.error);
-      // Provide a fallback image URL
-      return "https://picsum.photos/800/600?random=" + Math.floor(Math.random() * 1000);
+  
+      // Ensure data exists
+      if (!response.data) {
+        console.error("Image Generation API returned unexpected response:", response);
+        return fallbackImageUrl;
+      }
+  
+      const { success, error, imageUrl } = response.data;
+  
+      // Check Edge Function response
+      if (!success) {
+        console.error("Image Generation API returned an error:", error || "Unknown error");
+        return fallbackImageUrl;
+      }
+  
+      // If imageUrl is empty or invalid, return a fallback
+      if (!imageUrl || typeof imageUrl !== 'string') {
+        console.error("Received empty or invalid image URL from image generation API");
+        return fallbackImageUrl;
+      }
+  
+      return imageUrl;
+    } catch (innerError) {
+      console.error("Inner fetch error:", innerError);
+      return fallbackImageUrl;
     }
-
-    // Ensure data exists
-    if (!response.data) {
-      console.error("Image Generation API returned unexpected response:", response);
-      // Provide a fallback image URL
-      return "https://picsum.photos/800/600?random=" + Math.floor(Math.random() * 1000);
-    }
-
-    const { success, error, imageUrl } = response.data;
-
-    // Check Edge Function response
-    if (!success) {
-      console.error("Image Generation API returned an error:", error || "Unknown error");
-      // Provide a fallback image URL
-      return "https://picsum.photos/800/600?random=" + Math.floor(Math.random() * 1000);
-    }
-
-    // If imageUrl is empty or invalid, return a fallback
-    if (!imageUrl || typeof imageUrl !== 'string') {
-      console.error("Received empty or invalid image URL from image generation API");
-      // Provide a fallback image URL
-      return "https://picsum.photos/800/600?random=" + Math.floor(Math.random() * 1000);
-    }
-
-    return imageUrl;
   } catch (error) {
     console.error("Image Generation Client Error:", error);
     // Always return a fallback image URL to prevent the application from breaking
-    return "https://picsum.photos/800/600?random=" + Math.floor(Math.random() * 1000);
+    const randomSeed = Math.floor(Math.random() * 1000);
+    return `https://picsum.photos/800/600?random=${randomSeed}`;
   }
 }
