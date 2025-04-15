@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -21,7 +22,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: 'dist',
-    minify: 'terser', // Use Terser for better minification
+    minify: 'terser', // Ensure this is set to 'terser'
     sourcemap: false, // Disable sourcemaps in production
     chunkSizeWarningLimit: 1000, // Increase chunk size warning limit
     rollupOptions: {
