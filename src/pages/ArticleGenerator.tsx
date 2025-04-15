@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -13,8 +12,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, FileText, Import, PlusCircle, Sparkles, Loader2 } from "lucide-react";
-import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { ArrowLeft, FileText, Import, Loader2, Sparkles } from "lucide-react";
 import { fetchUserCampaigns, createArticle, generateArticleContent, generateArticleThumbnail, calculateSEOScore } from '@/services/articleService';
 import { Article, Campaign } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +31,6 @@ type FormValues = z.infer<typeof formSchema>;
 const ArticleGenerator = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentWorkspace } = useWorkspace();
   const [activeTab, setActiveTab] = useState("manual");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(false);

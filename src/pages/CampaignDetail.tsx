@@ -34,7 +34,7 @@ const CampaignDetail = () => {
         
         if (campaignError) throw campaignError;
         
-        setCampaign(campaignData);
+        setCampaign(campaignData as Campaign);
         
         // Fetch articles for this campaign
         const { data: articlesData, error: articlesError } = await supabase
@@ -45,7 +45,7 @@ const CampaignDetail = () => {
         
         if (articlesError) throw articlesError;
         
-        setArticles(articlesData || []);
+        setArticles(articlesData as Article[] || []);
       } catch (error) {
         console.error('Error fetching campaign details:', error);
         toast.error('Failed to load campaign details');
@@ -64,7 +64,7 @@ const CampaignDetail = () => {
       case 'in-progress':
         return <Badge variant="secondary" className="flex items-center gap-1"><AlertCircle className="h-3 w-3" /> In Progress</Badge>;
       case 'completed':
-        return <Badge variant="success" className="flex items-center gap-1 bg-green-500/10 text-green-500 border-green-500/20"><CheckCircle className="h-3 w-3" /> Completed</Badge>;
+        return <Badge className="flex items-center gap-1 bg-green-500/10 text-green-500 border-green-500/20"><CheckCircle className="h-3 w-3" /> Completed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }

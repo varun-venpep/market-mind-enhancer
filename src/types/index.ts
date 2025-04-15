@@ -43,6 +43,33 @@ export interface OutlineItem {
   children?: OutlineItem[];
 }
 
+// Updated Article interface to match the Supabase schema
+export interface Article {
+  id: string;
+  title: string;
+  content?: string;
+  keywords?: string[];
+  status: 'draft' | 'in-progress' | 'completed';
+  user_id: string;
+  campaign_id?: string;
+  created_at: string;
+  updated_at: string;
+  thumbnail_url?: string;
+  word_count?: number;
+  score?: number;
+}
+
+// Updated Campaign interface to match the Supabase schema
+export interface Campaign {
+  id: string;
+  name: string;
+  description?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  articleCount?: number;
+}
+
 // New Workspace interface
 export interface Workspace {
   id: string;
@@ -52,28 +79,4 @@ export interface Workspace {
   updatedAt: string;
   ownerId: string;
   isDefault?: boolean;
-}
-
-// New Article interface for SEO article generation
-export interface Article {
-  id: string;
-  title?: string;
-  keywords: string[];
-  createdAt: string;
-  updatedAt: string;
-  workspaceId: string;
-  campaignId: string;
-  status: 'draft' | 'in-progress' | 'completed';
-  content?: string;
-}
-
-// New Campaign interface to group articles
-export interface Campaign {
-  id: string;
-  name: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-  workspaceId: string;
-  articleCount?: number;
 }

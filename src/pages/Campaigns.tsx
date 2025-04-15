@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -7,17 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
 import { ArrowLeft, FileText, Plus, Search } from "lucide-react";
-import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Campaign } from '@/types';
 import { fetchUserCampaigns, createCampaign } from '@/services/articleService';
 import { CreateCampaignDialog } from '@/components/Dashboard/CreateCampaignDialog';
 
 const Campaigns = () => {
   const navigate = useNavigate();
-  const { currentWorkspace } = useWorkspace();
   const [isLoading, setIsLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,7 +21,7 @@ const Campaigns = () => {
   
   useEffect(() => {
     loadCampaigns();
-  }, [currentWorkspace]);
+  }, []);
   
   const loadCampaigns = async () => {
     try {
@@ -53,7 +49,6 @@ const Campaigns = () => {
     }
   };
   
-  // Filter campaigns based on search term
   const filteredCampaigns = campaigns.filter(campaign => 
     campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (campaign.description && campaign.description.toLowerCase().includes(searchTerm.toLowerCase()))

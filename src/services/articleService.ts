@@ -39,9 +39,20 @@ export async function fetchCampaign(id: string): Promise<Campaign | null> {
 // Create a new campaign
 export async function createCampaign(name: string, description?: string): Promise<Campaign> {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('You must be logged in to create a campaign');
+    }
+    
     const { data, error } = await supabase
       .from('campaigns')
-      .insert([{ name, description }])
+      .insert({
+        name,
+        description,
+        user_id: user.id
+      })
       .select()
       .single();
       
@@ -90,9 +101,22 @@ export async function fetchArticle(id: string): Promise<Article | null> {
 // Create a new article
 export async function createArticle(articleData: Partial<Article>): Promise<Article> {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('You must be logged in to create an article');
+    }
+    
+    // Ensure user_id is set
+    const articleWithUserId = {
+      ...articleData,
+      user_id: user.id
+    };
+    
     const { data, error } = await supabase
       .from('articles')
-      .insert([articleData])
+      .insert([articleWithUserId])
       .select()
       .single();
       

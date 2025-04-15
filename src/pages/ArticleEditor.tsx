@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -471,7 +470,7 @@ const ArticleEditor = () => {
                     <Label htmlFor="status" className="text-sm">Status</Label>
                     <Select 
                       value={article.status} 
-                      onValueChange={async (value) => {
+                      onValueChange={async (value: 'draft' | 'in-progress' | 'completed') => {
                         try {
                           const updatedArticle = await updateArticle(articleId!, {
                             status: value,
