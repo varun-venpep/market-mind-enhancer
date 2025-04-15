@@ -147,13 +147,14 @@ export async function updateArticle(id: string, articleData: {
   thumbnail_url?: string;
   word_count?: number;
   score?: number;
+  updated_at?: string; // Added this property
 }): Promise<Article> {
   try {
     const { data, error } = await supabase
       .from('articles')
       .update({
         ...articleData,
-        updated_at: new Date().toISOString()
+        updated_at: articleData.updated_at || new Date().toISOString() // Use provided value or set current timestamp
       })
       .eq('id', id)
       .select()
