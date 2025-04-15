@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Loader2, Share, Trash, Bookmark, FileText, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Share, Trash, Bookmark, FileText, Clock, Send } from "lucide-react";
 import { toast } from "sonner";
-import { fetchArticle, deleteArticle, updateArticle } from '@/services/articleService';
+import { fetchArticle, deleteArticle } from '@/services/articleService';
 import { Article } from '@/types';
 
 const ArticleDetail = () => {
@@ -38,6 +39,12 @@ const ArticleDetail = () => {
   const handleEdit = () => {
     if (article) {
       navigate(`/dashboard/article-editor/${article.id}`);
+    }
+  };
+
+  const handlePublish = () => {
+    if (article) {
+      navigate(`/dashboard/article-publisher/${article.id}`);
     }
   };
 
@@ -134,9 +141,9 @@ const ArticleDetail = () => {
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold">{article.title}</h1>
+              <h1 className="text-3xl font-bold">{article?.title}</h1>
               <div className="flex flex-wrap gap-2 mt-2">
-                {article.keywords?.map((keyword, index) => (
+                {article?.keywords?.map((keyword, index) => (
                   <span key={index} className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full text-xs">
                     {keyword}
                   </span>
@@ -159,6 +166,14 @@ const ArticleDetail = () => {
               >
                 <Edit className="h-4 w-4" />
                 Edit
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handlePublish}
+                className="flex items-center gap-1"
+              >
+                <Send className="h-4 w-4" />
+                Publish
               </Button>
               <Button 
                 variant="destructive"

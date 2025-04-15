@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 interface BloggerCredentials {
   access_token: string;
@@ -34,13 +35,15 @@ export const saveIntegrationCredentials = async (
       return false;
     }
     
-    // Using custom query instead of typed query due to type definitions not being updated yet
+    // Convert credentials to JSON-compatible format
+    const jsonCredentials = credentials as unknown as Json;
+    
     const { error } = await supabase
       .from('user_integrations')
       .upsert({
         user_id: user.user.id,
         platform,
-        credentials,
+        credentials: jsonCredentials,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, {
@@ -71,7 +74,6 @@ export const getIntegrationCredentials = async (platform: "blogger" | "medium") 
       return null;
     }
     
-    // Using custom query instead of typed query
     const { data, error } = await supabase
       .from('user_integrations')
       .select('credentials')
@@ -106,7 +108,6 @@ export const disconnectIntegration = async (platform: "blogger" | "medium") => {
       return false;
     }
     
-    // Using custom query instead of typed query
     const { error } = await supabase
       .from('user_integrations')
       .delete()
@@ -141,14 +142,16 @@ export const scheduleArticlePublish = async (
       return false;
     }
     
-    // Using custom query instead of typed query
+    // Convert platforms to JSON-compatible format
+    const jsonPlatforms = schedule.platforms as unknown as Json;
+    
     const { error } = await supabase
       .from('article_publishing')
       .upsert({
         article_id: articleId,
         user_id: user.user.id,
         scheduled_date: schedule.scheduledDate?.toISOString() || null,
-        platforms: schedule.platforms,
+        platforms: jsonPlatforms,
         status: "scheduled",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
