@@ -1,6 +1,7 @@
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, ShoppingBag, ArrowRight, ArrowLeft, Brain, Activity, FileText, Globe, Code } from "lucide-react";
+import { Package, ShoppingBag, ArrowRight, ArrowLeft, Brain, Activity, FileText, Globe, Code, Rss } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { useState, useEffect } from "react";
@@ -95,6 +96,15 @@ export default function Integrations() {
       url: "/dashboard/content-generator",
       status: "available",
       features: ["Blog Posts", "Product Descriptions", "AI Images"]
+    },
+    {
+      id: "blog-publishing",
+      name: "Blog Publishing",
+      description: "Connect Blogger and Medium accounts to publish and schedule your content directly from MarketMind.",
+      icon: Rss,
+      url: "/dashboard/blog-integrations",
+      status: "available",
+      features: ["Blogger", "Medium", "Scheduling"]
     },
     {
       id: "ai-agent",

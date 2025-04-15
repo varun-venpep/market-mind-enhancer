@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Edit, Trash2, Eye, ArrowRightIcon } from "lucide-react";
+import { Calendar, Edit, Trash2, Eye, ArrowRightIcon, Send } from "lucide-react";
 import { Article } from "@/types";
 import { formatDate } from "@/lib/utils";
 
@@ -35,6 +35,11 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
     navigate(`/dashboard/article-editor/${article.id}`);
   };
 
+  const handlePublish = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/dashboard/article-publisher/${article.id}`);
+  };
+
   // Define status color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -44,6 +49,10 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
         return "bg-blue-100 text-blue-800 border-blue-200";
       case "completed":
         return "bg-green-100 text-green-800 border-green-200";
+      case "published":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      case "scheduled":
+        return "bg-indigo-100 text-indigo-800 border-indigo-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
@@ -136,7 +145,7 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
             </Button>
           )}
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           {article.score ? (
             <Badge
               variant="outline"
@@ -151,6 +160,19 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
               SEO Score: {article.score}
             </Badge>
           ) : null}
+          
+          {article.status === "completed" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2 flex items-center gap-1"
+              onClick={handlePublish}
+              title="Publish article"
+            >
+              <Send className="h-3.5 w-3.5" />
+              <span className="text-xs">Publish</span>
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>
