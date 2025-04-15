@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { Article } from "@/types";
 import { updateArticle } from "@/services/articleService";
@@ -12,8 +12,9 @@ export function useArticleEditor(article: Article | null) {
   const [isDirty, setIsDirty] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
-  const [autoSaveInterval, setAutoSaveInterval] = useState<number | null>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true); // Default to enabled
+  const autoSaveIntervalRef = useRef<number | null>(null);
+  const saveTimeoutRef = useRef<number | null>(null);
   
   // Initialize the editor with article data
   useEffect(() => {
@@ -25,6 +26,13 @@ export function useArticleEditor(article: Article | null) {
       setSaveError(null);
       console.log("Editor initialized with article:", article.id);
     }
+    
+    return () => {
+      // Clean up any pending save operations when component unmounts
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [article]);
   
   // Track changes
@@ -35,19 +43,95 @@ export function useArticleEditor(article: Article | null) {
       const keywordsChanged = JSON.stringify(keywords) !== JSON.stringify(article.keywords || []);
       
       setIsDirty(titleChanged || contentChanged || keywordsChanged);
+      
+      // Set up debounced auto-save
+      if (autoSaveEnabled && (titleChanged || contentChanged || keywordsChanged)) {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        
+        saveTimeoutRef.current = window.setTimeout(() => {
+          if (!isSaving) {
+            console.log("Auto-saving after changes detected");
+            saveChanges();
+          }
+        }, 5000); // Auto-save 5 seconds after changes stop
+      }
     }
-  }, [title, content, keywords, article]);
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [title, content, keywords, article, autoSaveEnabled]);
   
   // Save changes
-  const saveChanges = useCallback(async () => {
+  const saveChanges = useCallback(async (showToast = true) => {
     if (!article || !isDirty) return null;
+    
+    // Prevent concurrent saves
+    if (isSaving) return null;
+    
+    setIsSaving(true);
+    setSaveError(null);
+    
+    let toastId: string | number | undefined;
+    if (showToast) {
+      toastId = toast.loading("Saving article...");
+    }
+    
+    try {
+      console.log("Saving article:", article.id);
+      
+      // Calculate word count
+      const wordCount = content.split(/\s+/).filter(Boolean).length;
+      
+      // Update the article
+      const updatedArticle = await updateArticle(article.id, {
+        title,
+        content,
+        keywords,
+        word_count: wordCount,
+        updated_at: new Date().toISOString()
+      });
+      
+      if (showToast && toastId) {
+        toast.dismiss(toastId);
+        toast.success("Article saved successfully");
+      }
+      
+      // Update tracking states
+      setIsDirty(false);
+      setLastSavedAt(new Date());
+      
+      return updatedArticle;
+    } catch (error) {
+      console.error("Error saving article:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setSaveError(errorMessage);
+      
+      if (showToast && toastId) {
+        toast.dismiss(toastId);
+        toast.error("Failed to save article. Please try again.");
+      }
+      
+      return null;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [article, title, content, keywords, isDirty, isSaving]);
+  
+  // Force save regardless of dirty state - useful for explicit user save actions
+  const forceSave = useCallback(async () => {
+    if (!article) return null;
     
     setIsSaving(true);
     setSaveError(null);
     const toastId = toast.loading("Saving article...");
     
     try {
-      console.log("Saving article:", article.id);
+      console.log("Force saving article:", article.id);
       
       // Calculate word count
       const wordCount = content.split(/\s+/).filter(Boolean).length;
@@ -79,12 +163,13 @@ export function useArticleEditor(article: Article | null) {
     } finally {
       setIsSaving(false);
     }
-  }, [article, title, content, keywords, isDirty]);
+  }, [article, title, content, keywords]);
   
   // Add a keyword
   const addKeyword = useCallback((keyword: string) => {
-    if (keyword && !keywords.includes(keyword)) {
-      setKeywords(prev => [...prev, keyword]);
+    const normalizedKeyword = keyword.trim().toLowerCase();
+    if (normalizedKeyword && !keywords.includes(normalizedKeyword)) {
+      setKeywords(prev => [...prev, normalizedKeyword]);
     }
   }, [keywords]);
   
@@ -98,18 +183,18 @@ export function useArticleEditor(article: Article | null) {
     setAutoSaveEnabled(enable);
     
     if (enable) {
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
       }
       
       const interval = window.setInterval(() => {
         if (isDirty && !isSaving) {
-          console.log("Auto-saving article...");
-          saveChanges();
+          console.log("Auto-saving article on interval...");
+          saveChanges(false); // Don't show toast on interval saves
         }
       }, intervalMs);
       
-      setAutoSaveInterval(interval);
+      autoSaveIntervalRef.current = interval;
       toast.success(`Auto-save enabled (every ${intervalMs / 1000} seconds)`);
       
       return () => {
@@ -118,22 +203,25 @@ export function useArticleEditor(article: Article | null) {
         }
       };
     } else {
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-        setAutoSaveInterval(null);
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+        autoSaveIntervalRef.current = null;
       }
       toast.info("Auto-save disabled");
     }
-  }, [isDirty, isSaving, saveChanges, autoSaveInterval]);
+  }, [isDirty, isSaving, saveChanges]);
   
   // Cleanup interval on unmount
   useEffect(() => {
     return () => {
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [autoSaveInterval]);
+  }, []);
   
   return {
     title,
@@ -147,6 +235,7 @@ export function useArticleEditor(article: Article | null) {
     isSaving,
     isDirty,
     saveChanges,
+    forceSave,
     saveError,
     lastSavedAt,
     autoSaveEnabled,

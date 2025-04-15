@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { fetchCampaign, fetchCampaignArticles, createArticle, deleteArticle } from '@/services/articleService';
 import { Campaign, Article } from '@/types';
-import { ArrowLeft, Plus, FileText, AlertCircle, Loader2, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import ArticlePreview from '@/components/Articles/ArticlePreview';
 
 const CampaignDetail = () => {
@@ -63,13 +63,19 @@ const CampaignDetail = () => {
       return;
     }
     
+    if (!campaignId) {
+      toast.error("Campaign ID is missing");
+      return;
+    }
+    
     setIsCreating(true);
     
     try {
       const article = await createArticle({
         title: newArticleTitle,
-        campaign_id: campaignId!,
-        status: 'draft'
+        campaign_id: campaignId,
+        status: 'draft',
+        keywords: []
       });
       
       // Add the new article to the list
@@ -121,6 +127,10 @@ const CampaignDetail = () => {
   };
 
   const goToGenerateArticle = () => {
+    if (!campaignId) {
+      toast.error("Campaign ID is missing");
+      return;
+    }
     navigate("/dashboard/article-generator", { state: { campaignId } });
   };
 
@@ -194,12 +204,13 @@ const CampaignDetail = () => {
               <Plus className="h-4 w-4 mr-2" />
               Generate AI Article
             </Button>
-            <DialogTrigger asChild onClick={() => setShowNewDialog(true)}>
-              <Button variant="outline">
-                <FileText className="h-4 w-4 mr-2" />
-                New Article
-              </Button>
-            </DialogTrigger>
+            <Button 
+              variant="outline"
+              onClick={() => setShowNewDialog(true)}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              New Article
+            </Button>
           </div>
         </div>
         
@@ -215,12 +226,13 @@ const CampaignDetail = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Generate AI Article
                 </Button>
-                <DialogTrigger asChild onClick={() => setShowNewDialog(true)}>
-                  <Button variant="outline">
-                    <FileText className="h-4 w-4 mr-2" />
-                    New Article
-                  </Button>
-                </DialogTrigger>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowNewDialog(true)}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  New Article
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -259,7 +271,7 @@ const CampaignDetail = () => {
             <Button variant="outline" onClick={() => setShowNewDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateArticle} disabled={isCreating}>
+            <Button onClick={handleCreateArticle} disabled={isCreating || !newArticleTitle.trim()}>
               {isCreating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

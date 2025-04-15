@@ -1,177 +1,157 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Article } from '@/types';
-import { Eye, Edit, Clock, Trash2 } from 'lucide-react';
+import { Calendar, Edit, Trash2, Eye, ArrowRightIcon } from "lucide-react";
+import { Article } from "@/types";
+import { formatDate } from "@/lib/utils";
 
 interface ArticlePreviewProps {
   article: Article;
-  onSelect?: (article: Article) => void;
-  compact?: boolean;
   onDeleted?: () => void;
 }
 
-const ArticlePreview: React.FC<ArticlePreviewProps> = ({ 
-  article, 
-  onSelect,
-  compact = false,
-  onDeleted
-}) => {
+const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
   const navigate = useNavigate();
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
-  };
-  
-  const handleView = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigate(`/dashboard/articles/${article.id}`);
-  };
-  
+
   const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     navigate(`/dashboard/article-editor/${article.id}`);
   };
-  
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
+
+  const handleView = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (onDeleted) {
-      onDeleted();
-    }
+    window.open(`/dashboard/article-preview/${article.id}`, "_blank");
   };
-  
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDeleted) onDeleted();
+  };
+
   const handleCardClick = () => {
-    if (onSelect) {
-      onSelect(article);
-    } else {
-      navigate(`/dashboard/articles/${article.id}`);
-    }
+    navigate(`/dashboard/article-editor/${article.id}`);
   };
-  
-  // Extract the first paragraph for the preview
-  const getContentPreview = (content: string | undefined, maxLength = 150) => {
-    if (!content) return 'No content available.';
-    
-    // Get the first paragraph or a snippet
-    const firstParagraph = content.split('\n\n')[0]?.replace(/[#*]/g, '');
-    
-    if (firstParagraph.length <= maxLength) return firstParagraph;
-    return firstParagraph.substring(0, maxLength) + '...';
-  };
-  
-  const getStatusBadgeColor = (status: string) => {
+
+  // Define status color
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-500/10 text-green-600 border-green-500/20';
-      case 'in-progress':
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
-      case 'draft':
-        return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+      case "draft":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "completed":
+        return "bg-green-100 text-green-800 border-green-200";
       default:
-        return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   return (
-    <Card 
-      className={`hover:shadow-md transition-shadow cursor-pointer border overflow-hidden ${compact ? 'h-full' : ''}`}
+    <Card
+      className="hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
       onClick={handleCardClick}
     >
-      {article.thumbnail_url && (
-        <div className="relative h-40 w-full overflow-hidden">
-          <img 
-            src={article.thumbnail_url} 
-            alt={article.title} 
-            className="w-full h-full object-cover transition-transform hover:scale-105"
-          />
-          <div className="absolute top-2 right-2">
-            <Badge 
-              variant="outline" 
-              className={getStatusBadgeColor(article.status)}
-            >
-              {article.status}
-            </Badge>
-          </div>
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-lg line-clamp-2">{article.title}</CardTitle>
+          <Badge className={`${getStatusColor(article.status)} capitalize ml-2`}>
+            {article.status?.replace("-", " ")}
+          </Badge>
         </div>
-      )}
-      
-      <CardContent className={`pt-4 ${compact ? 'pb-2' : 'pb-4'}`}>
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between items-start">
-            <h3 className="font-semibold text-lg line-clamp-2">{article.title}</h3>
+      </CardHeader>
+
+      <CardContent className="pb-4 flex-grow">
+        {article.thumbnail_url ? (
+          <div className="mb-4 aspect-video overflow-hidden rounded-md border">
+            <img
+              src={article.thumbnail_url}
+              alt={article.title}
+              className="h-full w-full object-cover transition-all hover:scale-105"
+            />
           </div>
-          
-          {!compact && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {getContentPreview(article.content)}
-            </p>
+        ) : (
+          <div className="mb-4 aspect-video overflow-hidden rounded-md border bg-muted flex items-center justify-center">
+            <span className="text-sm text-muted-foreground">No thumbnail</span>
+          </div>
+        )}
+
+        <div className="flex items-center text-sm text-muted-foreground space-x-4">
+          <div className="flex items-center">
+            <Calendar className="mr-1 h-3.5 w-3.5" />
+            <span>{formatDate(article.created_at)}</span>
+          </div>
+          {article.word_count && (
+            <div>
+              <span>{article.word_count} words</span>
+            </div>
           )}
-          
-          <div className="flex flex-wrap gap-2 mt-1">
-            {article.keywords?.slice(0, compact ? 2 : 3).map((keyword, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {keyword}
-              </Badge>
-            ))}
-            {article.keywords && article.keywords.length > (compact ? 2 : 3) && (
-              <Badge variant="outline" className="text-xs">
-                +{article.keywords.length - (compact ? 2 : 3)}
-              </Badge>
-            )}
-          </div>
-          
-          <div className="flex items-center text-xs text-muted-foreground mt-1">
-            <Clock className="h-3 w-3 mr-1" />
-            <span>{formatDate(article.updated_at)}</span>
-            {article.word_count && (
-              <span className="ml-2">{article.word_count} words</span>
-            )}
-          </div>
+        </div>
+
+        <div className="mt-2 flex flex-wrap gap-1">
+          {article.keywords?.slice(0, 3).map((keyword, index) => (
+            <Badge key={index} variant="secondary" className="text-xs">
+              {keyword}
+            </Badge>
+          ))}
+          {article.keywords && article.keywords.length > 3 && (
+            <Badge variant="outline" className="text-xs">
+              +{article.keywords.length - 3}
+            </Badge>
+          )}
         </div>
       </CardContent>
-      
-      <CardFooter className={`${compact ? 'pt-0 pb-3' : 'pt-0'} flex gap-2`}>
-        <Button 
-          size="sm" 
-          variant="ghost" 
-          onClick={handleView}
-          className="flex-1 h-8"
-        >
-          <Eye className="h-3.5 w-3.5 mr-1" />
-          <span className="text-xs">View</span>
-        </Button>
-        <Button 
-          size="sm" 
-          variant="ghost"
-          onClick={handleEdit}
-          className="flex-1 h-8"
-        >
-          <Edit className="h-3.5 w-3.5 mr-1" />
-          <span className="text-xs">Edit</span>
-        </Button>
-        {onDeleted && (
-          <Button 
-            size="sm" 
-            variant="ghost"
-            onClick={handleDelete}
-            className="flex-1 h-8 text-red-500 hover:text-red-600"
+
+      <CardFooter className="pt-0 border-t justify-between">
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleEdit}
+            title="Edit article"
           >
-            <Trash2 className="h-3.5 w-3.5 mr-1" />
-            <span className="text-xs">Delete</span>
+            <Edit className="h-4 w-4" />
           </Button>
-        )}
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleView}
+            title="Preview article"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          {onDeleted && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+              onClick={handleDelete}
+              title="Delete article"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center">
+          {article.score ? (
+            <Badge
+              variant="outline"
+              className={`text-xs ${
+                article.score >= 80
+                  ? "bg-green-50 text-green-600 border-green-200"
+                  : article.score >= 60
+                  ? "bg-yellow-50 text-yellow-600 border-yellow-200"
+                  : "bg-red-50 text-red-600 border-red-200"
+              }`}
+            >
+              SEO Score: {article.score}
+            </Badge>
+          ) : null}
+        </div>
       </CardFooter>
     </Card>
   );
