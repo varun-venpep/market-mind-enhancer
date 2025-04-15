@@ -37,20 +37,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authInitialized, setAuthInitialized] = useState(false);
-  // Track if we've shown the login toast
-  const [loginToastShown, setLoginToastShown] = useState(false);
+  // Only show one toast per session
+  const [authToastShown, setAuthToastShown] = useState(false);
 
   // Configure persistent session
   useEffect(() => {
-    // Track auth state changes
-    let authStateChangeCount = 0;
-    
     // Set session persistence to localStorage for better persistence
-    supabase.auth.onAuthStateChange((event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log('Auth state changed:', event, !!currentSession);
-      authStateChangeCount++;
       
-      // Only update synchronously in the callback
+      // Update state
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
@@ -58,18 +54,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (currentSession) {
         localStorage.setItem('supabase.auth.token', JSON.stringify(currentSession));
         
-        // Only show the success toast once, and only after initial load (not on page refresh)
-        if (event === 'SIGNED_IN' && !loginToastShown && authStateChangeCount > 1) {
-          toast.success("Successfully signed in");
-          setLoginToastShown(true);
+        // Show success toast only once per session and only for explicit sign-ins
+        if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && !authToastShown) {
+          // Avoid showing toast on page refresh or initial load
+          if (authInitialized) {
+            toast.success("Successfully signed in");
+            setAuthToastShown(true);
+          }
         }
       } else {
         localStorage.removeItem('supabase.auth.token');
         
-        // If user signs out, show info toast - but only for explicit sign outs
-        if (event === 'SIGNED_OUT' && authStateChangeCount > 1) {
+        // Show sign out toast only for explicit sign outs
+        if (event === 'SIGNED_OUT' && authInitialized) {
           toast.info("You have been signed out");
-          setLoginToastShown(false);
+          setAuthToastShown(false);
         }
       }
     });
@@ -83,9 +82,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(data.session);
         setUser(data.session?.user ?? null);
         
-        // If we have a valid session at initialization, mark that we've shown the login toast
+        // If we have a valid session at initialization, mark as shown
         if (data.session) {
-          setLoginToastShown(true);
+          setAuthToastShown(true);
         }
         
         // If no session from API but we have one in localStorage, try to restore it
@@ -104,7 +103,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.log('Successfully restored session from localStorage');
                 setSession(refreshData.session);
                 setUser(refreshData.session.user);
-                setLoginToastShown(true);
+                setAuthToastShown(true);
               } else {
                 // Invalid local session, remove it
                 localStorage.removeItem('supabase.auth.token');
@@ -144,9 +143,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, 10 * 60 * 1000); // 10 minutes
     
     return () => {
+      subscription.unsubscribe();
       clearInterval(refreshInterval);
     };
-  }, [loginToastShown]);
+  }, [authToastShown, authInitialized]);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -166,34 +166,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithGoogle = async (): Promise<AuthResult> => {
     try {
       console.log('Starting Google sign-in process...');
-      // Check if user might exist already
-      const currentSession = await supabase.auth.getSession();
-      const currentUser = currentSession.data?.session?.user;
       
       // Get origin for proper redirect
       const origin = window.location.origin;
-
+      const redirectTo = `${origin}/dashboard`;
+      
+      // Check if current URL contains 'login' or 'sign-up' to determine flow
+      const currentPath = window.location.pathname;
+      const isSignUp = currentPath.includes('sign-up');
+      
+      // Use different Google flow based on path
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/dashboard`,
+          redirectTo,
           queryParams: {
-            // Skip the Google account selection if user is already logged in
-            prompt: currentUser ? 'none' : 'select_account',
-            // Use consent authorization flow to ensure we can detect if user is new or existing
-            access_type: 'offline'
+            // For sign-up, always ask for Google account selection
+            // For sign-in, skip account selection if possible
+            prompt: isSignUp ? 'select_account' : 'none',
+            // Different access_type based on flow for better UX
+            access_type: isSignUp ? 'offline' : 'online'
           }
         }
       });
       
       if (error) {
-        console.error('Google sign-in error:', error);
+        console.error('Google auth error:', error);
         toast.error(`Authentication failed: ${error.message}`);
       }
       
       return { error };
     } catch (err) {
-      console.error('Unexpected error during Google sign-in:', err);
+      console.error('Unexpected error during Google auth:', err);
       toast.error('An unexpected error occurred during authentication');
       return { error: err as AuthError };
     }

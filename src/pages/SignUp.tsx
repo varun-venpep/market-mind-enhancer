@@ -147,13 +147,11 @@ const SignUp = () => {
     setRedirectInProgress(true);
     
     try {
-      const origin = window.location.origin;
-      
-      const result = await signInWithGoogle();
-      if (result.error) {
+      const { error } = await signInWithGoogle();
+      if (error) {
         toast({
           title: "Google Sign In Failed",
-          description: result.error.message,
+          description: error.message,
           variant: "destructive",
         });
         setRedirectInProgress(false);

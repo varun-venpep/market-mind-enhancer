@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -25,7 +24,6 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  // Add a flag to avoid duplicate redirects
   const [redirectInProgress, setRedirectInProgress] = useState(false);
 
   useEffect(() => {
@@ -51,10 +49,10 @@ const Login = () => {
     try {
       if (mode === 'login') {
         await login(email, password);
-        // Toast is now handled in AuthContext
+        // Toast is handled in AuthContext
       } else {
         await login(email, password);
-        // Toast is now handled in AuthContext
+        // Toast is handled in AuthContext
       }
       navigate('/dashboard');
     } catch (error: any) {
@@ -108,8 +106,7 @@ const Login = () => {
         setRedirectInProgress(false);
       } else {
         console.log('Google sign-in initiated successfully');
-        // Don't navigate here - let the OAuth redirect happen
-        // Don't reset redireclnProgress - we want to prevent redirect loops
+        // We'll keep redirectInProgress true to prevent redirect loops
       }
     } catch (error: any) {
       console.error('Error in Google sign-in handler:', error);
@@ -121,8 +118,6 @@ const Login = () => {
       setRedirectInProgress(false);
     } finally {
       setIsGoogleLoading(false);
-      // Note: We deliberately don't reset redirectInProgress on success
-      // It will stay true until the OAuth redirect happens
     }
   };
 
