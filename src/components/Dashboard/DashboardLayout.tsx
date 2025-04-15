@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-14 items-center px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="flex gap-1 text-primary font-bold">
-              <span className="hidden md:inline-block">SEO Wizard</span>
+              <span className="hidden md:inline-block">Market Mind</span>
             </div>
             <Button
               variant="outline"
