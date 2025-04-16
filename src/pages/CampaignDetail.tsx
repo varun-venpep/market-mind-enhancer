@@ -140,6 +140,7 @@ const CampaignDetail = () => {
 
         <CampaignArticlesList 
           articles={articles} 
+          campaignId={campaignId || ''} 
           onArticleDeleted={(deletedId) => {
             setArticles(articles.filter(article => article.id !== deletedId));
           }}

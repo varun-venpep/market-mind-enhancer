@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +13,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 interface ArticlePreviewProps {
   article: Article;
   onDeleted?: () => void;
+  onClick?: () => void;
 }
 
-const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
+const ArticlePreview = ({ article, onDeleted, onClick }: ArticlePreviewProps) => {
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -47,10 +47,13 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
   };
 
   const handleCardClick = () => {
-    navigate(`/dashboard/article/${article.id}`);
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(`/dashboard/article/${article.id}`);
+    }
   };
 
-  // Define status color
   const getStatusColor = (status: string) => {
     switch (status) {
       case "draft":
