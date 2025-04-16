@@ -27,6 +27,7 @@ export async function getTinyMceApiKey(): Promise<string> {
     }
 
     const data = await response.json();
+    console.log('TinyMCE API Key fetched successfully:', data);
     return data.data.key;
   } catch (error) {
     console.error('Error fetching TinyMCE API key:', error);

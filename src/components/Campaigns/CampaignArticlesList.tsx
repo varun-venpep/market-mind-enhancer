@@ -4,13 +4,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Article } from '@/types';
 import { ChevronRight } from "lucide-react";
 import ArticlePreview from '@/components/Articles/ArticlePreview';
+import { useNavigate } from 'react-router-dom';
 
 interface CampaignArticlesListProps {
   articles: Article[];
+  campaignId: string;
   onArticleDeleted: (articleId: string) => void;
 }
 
-const CampaignArticlesList: React.FC<CampaignArticlesListProps> = ({ articles, onArticleDeleted }) => {
+const CampaignArticlesList: React.FC<CampaignArticlesListProps> = ({ 
+  articles, 
+  campaignId, 
+  onArticleDeleted 
+}) => {
+  const navigate = useNavigate();
+  
   if (articles.length === 0) {
     return (
       <Card className="p-8 text-center mt-6">
@@ -31,6 +39,7 @@ const CampaignArticlesList: React.FC<CampaignArticlesListProps> = ({ articles, o
             key={article.id} 
             article={article}
             onDeleted={() => onArticleDeleted(article.id)}
+            onClick={() => navigate(`/dashboard/article/${article.id}`)}
           />
         ))}
       </div>

@@ -15,6 +15,7 @@ import { ArrowLeft, Loader2, Wand2, Image, Save } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { InfoIcon } from "lucide-react";
+import { getTinyMceApiKey } from '@/services/tinyMceService';
 
 const ArticleGenerator = () => {
   const [title, setTitle] = useState('');
@@ -25,6 +26,7 @@ const ArticleGenerator = () => {
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [tinyMceKey, setTinyMceKey] = useState<string>('');
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,18 +38,43 @@ const ArticleGenerator = () => {
     if (id) {
       setCampaignId(id);
     }
+    
+    // Fetch TinyMCE API key
+    const fetchApiKey = async () => {
+      try {
+        const apiKey = await getTinyMceApiKey();
+        setTinyMceKey(apiKey);
+      } catch (error) {
+        console.error('Error fetching TinyMCE API key:', error);
+        toast.error('Failed to load rich text editor. Please refresh the page.');
+      }
+    };
+    
+    fetchApiKey();
   }, [location]);
   
   const handleGenerateContent = async () => {
-    if (!title || !keywords) {
+    // Fix: Properly check if title is empty or just whitespace
+    const trimmedTitle = title.trim();
+    // Fix: Check if keywords string has any non-whitespace content
+    const trimmedKeywords = keywords.trim();
+    
+    if (!trimmedTitle || !trimmedKeywords) {
       toast.error("Please enter a title and keywords before generating content.");
       return;
     }
     
     setIsGeneratingContent(true);
     try {
-      const keywordsArray = keywords.split(',').map(k => k.trim());
-      const { content: generatedContent, wordCount } = await generateArticleContent(title, keywordsArray);
+      const keywordsArray = trimmedKeywords.split(',').map(k => k.trim()).filter(Boolean);
+      
+      if (keywordsArray.length === 0) {
+        toast.error("Please enter at least one valid keyword.");
+        setIsGeneratingContent(false);
+        return;
+      }
+      
+      const { content: generatedContent, wordCount } = await generateArticleContent(trimmedTitle, keywordsArray);
       setContent(generatedContent);
       
       toast.success("Article content generated successfully!");
@@ -296,7 +323,7 @@ const ArticleGenerator = () => {
               </CardHeader>
               <CardContent>
                 <Editor
-                  apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY || 'no-api-key'}
+                  apiKey={tinyMceKey || 'no-api-key'}
                   init={{
                     height: 500,
                     menubar: true,
