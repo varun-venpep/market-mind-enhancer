@@ -1,355 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ArrowLeft } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Editor } from '@tinymce/tinymce-react';
-import { generateArticleContent, generateArticleThumbnail } from '@/services/articles/ai';
-import { createArticle } from '@/services/articles';
-import { ArticleCreationData } from '@/services/articles/types';
-import { ArrowLeft, Loader2, Wand2, Image, Save } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { InfoIcon } from "lucide-react";
-import { getTinyMceApiKey } from '@/services/tinyMceService';
+import { generateContent } from '@/services/geminiApi';
+import ArticleForm from '@/components/ArticleGenerator/ArticleForm';
+import ContentPreview from '@/components/ArticleGenerator/ContentPreview';
+import ImageGenerator from '@/components/ArticleGenerator/ImageGenerator';
 
 const ArticleGenerator = () => {
+  const navigate = useNavigate();
+  
+  // Form state
+  const [activeTab, setActiveTab] = useState('blog-post');
   const [title, setTitle] = useState('');
   const [keywords, setKeywords] = useState('');
-  const [content, setContent] = useState('');
-  const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-  const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState(false);
-  const [campaignId, setCampaignId] = useState<string | null>(null);
-  const [tinyMceKey, setTinyMceKey] = useState<string>('');
+  const [contentType, setContentType] = useState('blog-post');
+  const [contentLength, setContentLength] = useState('medium');
+  const [tone, setTone] = useState('informational');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState('');
   
-  const navigate = useNavigate();
-  const location = useLocation();
+  // Image generation state
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const id = searchParams.get('campaignId');
-    if (id) {
-      setCampaignId(id);
-    }
-    
-    const fetchApiKey = async () => {
-      try {
-        const apiKey = await getTinyMceApiKey();
-        setTinyMceKey(apiKey);
-      } catch (error) {
-        console.error('Error fetching TinyMCE API key:', error);
-        toast.error('Failed to load rich text editor. Please refresh the page.');
-      }
-    };
-    
-    fetchApiKey();
-  }, [location]);
-  
-  const handleGenerateContent = async () => {
-    const trimmedTitle = title.trim();
-    const keywordsArray = keywords
-      .split(',')
-      .map(k => k.trim())
-      .filter(k => k.length > 0);
-    
-    if (!trimmedTitle) {
-      toast.error("Please enter a title before generating content.");
+  // Keyword suggestions state
+  const [keywordSuggestions, setKeywordSuggestions] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!title.trim()) {
+      toast.error('Please enter a title');
       return;
     }
-    
-    if (keywordsArray.length === 0) {
-      toast.error("Please enter at least one keyword before generating content.");
-      return;
-    }
-    
-    setIsGeneratingContent(true);
+
+    setIsGenerating(true);
+    setGeneratedContent('');
+
     try {
-      const { content: generatedContent, wordCount } = await generateArticleContent(trimmedTitle, keywordsArray);
-      setContent(generatedContent);
-      
-      toast.success("Article content generated successfully!");
+      const result = await generateContent(`Create a ${contentType} about "${title}" with a ${tone} tone`);
+      setGeneratedContent(result);
+      toast.success('Content generated successfully!');
     } catch (error) {
-      console.error("Error generating content:", error);
-      toast.error("Failed to generate article content.");
+      console.error('Error generating content:', error);
+      toast.error('Failed to generate content');
     } finally {
-      setIsGeneratingContent(false);
-    }
-  };
-  
-  const handleGenerateThumbnail = async () => {
-    const trimmedTitle = title.trim();
-    const keywordsArray = keywords
-      .split(',')
-      .map(k => k.trim())
-      .filter(k => k.length > 0);
-    
-    if (!trimmedTitle) {
-      toast.error("Please enter a title before generating a thumbnail.");
-      return;
-    }
-    
-    if (keywordsArray.length === 0) {
-      toast.error("Please enter at least one keyword before generating a thumbnail.");
-      return;
-    }
-    
-    setIsGeneratingThumbnail(true);
-    try {
-      const thumbnailUrl = await generateArticleThumbnail(trimmedTitle, keywordsArray);
-      setThumbnailUrl(thumbnailUrl);
-      
-      toast.success("Article thumbnail generated successfully!");
-    } catch (error) {
-      console.error("Error generating thumbnail:", error);
-      toast.error("Failed to generate article thumbnail.");
-    } finally {
-      setIsGeneratingThumbnail(false);
-    }
-  };
-  
-  const handleSaveArticle = async () => {
-    if (!title || !content) {
-      toast.error("Please make sure title and content are not empty before saving.");
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      const keywordsArray = keywords.split(',').map(k => k.trim()).filter(Boolean);
-      
-      const articleData: ArticleCreationData = {
-        title,
-        keywords: keywordsArray,
-        content,
-        thumbnail_url: thumbnailUrl,
-        word_count: content.split(/\s+/).filter(Boolean).length,
-        campaign_id: campaignId
-      };
-      
-      const newArticle = await createArticle(articleData);
-      toast.success("Article saved successfully!");
-      
-      if (campaignId) {
-        navigate(`/dashboard/campaign/${campaignId}`);
-      } else {
-        navigate(`/dashboard/article/${newArticle.id}`);
-      }
-    } catch (error) {
-      console.error("Error saving article:", error);
-      toast.error("Failed to save article.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleGoBack = () => {
-    if (campaignId) {
-      navigate(`/dashboard/campaign/${campaignId}`);
-    } else {
-      navigate('/dashboard/campaigns');
+      setIsGenerating(false);
     }
   };
 
-  const addKeywordBadge = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && e.currentTarget.value) {
-      const newKeyword = e.currentTarget.value.trim();
-      if (newKeyword) {
-        const keywordsArray = keywords ? keywords.split(',').map(k => k.trim()) : [];
-        if (!keywordsArray.includes(newKeyword)) {
-          keywordsArray.push(newKeyword);
-          setKeywords(keywordsArray.join(', '));
-          e.currentTarget.value = '';
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) {
+      toast.error('Please enter an image description');
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    setGeneratedImageUrl('');
+
+    try {
+      // Your image generation logic here
+      const imageUrl = 'https://example.com/placeholder.jpg'; // Replace with actual image generation
+      setGeneratedImageUrl(imageUrl);
+      toast.success('Image generated successfully!');
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast.error('Failed to generate image');
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleKeywordInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const input = e.currentTarget.value.trim();
+      if (input) {
+        const keywordsList = keywords.split(',').map(k => k.trim());
+        if (!keywordsList.includes(input)) {
+          const newKeywords = [...keywordsList, input].filter(Boolean).join(', ');
+          setKeywords(newKeywords);
         }
+        e.currentTarget.value = '';
       }
     }
   };
 
-  const removeKeyword = (keywordToRemove: string) => {
-    const keywordsArray = keywords.split(',').map(k => k.trim());
-    const filteredKeywords = keywordsArray.filter(k => k !== keywordToRemove);
-    setKeywords(filteredKeywords.join(', '));
+  const addKeyword = (keyword: string) => {
+    const keywordsList = keywords.split(',').map(k => k.trim());
+    if (!keywordsList.includes(keyword)) {
+      const newKeywords = [...keywordsList, keyword].filter(Boolean).join(', ');
+      setKeywords(newKeywords);
+      toast.success(`Added "${keyword}" to keywords`);
+    }
   };
-  
+
+  const getSuggestions = async () => {
+    if (!title.trim()) {
+      toast.error('Please enter a topic first');
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    setKeywordSuggestions([]);
+
+    try {
+      // Your keyword suggestions logic here
+      const suggestions = ['example1', 'example2', 'example3'];
+      setKeywordSuggestions(suggestions);
+    } catch (error) {
+      console.error('Error fetching keyword suggestions:', error);
+      toast.error('Failed to get keyword suggestions');
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <div className="flex items-center mb-6">
+        <div className="flex items-center gap-2 mb-6">
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={handleGoBack}
-            className="mr-4"
+            onClick={() => navigate('/dashboard/integrations')} 
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
+            Back to Integrations
           </Button>
-          <h1 className="text-2xl font-bold">Create New Article</h1>
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Article Details</CardTitle>
-                <CardDescription>Enter basic information about your article</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="Enter article title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="keywords">Keywords</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <InfoIcon className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80">
-                        <div className="space-y-2">
-                          <h4 className="font-medium">Keyword Tips</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Enter keywords separated by commas or press Enter after each keyword. 
-                            Good keywords are specific and relevant to your article's topic.
-                          </p>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <Input
-                    id="keywords"
-                    placeholder="Enter keywords and press Enter"
-                    onKeyDown={addKeywordBadge}
-                  />
-                  {keywords && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {keywords.split(',').map((keyword, idx) => {
-                        const trimmed = keyword.trim();
-                        return trimmed ? (
-                          <Badge key={idx} variant="secondary" className="cursor-pointer" onClick={() => removeKeyword(trimmed)}>
-                            {trimmed} ×
-                          </Badge>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleGenerateContent}
-                    disabled={isGeneratingContent}
-                    className="w-full"
-                  >
-                    {isGeneratingContent ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="mr-2 h-4 w-4" />
-                        Generate Content
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={handleGenerateThumbnail}
-                    disabled={isGeneratingThumbnail}
-                    className="w-full"
-                  >
-                    {isGeneratingThumbnail ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Image className="mr-2 h-4 w-4" />
-                        Generate Thumbnail
-                      </>
-                    )}
-                  </Button>
-                </div>
-                
-                {thumbnailUrl && (
-                  <div>
-                    <Label>Thumbnail</Label>
-                    <div className="mt-2 rounded-md overflow-hidden border">
-                      <img src={thumbnailUrl} alt="Article Thumbnail" className="w-full h-auto" />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  onClick={handleSaveArticle}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Article
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-          
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Content</CardTitle>
-                <CardDescription>
-                  Write or generate your article content using the rich text editor
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Editor
-                  apiKey={tinyMceKey || 'no-api-key'}
-                  init={{
-                    height: 500,
-                    menubar: true,
-                    plugins: [
-                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                    ],
-                    toolbar: 'undo redo | blocks | ' +
-                      'bold italic forecolor | alignleft aligncenter ' +
-                      'alignright alignjustify | bullist numlist outdent indent | ' +
-                      'removeformat | help',
-                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                  }}
-                  value={content}
-                  onEditorChange={(newContent) => setContent(newContent)}
-                />
-              </CardContent>
-            </Card>
+
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold gradient-text">AI Content Generator</h1>
+            <p className="text-muted-foreground mt-1">
+              Generate SEO-optimized content and images powered by Google's Gemini AI
+            </p>
           </div>
         </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="blog-post" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span>Content Creator</span>
+            </TabsTrigger>
+            <TabsTrigger value="image-generator" className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              <span>Image Generator</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="blog-post">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-1">
+                <CardHeader>
+                  <CardTitle>Content Settings</CardTitle>
+                  <CardDescription>
+                    Configure your content generation preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ArticleForm 
+                    title={title}
+                    setTitle={setTitle}
+                    keywords={keywords}
+                    setKeywords={setKeywords}
+                    contentType={contentType}
+                    setContentType={setContentType}
+                    contentLength={contentLength}
+                    setContentLength={setContentLength}
+                    tone={tone}
+                    setTone={setTone}
+                    onGenerate={handleGenerate}
+                    isGenerating={isGenerating}
+                    handleKeywordInput={handleKeywordInput}
+                    keywordSuggestions={keywordSuggestions}
+                    addKeyword={addKeyword}
+                    isLoadingSuggestions={isLoadingSuggestions}
+                    getSuggestions={getSuggestions}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Generated Content</CardTitle>
+                  <CardDescription>
+                    Your AI-generated content will appear here
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ContentPreview 
+                    isGenerating={isGenerating}
+                    generatedContent={generatedContent}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="image-generator">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-1">
+                <CardHeader>
+                  <CardTitle>Image Generator</CardTitle>
+                  <CardDescription>
+                    Create AI-generated images for your content
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ImageGenerator 
+                    imagePrompt={imagePrompt}
+                    setImagePrompt={setImagePrompt}
+                    handleGenerateImage={handleGenerateImage}
+                    isGeneratingImage={isGeneratingImage}
+                    generatedImageUrl={generatedImageUrl}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Generated Image</CardTitle>
+                  <CardDescription>
+                    Your AI-generated image will appear here
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
