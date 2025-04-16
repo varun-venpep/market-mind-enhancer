@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -32,14 +31,12 @@ const ArticleGenerator = () => {
   const location = useLocation();
   
   useEffect(() => {
-    // Extract campaignId from URL search params
     const searchParams = new URLSearchParams(location.search);
     const id = searchParams.get('campaignId');
     if (id) {
       setCampaignId(id);
     }
     
-    // Fetch TinyMCE API key
     const fetchApiKey = async () => {
       try {
         const apiKey = await getTinyMceApiKey();
@@ -54,26 +51,24 @@ const ArticleGenerator = () => {
   }, [location]);
   
   const handleGenerateContent = async () => {
-    // Fix: Properly check if title is empty or just whitespace
     const trimmedTitle = title.trim();
-    // Fix: Check if keywords string has any non-whitespace content
-    const trimmedKeywords = keywords.trim();
+    const keywordsArray = keywords
+      .split(',')
+      .map(k => k.trim())
+      .filter(k => k.length > 0);
     
-    if (!trimmedTitle || !trimmedKeywords) {
-      toast.error("Please enter a title and keywords before generating content.");
+    if (!trimmedTitle) {
+      toast.error("Please enter a title before generating content.");
+      return;
+    }
+    
+    if (keywordsArray.length === 0) {
+      toast.error("Please enter at least one keyword before generating content.");
       return;
     }
     
     setIsGeneratingContent(true);
     try {
-      const keywordsArray = trimmedKeywords.split(',').map(k => k.trim()).filter(Boolean);
-      
-      if (keywordsArray.length === 0) {
-        toast.error("Please enter at least one valid keyword.");
-        setIsGeneratingContent(false);
-        return;
-      }
-      
       const { content: generatedContent, wordCount } = await generateArticleContent(trimmedTitle, keywordsArray);
       setContent(generatedContent);
       
@@ -87,15 +82,25 @@ const ArticleGenerator = () => {
   };
   
   const handleGenerateThumbnail = async () => {
-    if (!title || !keywords) {
-      toast.error("Please enter a title and keywords before generating a thumbnail.");
+    const trimmedTitle = title.trim();
+    const keywordsArray = keywords
+      .split(',')
+      .map(k => k.trim())
+      .filter(k => k.length > 0);
+    
+    if (!trimmedTitle) {
+      toast.error("Please enter a title before generating a thumbnail.");
+      return;
+    }
+    
+    if (keywordsArray.length === 0) {
+      toast.error("Please enter at least one keyword before generating a thumbnail.");
       return;
     }
     
     setIsGeneratingThumbnail(true);
     try {
-      const keywordsArray = keywords.split(',').map(k => k.trim());
-      const thumbnailUrl = await generateArticleThumbnail(title, keywordsArray);
+      const thumbnailUrl = await generateArticleThumbnail(trimmedTitle, keywordsArray);
       setThumbnailUrl(thumbnailUrl);
       
       toast.success("Article thumbnail generated successfully!");

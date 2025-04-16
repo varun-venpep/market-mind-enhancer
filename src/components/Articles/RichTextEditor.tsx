@@ -10,9 +10,12 @@ interface RichTextEditorProps {
   readOnly?: boolean;
 }
 
+// Fallback API key in case the service fails
+const FALLBACK_API_KEY = "sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk";
+
 const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string>(FALLBACK_API_KEY);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,7 +25,9 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
         setApiKey(key);
       } catch (err) {
         console.error("Failed to load TinyMCE API key:", err);
-        setError("Failed to load editor. Please try again later.");
+        setError("Using basic editor mode. Some features may be limited.");
+        // Still use the fallback key
+        setApiKey(FALLBACK_API_KEY);
       } finally {
         setIsLoading(false);
       }
@@ -31,21 +36,7 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
     fetchApiKey();
   }, []);
 
-  if (error) {
-    return (
-      <div className="min-h-[400px] rounded-md border p-4 bg-red-50">
-        <p className="text-red-500">{error}</p>
-        <textarea
-          className="w-full h-[350px] p-2 mt-2 border rounded-md"
-          value={content}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={readOnly}
-        />
-      </div>
-    );
-  }
-
-  if (isLoading || !apiKey) {
+  if (isLoading) {
     return (
       <div className="min-h-[400px] rounded-md border">
         <Skeleton className="h-[400px] w-full" />
@@ -55,6 +46,11 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
 
   return (
     <div className="relative min-h-[400px] rounded-md border">
+      {error && (
+        <div className="bg-yellow-50 text-yellow-800 px-4 py-2 mb-2 rounded-md text-sm">
+          {error}
+        </div>
+      )}
       <Editor
         apiKey={apiKey}
         value={content}

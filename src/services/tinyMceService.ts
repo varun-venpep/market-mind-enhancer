@@ -1,12 +1,16 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Fallback TinyMCE API key
+const FALLBACK_TINY_API_KEY = "sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk";
+
 export async function getTinyMceApiKey(): Promise<string> {
   try {
     // Get current session
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      throw new Error('No active session');
+      console.log('No active session, using fallback TinyMCE API key');
+      return FALLBACK_TINY_API_KEY;
     }
 
     // Use the Supabase URL from environment or hardcoded value
@@ -23,14 +27,16 @@ export async function getTinyMceApiKey(): Promise<string> {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch TinyMCE API key');
+      console.warn('Failed to fetch TinyMCE API key from edge function, using fallback:', errorData.error);
+      return FALLBACK_TINY_API_KEY;
     }
 
     const data = await response.json();
-    console.log('TinyMCE API Key fetched successfully:', data);
+    console.log('TinyMCE API Key fetched successfully');
     return data.data.key;
   } catch (error) {
     console.error('Error fetching TinyMCE API key:', error);
-    throw error;
+    console.log('Using fallback TinyMCE API key due to error');
+    return FALLBACK_TINY_API_KEY;
   }
 }
