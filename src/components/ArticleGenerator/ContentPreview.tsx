@@ -23,10 +23,10 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
       {isGenerating ? (
         <div className="flex flex-col items-center justify-center h-[500px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-          <p className="text-muted-foreground">Generating high-quality content...</p>
+          <p className="text-muted-foreground">Generating high-quality content with AI...</p>
         </div>
       ) : (
-        <div className="min-h-[500px] border rounded-md">
+        <div className="min-h-[500px]">
           {generatedContent ? (
             <RichTextEditor 
               content={generatedContent}

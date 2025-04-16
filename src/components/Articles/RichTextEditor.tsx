@@ -21,7 +21,7 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
-        const key = FALLBACK_API_KEY;
+        const key = await getTinyMceApiKey();
         setApiKey(key);
       } catch (err) {
         console.error("Failed to load TinyMCE API key:", err);
@@ -53,24 +53,30 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
       )}
       <Editor
         apiKey={apiKey}
+        initialValue={content}
         value={content}
         onInit={() => setIsLoading(false)}
         init={{
           height: 500,
-          menubar: !readOnly,
+          menubar: true,
           plugins: [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
             'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
           ],
-          toolbar: readOnly ? false : 'undo redo | blocks | ' +
-            'bold italic forecolor | alignleft aligncenter ' +
+          toolbar: readOnly ? false : 'undo redo | formatselect | ' +
+            'bold italic backcolor | alignleft aligncenter ' +
             'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | help',
+            'removeformat | image | table | help',
           content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px }',
           branding: false,
           promotion: false,
           readonly: readOnly,
+          setup: (editor) => {
+            editor.on('change', () => {
+              onChange(editor.getContent());
+            });
+          }
         }}
         onEditorChange={onChange}
         disabled={readOnly}

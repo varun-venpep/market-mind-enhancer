@@ -38,6 +38,11 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
     
     try {
       const keywordsList = keywords.split(',').map(k => k.trim()).filter(Boolean);
+      
+      toast.info('Generating AI content with Gemini...', {
+        duration: 3000,
+      });
+      
       const { content } = await generateArticleContent(
         title, 
         keywordsList, 
@@ -45,11 +50,14 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
         contentLength, 
         tone
       );
+      
       setGeneratedContent(content);
       onGenerate();
+      
+      toast.success('Content generated successfully!');
     } catch (error) {
       console.error('Error generating content:', error);
-      toast.error('Failed to generate content');
+      toast.error('Failed to generate content. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -64,12 +72,12 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
       {isGenerating ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          Generating...
+          Generating with Gemini AI...
         </>
       ) : (
         <>
           <Sparkles className="h-4 w-4" />
-          Generate Content
+          Generate SEO Content
         </>
       )}
     </Button>

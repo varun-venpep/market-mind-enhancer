@@ -13,6 +13,23 @@ export async function getTinyMceApiKey(): Promise<string> {
       return TINY_API_KEY;
     }
 
+    // Try to fetch from edge function if it exists
+    try {
+      const { data: functionData, error } = await supabase.functions.invoke("tiny-key", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (error) throw error;
+      if (functionData?.data?.key) {
+        console.log("Retrieved TinyMCE API key from edge function");
+        return functionData.data.key;
+      }
+    } catch (functionError) {
+      console.log("Edge function not available or errored, using default key", functionError);
+    }
+
     // Return the API key
     return TINY_API_KEY;
   } catch (error) {
