@@ -2,31 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Loader2, MoreHorizontal, Pencil, Trash } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchCampaign, fetchCampaignArticles, deleteCampaign, deleteArticle } from '@/services/articles';
+import { fetchCampaign, fetchCampaignArticles, deleteCampaign } from '@/services/articles';
 import { Campaign, Article } from '@/types';
-import { formatDate, truncateText } from '@/lib/utils';
-import ArticlePreview from '@/components/Articles/ArticlePreview';
+import CampaignHeader from '@/components/Campaigns/CampaignHeader';
+import DeleteCampaignDialog from '@/components/Campaigns/DeleteCampaignDialog';
+import CampaignArticlesList from '@/components/Campaigns/CampaignArticlesList';
 
 const CampaignDetail = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -35,6 +17,7 @@ const CampaignDetail = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   useEffect(() => {
     const loadCampaignAndArticles = async () => {
@@ -81,16 +64,16 @@ const CampaignDetail = () => {
     }
   };
 
-  const handleArticleDeleted = () => {
-    // Refresh the article list after deletion
+  const handleArticleDeleted = async () => {
     if (!campaignId) return;
     
-    fetchCampaignArticles(campaignId)
-      .then(data => setArticles(data))
-      .catch(error => {
-        console.error("Error refreshing campaign articles:", error);
-        toast.error("Failed to refresh articles");
-      });
+    try {
+      const articlesData = await fetchCampaignArticles(campaignId);
+      setArticles(articlesData);
+    } catch (error) {
+      console.error("Error refreshing campaign articles:", error);
+      toast.error("Failed to refresh articles");
+    }
   };
 
   if (isLoading) {
@@ -136,88 +119,25 @@ const CampaignDetail = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleGoBack}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Campaigns
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{campaign.name}</h1>
-              <p className="text-muted-foreground">{campaign.description || 'No description provided.'}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleCreateArticle}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Article
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete Campaign
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the campaign
-                    and all associated articles.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleDeleteCampaign}
-                    disabled={isDeleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Deleting...
-                      </>
-                    ) : (
-                      "Delete Campaign"
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
+        <CampaignHeader 
+          campaign={campaign}
+          onGoBack={handleGoBack}
+          onCreateArticle={handleCreateArticle}
+          onDeleteClick={() => setShowDeleteDialog(true)}
+        />
         
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Articles</h2>
-            {articles.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No articles found for this campaign.</p>
-                <Button onClick={handleCreateArticle}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Article
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {articles.map((article) => (
-                  <ArticlePreview 
-                    key={article.id} 
-                    article={article} 
-                    onDeleted={handleArticleDeleted}
-                  />
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <CampaignArticlesList 
+          articles={articles}
+          onCreateArticle={handleCreateArticle}
+          onArticleDeleted={handleArticleDeleted}
+        />
+
+        <DeleteCampaignDialog 
+          isOpen={showDeleteDialog}
+          isDeleting={isDeleting}
+          onClose={() => setShowDeleteDialog(false)}
+          onConfirm={handleDeleteCampaign}
+        />
       </div>
     </DashboardLayout>
   );
