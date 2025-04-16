@@ -10,12 +10,9 @@ interface RichTextEditorProps {
   readOnly?: boolean;
 }
 
-// Fallback API key in case the service fails
-const FALLBACK_API_KEY = "sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk";
-
 const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [apiKey, setApiKey] = useState<string>(FALLBACK_API_KEY);
+  const [apiKey, setApiKey] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,8 +23,6 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
       } catch (err) {
         console.error("Failed to load TinyMCE API key:", err);
         setError("Using basic editor mode. Some features may be limited.");
-        // Still use the fallback key
-        setApiKey(FALLBACK_API_KEY);
       } finally {
         setIsLoading(false);
       }
@@ -60,18 +55,28 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
           height: 500,
           menubar: true,
           plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+            // Core editing features
+            'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 
+            'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 
+            'wordcount', 'fullscreen', 'preview', 'quickbars', 'help',
+            // Premium features
+            'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed',
+            'permanentpen', 'advtable', 'advcode', 'editimage', 'advtemplate',
+            'mentions', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect',
+            'typography', 'inlinecss', 'markdown'
           ],
-          toolbar: readOnly ? false : 'undo redo | formatselect | ' +
-            'bold italic backcolor | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'removeformat | image | table | help',
+          toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough ' +
+                  '| link image media table mergetags | spellcheckdialog typography ' +
+                  '| align lineheight | checklist numlist bullist indent outdent ' +
+                  '| emoticons charmap | removeformat | help',
           content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px }',
           branding: false,
           promotion: false,
           readonly: readOnly,
+          quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
+          contextmenu: 'link image table',
+          powerpaste_word_import: 'clean',
+          powerpaste_html_import: 'clean',
           setup: (editor) => {
             editor.on('change', () => {
               onChange(editor.getContent());
