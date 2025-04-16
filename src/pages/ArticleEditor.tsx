@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
 import { Article } from '@/types';
 import { generateArticleContent } from '@/services/articles/ai';
 import { fetchArticle } from '@/services/articles';
@@ -14,6 +12,8 @@ import RichTextEditor from '@/components/Articles/RichTextEditor';
 import ArticleHeader from '@/components/Articles/ArticleHeader';
 import ArticleGenerationControls from '@/components/Articles/ArticleGenerationControls';
 import ErrorDisplay from '@/components/Articles/ErrorDisplay';
+import { ArticleLoadingState } from '@/components/Articles/ArticleLoadingState';
+import { ArticleNotFound } from '@/components/Articles/ArticleNotFound';
 
 const ArticleEditor = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -91,28 +91,11 @@ const ArticleEditor = () => {
   };
 
   if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="container mx-auto py-8 flex items-center justify-center h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </DashboardLayout>
-    );
+    return <ArticleLoadingState />;
   }
 
   if (!article) {
-    return (
-      <DashboardLayout>
-        <div className="container mx-auto py-8">
-          <Card className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Article Not Found</h2>
-            <p className="text-muted-foreground mb-6">
-              The article you are looking for does not exist or has been deleted.
-            </p>
-          </Card>
-        </div>
-      </DashboardLayout>
-    );
+    return <ArticleNotFound />;
   }
 
   return (
