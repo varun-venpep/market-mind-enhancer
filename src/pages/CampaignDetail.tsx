@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Loader2, MoreHorizontal } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner";
-import { fetchCampaign, fetchCampaignArticles } from '@/services/articles';
+import { fetchCampaign, fetchCampaignArticles, deleteCampaign, deleteArticle } from '@/services/articles';
 import { Campaign, Article } from '@/types';
 import { formatDate, truncateText } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -22,6 +23,7 @@ const CampaignDetail = () => {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   useEffect(() => {
     const loadCampaignAndArticles = async () => {
@@ -51,6 +53,34 @@ const CampaignDetail = () => {
   
   const handleGoBack = () => {
     navigate('/dashboard/campaigns');
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (!campaign || !window.confirm("Are you sure you want to delete this campaign? All associated articles will also be deleted.")) return;
+    
+    try {
+      setIsDeleting(true);
+      await deleteCampaign(campaignId!);
+      toast.success("Campaign deleted successfully");
+      navigate('/dashboard/campaigns');
+    } catch (error) {
+      console.error("Error deleting campaign:", error);
+      toast.error("Failed to delete campaign");
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteArticle = async (articleId: string) => {
+    if (!window.confirm("Are you sure you want to delete this article?")) return;
+    
+    try {
+      await deleteArticle(articleId);
+      toast.success("Article deleted successfully");
+      setArticles(articles.filter(article => article.id !== articleId));
+    } catch (error) {
+      console.error("Error deleting article:", error);
+      toast.error("Failed to delete article");
+    }
   };
 
   if (isLoading) {
@@ -112,10 +142,20 @@ const CampaignDetail = () => {
               <p className="text-muted-foreground">{campaign.description || 'No description provided.'}</p>
             </div>
           </div>
-          <Button onClick={handleCreateArticle}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Article
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleCreateArticle}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Article
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteCampaign}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
+              Delete Campaign
+            </Button>
+          </div>
         </div>
         
         <Card>
@@ -139,12 +179,14 @@ const CampaignDetail = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => navigate(`/dashboard/article-editor/${article.id}`)}>
+                              <Pencil className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate(`/article/${article.id}`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/dashboard/article/${article.id}`)}>
                               View
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteArticle(article.id)}>
+                              <Trash className="h-4 w-4 mr-2" />
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -153,11 +195,23 @@ const CampaignDetail = () => {
                       <p className="text-sm text-muted-foreground mb-2">
                         Updated: {formatDate(article.updated_at)}
                       </p>
-                      <Link to={`/article/${article.id}`}>
-                        <Button variant="secondary" size="sm">
-                          Read More
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate(`/dashboard/article-editor/${article.id}`)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
                         </Button>
-                      </Link>
+                        <Button 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={() => navigate(`/dashboard/article/${article.id}`)}
+                        >
+                          View Article
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

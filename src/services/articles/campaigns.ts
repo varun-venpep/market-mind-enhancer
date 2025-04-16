@@ -61,6 +61,20 @@ export async function createCampaign(name: string, description?: string): Promis
   }
 }
 
+export async function deleteCampaign(id: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('campaigns')
+      .delete()
+      .eq('id', id);
+      
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error deleting campaign:', error);
+    throw error;
+  }
+}
+
 export async function fetchCampaignArticles(campaignId: string): Promise<Article[]> {
   try {
     const { data, error } = await supabase

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Edit, Trash2, Eye, ArrowRightIcon, Send } from "lucide-react";
+import { Calendar, Edit, Trash2, Eye, ArrowRight, Send } from "lucide-react";
 import { Article } from "@/types";
 import { formatDate } from "@/lib/utils";
 
@@ -81,98 +81,45 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
               className="h-full w-full object-cover transition-all hover:scale-105"
             />
           </div>
-        ) : (
-          <div className="mb-4 aspect-video overflow-hidden rounded-md border bg-muted flex items-center justify-center">
-            <span className="text-sm text-muted-foreground">No thumbnail</span>
-          </div>
-        )}
+        ) : null}
 
-        <div className="flex items-center text-sm text-muted-foreground space-x-4">
-          <div className="flex items-center">
-            <Calendar className="mr-1 h-3.5 w-3.5" />
-            <span>{formatDate(article.created_at)}</span>
+        <div className="space-y-1">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Calendar className="mr-1 h-4 w-4" />
+            {formatDate(article.updated_at)}
           </div>
-          {article.word_count && (
-            <div>
-              <span>{article.word_count} words</span>
+          
+          {article.keywords && article.keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {article.keywords.slice(0, 3).map((keyword, i) => (
+                <Badge key={i} variant="outline" className="text-xs">
+                  {keyword}
+                </Badge>
+              ))}
+              {article.keywords.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{article.keywords.length - 3}
+                </Badge>
+              )}
             </div>
-          )}
-        </div>
-
-        <div className="mt-2 flex flex-wrap gap-1">
-          {article.keywords?.slice(0, 3).map((keyword, index) => (
-            <Badge key={index} variant="secondary" className="text-xs">
-              {keyword}
-            </Badge>
-          ))}
-          {article.keywords && article.keywords.length > 3 && (
-            <Badge variant="outline" className="text-xs">
-              +{article.keywords.length - 3}
-            </Badge>
           )}
         </div>
       </CardContent>
 
-      <CardFooter className="pt-0 border-t justify-between">
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleEdit}
-            title="Edit article"
-          >
-            <Edit className="h-4 w-4" />
+      <CardFooter className="pt-0 border-t mt-auto">
+        <div className="flex justify-between w-full">
+          <Button size="sm" variant="ghost" onClick={handleEdit}>
+            <Edit className="h-4 w-4 mr-1" />
+            Edit
           </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleView}
-            title="View article"
-          >
-            <Eye className="h-4 w-4" />
+          <Button size="sm" variant="ghost" onClick={handleView}>
+            <Eye className="h-4 w-4 mr-1" />
+            View
           </Button>
-          {onDeleted && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-              onClick={handleDelete}
-              title="Delete article"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {article.score ? (
-            <Badge
-              variant="outline"
-              className={`text-xs ${
-                article.score >= 80
-                  ? "bg-green-50 text-green-600 border-green-200"
-                  : article.score >= 60
-                  ? "bg-yellow-50 text-yellow-600 border-yellow-200"
-                  : "bg-red-50 text-red-600 border-red-200"
-              }`}
-            >
-              SEO Score: {article.score}
-            </Badge>
-          ) : null}
-          
-          {article.status === "completed" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-2 flex items-center gap-1"
-              onClick={handlePublish}
-              title="Publish article"
-            >
-              <Send className="h-3.5 w-3.5" />
-              <span className="text-xs">Publish</span>
-            </Button>
-          )}
+          <Button size="sm" variant="ghost" onClick={handleDelete}>
+            <Trash2 className="h-4 w-4 mr-1" />
+            Delete
+          </Button>
         </div>
       </CardFooter>
     </Card>
