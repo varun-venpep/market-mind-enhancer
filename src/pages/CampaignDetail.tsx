@@ -2,15 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Loader2, ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { fetchCampaign, fetchCampaignArticles, deleteCampaign } from '@/services/articles';
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { fetchCampaign, fetchCampaignArticles, deleteCampaign } from '@/services/articles/campaigns';
+import { createArticle } from '@/services/articles';
 import { Campaign, Article } from '@/types';
 import CampaignHeader from '@/components/Campaigns/CampaignHeader';
-import DeleteCampaignDialog from '@/components/Campaigns/DeleteCampaignDialog';
 import CampaignArticlesList from '@/components/Campaigns/CampaignArticlesList';
+import { DeleteCampaignDialog } from '@/components/Campaigns/DeleteCampaignDialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const CampaignDetail = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -20,43 +23,49 @@ const CampaignDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newArticleTitle, setNewArticleTitle] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
   useEffect(() => {
-    const loadCampaignAndArticles = async () => {
+    const loadCampaignData = async () => {
       if (!campaignId) return;
       
       try {
         setIsLoading(true);
+        // Fetch campaign details
         const campaignData = await fetchCampaign(campaignId);
-        const articlesData = await fetchCampaignArticles(campaignId);
-        
+        if (!campaignData) {
+          toast.error("Campaign not found");
+          navigate('/dashboard/campaigns');
+          return;
+        }
         setCampaign(campaignData);
+        
+        // Fetch articles for this campaign
+        const articlesData = await fetchCampaignArticles(campaignId);
         setArticles(articlesData);
       } catch (error) {
-        console.error("Error loading campaign and articles:", error);
-        toast.error("Failed to load campaign details");
+        console.error("Error loading campaign data:", error);
+        toast.error("Failed to load campaign data");
       } finally {
         setIsLoading(false);
       }
     };
     
-    loadCampaignAndArticles();
-  }, [campaignId]);
-  
-  const handleCreateArticle = () => {
-    navigate(`/dashboard/article-generator?campaignId=${campaignId}`);
-  };
-  
+    loadCampaignData();
+  }, [campaignId, navigate]);
+
   const handleGoBack = () => {
     navigate('/dashboard/campaigns');
   };
 
   const handleDeleteCampaign = async () => {
-    if (!campaign) return;
+    if (!campaign || !campaignId) return;
     
     try {
       setIsDeleting(true);
-      await deleteCampaign(campaignId!);
+      await deleteCampaign(campaignId);
       toast.success("Campaign deleted successfully");
       navigate('/dashboard/campaigns');
     } catch (error) {
@@ -66,16 +75,30 @@ const CampaignDetail = () => {
     }
   };
 
-  const handleArticleDeleted = async () => {
-    if (!campaignId) return;
+  const handleCreateArticle = async () => {
+    if (!campaign || !campaignId || !newArticleTitle.trim()) return;
     
     try {
-      const articlesData = await fetchCampaignArticles(campaignId);
-      setArticles(articlesData);
-      toast.success("Article deleted successfully");
+      setIsCreating(true);
+      const newArticle = await createArticle({
+        title: newArticleTitle,
+        campaign_id: campaignId,
+        status: 'draft',
+        keywords: []
+      });
+      
+      setArticles([newArticle, ...articles]);
+      setNewArticleTitle('');
+      setShowCreateDialog(false);
+      toast.success("Article created successfully");
+      
+      // Navigate to the article editor
+      navigate(`/dashboard/article-editor/${newArticle.id}`);
     } catch (error) {
-      console.error("Error refreshing campaign articles:", error);
-      toast.error("Failed to refresh articles");
+      console.error("Error creating article:", error);
+      toast.error("Failed to create article");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -92,28 +115,14 @@ const CampaignDetail = () => {
   if (!campaign) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto py-8">
-          <div className="flex items-center mb-6">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleGoBack}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Campaigns
-            </Button>
-          </div>
-          
-          <Card className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Campaign Not Found</h2>
-            <p className="text-muted-foreground mb-6">
-              The campaign you are looking for does not exist or has been deleted.
-            </p>
-            <Button onClick={handleGoBack}>
-              Go to Campaigns
-            </Button>
-          </Card>
+        <div className="container mx-auto py-8 text-center">
+          <h1 className="text-2xl font-bold mb-4">Campaign Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            The campaign you're looking for doesn't exist or has been deleted.
+          </p>
+          <Button onClick={handleGoBack}>
+            Go Back to Campaigns
+          </Button>
         </div>
       </DashboardLayout>
     );
@@ -122,25 +131,70 @@ const CampaignDetail = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <CampaignHeader 
+        <CampaignHeader
           campaign={campaign}
           onGoBack={handleGoBack}
-          onCreateArticle={handleCreateArticle}
+          onCreateArticle={() => setShowCreateDialog(true)}
           onDeleteClick={() => setShowDeleteDialog(true)}
         />
-        
+
         <CampaignArticlesList 
-          articles={articles}
-          onCreateArticle={handleCreateArticle}
-          onArticleDeleted={handleArticleDeleted}
+          articles={articles} 
+          onArticleDeleted={(deletedId) => {
+            setArticles(articles.filter(article => article.id !== deletedId));
+          }}
         />
 
+        {/* Delete Campaign Dialog */}
         <DeleteCampaignDialog 
-          isOpen={showDeleteDialog}
+          open={showDeleteDialog} 
+          onOpenChange={setShowDeleteDialog}
           isDeleting={isDeleting}
-          onClose={() => setShowDeleteDialog(false)}
-          onConfirm={handleDeleteCampaign}
+          onConfirmDelete={handleDeleteCampaign}
+          campaignName={campaign.name}
         />
+
+        {/* Create Article Dialog */}
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Article</DialogTitle>
+              <DialogDescription>
+                Add a new article to the "{campaign.name}" campaign
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <Label htmlFor="article-title">Article Title</Label>
+              <Input
+                id="article-title"
+                value={newArticleTitle}
+                onChange={(e) => setNewArticleTitle(e.target.value)}
+                placeholder="Enter article title"
+                className="mt-1"
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateArticle} 
+                disabled={isCreating || !newArticleTitle.trim()}
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Article'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

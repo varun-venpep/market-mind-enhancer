@@ -1,45 +1,40 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface DeleteCampaignDialogProps {
-  isOpen: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   isDeleting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  onConfirmDelete: () => void;
+  campaignName: string;
 }
 
-const DeleteCampaignDialog: React.FC<DeleteCampaignDialogProps> = ({
-  isOpen,
+export const DeleteCampaignDialog: React.FC<DeleteCampaignDialogProps> = ({
+  open,
+  onOpenChange,
   isDeleting,
-  onClose,
-  onConfirm,
+  onConfirmDelete,
+  campaignName
 }) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the campaign
-            and all associated articles.
+            Are you sure you want to delete the "{campaignName}" campaign? This action cannot be undone
+            and all articles in this campaign will also be deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm}
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirmDelete();
+            }}
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
@@ -49,7 +44,7 @@ const DeleteCampaignDialog: React.FC<DeleteCampaignDialogProps> = ({
                 Deleting...
               </>
             ) : (
-              "Delete Campaign"
+              'Delete Campaign'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -57,5 +52,3 @@ const DeleteCampaignDialog: React.FC<DeleteCampaignDialogProps> = ({
     </AlertDialog>
   );
 };
-
-export default DeleteCampaignDialog;

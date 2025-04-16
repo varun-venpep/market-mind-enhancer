@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CreateCampaignDialog } from '@/components/Dashboard/CreateCampaignDialog';
 
 const Campaigns = () => {
   const navigate = useNavigate();
@@ -20,8 +21,6 @@ const Campaigns = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [campaignName, setCampaignName] = useState('');
-  const [campaignDescription, setCampaignDescription] = useState('');
   
   useEffect(() => {
     const loadCampaigns = async () => {
@@ -41,20 +40,20 @@ const Campaigns = () => {
     loadCampaigns();
   }, []);
   
-  const handleCreateCampaign = async () => {
-    if (!campaignName.trim()) {
+  const handleCreateCampaign = async (name: string, description: string) => {
+    if (!name.trim()) {
       toast.error("Campaign name is required");
       return;
     }
     
     try {
       setIsCreating(true);
-      const newCampaign = await createCampaign(campaignName, campaignDescription);
+      const newCampaign = await createCampaign(name, description);
       setCampaigns([newCampaign, ...campaigns]);
-      setCampaignName('');
-      setCampaignDescription('');
       setOpenDialog(false);
       toast.success("Campaign created successfully");
+      // Navigate to the new campaign
+      navigate(`/dashboard/campaign/${newCampaign.id}`);
     } catch (error) {
       console.error("Error creating campaign:", error);
       toast.error("Failed to create campaign");
@@ -83,55 +82,16 @@ const Campaigns = () => {
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Campaigns</h1>
-          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Campaign
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Campaign</DialogTitle>
-                <DialogDescription>
-                  Create a new campaign to organize your articles
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="campaign-name">Campaign Name</Label>
-                  <Input 
-                    id="campaign-name" 
-                    placeholder="Enter campaign name" 
-                    value={campaignName}
-                    onChange={e => setCampaignName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="campaign-description">Campaign Description (Optional)</Label>
-                  <Textarea 
-                    id="campaign-description" 
-                    placeholder="Enter campaign description" 
-                    value={campaignDescription}
-                    onChange={e => setCampaignDescription(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancel</Button>
-                <Button onClick={handleCreateCampaign} disabled={isCreating}>
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Campaign'
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setOpenDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Campaign
+          </Button>
+          
+          <CreateCampaignDialog 
+            open={openDialog}
+            onOpenChange={setOpenDialog}
+            onSubmit={handleCreateCampaign}
+          />
         </div>
         
         {campaigns.length === 0 ? (
