@@ -2,9 +2,11 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import KeywordManager from './KeywordManager';
 import ContentTypeSelector from './ContentTypeSelector';
 import GenerateButton from './GenerateButton';
+import { Campaign } from "@/types";
 
 interface ArticleFormProps {
   title: string;
@@ -26,6 +28,9 @@ interface ArticleFormProps {
   addKeyword: (keyword: string) => void;
   isLoadingSuggestions: boolean;
   getSuggestions: () => void;
+  campaigns: Campaign[];
+  selectedCampaignId: string | null;
+  setSelectedCampaignId: (id: string) => void;
 }
 
 const ArticleForm: React.FC<ArticleFormProps> = ({
@@ -47,7 +52,10 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
   keywordSuggestions,
   addKeyword,
   isLoadingSuggestions,
-  getSuggestions
+  getSuggestions,
+  campaigns,
+  selectedCampaignId,
+  setSelectedCampaignId
 }) => {
   return (
     <>
@@ -59,6 +67,30 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
+      </div>
+
+      <div className="space-y-2 mt-4">
+        <Label htmlFor="campaign">Campaign</Label>
+        <Select 
+          value={selectedCampaignId || ""} 
+          onValueChange={(value) => setSelectedCampaignId(value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a campaign" />
+          </SelectTrigger>
+          <SelectContent>
+            {campaigns.map((campaign) => (
+              <SelectItem key={campaign.id} value={campaign.id}>
+                {campaign.name}
+              </SelectItem>
+            ))}
+            {campaigns.length === 0 && (
+              <SelectItem value="no-campaigns" disabled>
+                No campaigns available
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
       <KeywordManager 

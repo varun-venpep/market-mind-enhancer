@@ -1,245 +1,192 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { generateContent } from '@/services/geminiApi';
-import ArticleForm from '@/components/ArticleGenerator/ArticleForm';
-import ContentPreview from '@/components/ArticleGenerator/ContentPreview';
-import ImageGenerator from '@/components/ArticleGenerator/ImageGenerator';
+import DashboardLayout from "@/components/Dashboard/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ArticleForm from "@/components/ArticleGenerator/ArticleForm";
+import ContentPreview from "@/components/ArticleGenerator/ContentPreview";
+import { createArticle } from '@/services/articles';
+import { fetchUserCampaigns } from '@/services/articles/campaigns';
+import { Campaign } from '@/types';
 
 const ArticleGenerator = () => {
   const navigate = useNavigate();
-  
-  // Form state
-  const [activeTab, setActiveTab] = useState('blog-post');
-  const [title, setTitle] = useState('');
-  const [keywords, setKeywords] = useState('');
-  const [contentType, setContentType] = useState('blog-post');
-  const [contentLength, setContentLength] = useState('medium');
-  const [tone, setTone] = useState('informational');
+  const [title, setTitle] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [contentType, setContentType] = useState("blog");
+  const [contentLength, setContentLength] = useState("medium");
+  const [tone, setTone] = useState("professional");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState('');
-  
-  // Image generation state
-  const [imagePrompt, setImagePrompt] = useState('');
-  const [generatedImageUrl, setGeneratedImageUrl] = useState('');
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  
-  // Keyword suggestions state
-  const [keywordSuggestions, setKeywordSuggestions] = useState([]);
+  const [generatedContent, setGeneratedContent] = useState("");
+  const [editedContent, setEditedContent] = useState("");
+  const [activeTab, setActiveTab] = useState("settings");
+  const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
 
-  const handleGenerate = async () => {
-    if (!title.trim()) {
-      toast.error('Please enter a title');
-      return;
-    }
+  useEffect(() => {
+    const loadCampaigns = async () => {
+      try {
+        const campaignsData = await fetchUserCampaigns();
+        setCampaigns(campaignsData);
+        
+        if (campaignsData.length > 0) {
+          setSelectedCampaignId(campaignsData[0].id);
+        }
+      } catch (error) {
+        console.error("Error loading campaigns:", error);
+      }
+    };
+    
+    loadCampaigns();
+  }, []);
 
-    setIsGenerating(true);
-    setGeneratedContent('');
-
-    try {
-      const result = await generateContent(`Create a ${contentType} about "${title}" with a ${tone} tone`);
-      setGeneratedContent(result);
-      toast.success('Content generated successfully!');
-    } catch (error) {
-      console.error('Error generating content:', error);
-      toast.error('Failed to generate content');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleGenerateImage = async () => {
-    if (!imagePrompt.trim()) {
-      toast.error('Please enter an image description');
-      return;
-    }
-
-    setIsGeneratingImage(true);
-    setGeneratedImageUrl('');
-
-    try {
-      // Your image generation logic here
-      const imageUrl = 'https://example.com/placeholder.jpg'; // Replace with actual image generation
-      setGeneratedImageUrl(imageUrl);
-      toast.success('Image generated successfully!');
-    } catch (error) {
-      console.error('Error generating image:', error);
-      toast.error('Failed to generate image');
-    } finally {
-      setIsGeneratingImage(false);
-    }
+  const handleGenerate = () => {
+    setActiveTab("preview");
+    setEditedContent(generatedContent);
   };
 
   const handleKeywordInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const input = e.currentTarget.value.trim();
-      if (input) {
-        const keywordsList = keywords.split(',').map(k => k.trim());
-        if (!keywordsList.includes(input)) {
-          const newKeywords = [...keywordsList, input].filter(Boolean).join(', ');
-          setKeywords(newKeywords);
+    if (e.key === 'Enter' && e.currentTarget.value) {
+      const newKeyword = e.currentTarget.value.trim();
+      if (newKeyword && !keywords.includes(newKeyword)) {
+        if (keywords) {
+          setKeywords(prev => `${prev}, ${newKeyword}`);
+        } else {
+          setKeywords(newKeyword);
         }
         e.currentTarget.value = '';
       }
     }
   };
 
-  const addKeyword = (keyword: string) => {
-    const keywordsList = keywords.split(',').map(k => k.trim());
-    if (!keywordsList.includes(keyword)) {
-      const newKeywords = [...keywordsList, keyword].filter(Boolean).join(', ');
-      setKeywords(newKeywords);
-      toast.success(`Added "${keyword}" to keywords`);
+  const getSuggestions = async () => {
+    if (!title) {
+      toast.error("Please enter a title first");
+      return;
+    }
+    
+    setIsLoadingSuggestions(true);
+    try {
+      // This is a placeholder for the actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const suggestions = [
+        "SEO optimization", 
+        "content marketing", 
+        "digital strategy", 
+        "keyword research", 
+        "online presence"
+      ];
+      setKeywordSuggestions(suggestions);
+    } catch (error) {
+      console.error("Error getting suggestions:", error);
+      toast.error("Failed to get keyword suggestions");
+    } finally {
+      setIsLoadingSuggestions(false);
     }
   };
 
-  const getSuggestions = async () => {
-    if (!title.trim()) {
-      toast.error('Please enter a topic first');
+  const addKeyword = (keyword: string) => {
+    if (!keywords.includes(keyword)) {
+      if (keywords) {
+        setKeywords(prev => `${prev}, ${keyword}`);
+      } else {
+        setKeywords(keyword);
+      }
+    }
+  };
+
+  const handleSaveArticle = async () => {
+    if (!title || !editedContent) {
+      toast.error("Please provide a title and generate content before saving");
       return;
     }
 
-    setIsLoadingSuggestions(true);
-    setKeywordSuggestions([]);
+    if (!selectedCampaignId) {
+      toast.error("Please select a campaign before saving");
+      return;
+    }
 
+    const toastId = toast.loading("Saving article...");
+    
     try {
-      // Your keyword suggestions logic here
-      const suggestions = ['example1', 'example2', 'example3'];
-      setKeywordSuggestions(suggestions);
+      const keywordsList = keywords.split(',').map(k => k.trim()).filter(Boolean);
+      
+      const newArticle = await createArticle({
+        title,
+        content: editedContent,
+        keywords: keywordsList,
+        campaign_id: selectedCampaignId,
+        status: 'draft'
+      });
+      
+      toast.dismiss(toastId);
+      toast.success("Article saved successfully");
+      
+      // Navigate to the article editor page
+      navigate(`/dashboard/article-editor/${newArticle.id}`);
     } catch (error) {
-      console.error('Error fetching keyword suggestions:', error);
-      toast.error('Failed to get keyword suggestions');
-    } finally {
-      setIsLoadingSuggestions(false);
+      console.error("Error saving article:", error);
+      toast.dismiss(toastId);
+      toast.error("Failed to save article");
     }
   };
 
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <div className="flex items-center gap-2 mb-6">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/dashboard/integrations')} 
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Integrations
-          </Button>
-        </div>
-
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold gradient-text">AI Content Generator</h1>
-            <p className="text-muted-foreground mt-1">
-              Generate SEO-optimized content and images powered by Google's Gemini AI
-            </p>
-          </div>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="blog-post" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span>Content Creator</span>
-            </TabsTrigger>
-            <TabsTrigger value="image-generator" className="flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" />
-              <span>Image Generator</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="blog-post">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <CardTitle>Content Settings</CardTitle>
-                  <CardDescription>
-                    Configure your content generation preferences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <ArticleForm 
-                    title={title}
-                    setTitle={setTitle}
-                    keywords={keywords}
-                    setKeywords={setKeywords}
-                    contentType={contentType}
-                    setContentType={setContentType}
-                    contentLength={contentLength}
-                    setContentLength={setContentLength}
-                    tone={tone}
-                    setTone={setTone}
-                    onGenerate={handleGenerate}
-                    isGenerating={isGenerating}
-                    setIsGenerating={setIsGenerating}
-                    setGeneratedContent={setGeneratedContent}
-                    handleKeywordInput={handleKeywordInput}
-                    keywordSuggestions={keywordSuggestions}
-                    addKeyword={addKeyword}
-                    isLoadingSuggestions={isLoadingSuggestions}
-                    getSuggestions={getSuggestions}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Generated Content</CardTitle>
-                  <CardDescription>
-                    Your AI-generated content will appear here
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ContentPreview 
-                    isGenerating={isGenerating}
-                    generatedContent={generatedContent}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="image-generator">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <CardTitle>Image Generator</CardTitle>
-                  <CardDescription>
-                    Create AI-generated images for your content
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ImageGenerator 
-                    imagePrompt={imagePrompt}
-                    setImagePrompt={setImagePrompt}
-                    handleGenerateImage={handleGenerateImage}
-                    isGeneratingImage={isGeneratingImage}
-                    generatedImageUrl={generatedImageUrl}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Generated Image</CardTitle>
-                  <CardDescription>
-                    Your AI-generated image will appear here
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Content Generator</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="preview">Content Preview</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="settings" className="space-y-4 mt-4">
+                <ArticleForm
+                  title={title}
+                  setTitle={setTitle}
+                  keywords={keywords}
+                  setKeywords={setKeywords}
+                  contentType={contentType}
+                  setContentType={setContentType}
+                  contentLength={contentLength}
+                  setContentLength={setContentLength}
+                  tone={tone}
+                  setTone={setTone}
+                  onGenerate={handleGenerate}
+                  isGenerating={isGenerating}
+                  setIsGenerating={setIsGenerating}
+                  setGeneratedContent={setGeneratedContent}
+                  handleKeywordInput={handleKeywordInput}
+                  keywordSuggestions={keywordSuggestions}
+                  addKeyword={addKeyword}
+                  isLoadingSuggestions={isLoadingSuggestions}
+                  getSuggestions={getSuggestions}
+                  campaigns={campaigns}
+                  selectedCampaignId={selectedCampaignId}
+                  setSelectedCampaignId={setSelectedCampaignId}
+                />
+              </TabsContent>
+              
+              <TabsContent value="preview" className="space-y-4 mt-4">
+                <ContentPreview 
+                  isGenerating={isGenerating}
+                  generatedContent={generatedContent}
+                  onContentChange={setEditedContent}
+                  onSaveArticle={handleSaveArticle}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

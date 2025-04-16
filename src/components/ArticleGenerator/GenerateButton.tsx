@@ -38,7 +38,13 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
     
     try {
       const keywordsList = keywords.split(',').map(k => k.trim()).filter(Boolean);
-      const { content } = await generateArticleContent(title, keywordsList);
+      const { content } = await generateArticleContent(
+        title, 
+        keywordsList, 
+        contentType, 
+        contentLength, 
+        tone
+      );
       setGeneratedContent(content);
       onGenerate();
     } catch (error) {

@@ -8,11 +8,15 @@ import RichTextEditor from "@/components/Articles/RichTextEditor";
 interface ContentPreviewProps {
   isGenerating: boolean;
   generatedContent: string;
+  onContentChange: (content: string) => void;
+  onSaveArticle?: () => void;
 }
 
 const ContentPreview: React.FC<ContentPreviewProps> = ({ 
   isGenerating, 
-  generatedContent 
+  generatedContent,
+  onContentChange,
+  onSaveArticle
 }) => {
   return (
     <>
@@ -26,10 +30,8 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           {generatedContent ? (
             <RichTextEditor 
               content={generatedContent}
-              onChange={(content) => {
-                // Store the edited content in state
-                console.log('Content updated:', content);
-              }}
+              onChange={onContentChange}
+              readOnly={false}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-[500px] border border-dashed rounded-md">
@@ -52,7 +54,7 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           >
             Copy Content
           </Button>
-          <Button disabled>
+          <Button onClick={onSaveArticle}>
             Save as Draft
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
