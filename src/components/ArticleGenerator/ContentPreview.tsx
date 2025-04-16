@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Loader2, FileText, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import RichTextEditor from "@/components/Articles/RichTextEditor";
 
 interface ContentPreviewProps {
   isGenerating: boolean;
@@ -20,15 +21,23 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
           <p className="text-muted-foreground">Generating high-quality content...</p>
         </div>
-      ) : generatedContent ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none h-[500px] overflow-y-auto border rounded-md p-4">
-          <div dangerouslySetInnerHTML={{ __html: generatedContent.replace(/\n/g, '<br/>') }} />
-        </div>
       ) : (
-        <div className="flex flex-col items-center justify-center h-[500px] border border-dashed rounded-md">
-          <FileText className="h-12 w-12 text-muted-foreground mb-2 opacity-20" />
-          <p className="text-muted-foreground">Your content will appear here</p>
-          <p className="text-xs text-muted-foreground mt-1">Fill in the settings and click Generate</p>
+        <div className="min-h-[500px] border rounded-md">
+          {generatedContent ? (
+            <RichTextEditor 
+              content={generatedContent}
+              onChange={(content) => {
+                // Store the edited content in state
+                console.log('Content updated:', content);
+              }}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[500px] border border-dashed rounded-md">
+              <FileText className="h-12 w-12 text-muted-foreground mb-2 opacity-20" />
+              <p className="text-muted-foreground">Your content will appear here</p>
+              <p className="text-xs text-muted-foreground mt-1">Fill in the settings and click Generate</p>
+            </div>
+          )}
         </div>
       )}
 

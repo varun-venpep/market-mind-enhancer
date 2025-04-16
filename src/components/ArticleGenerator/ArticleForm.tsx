@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import KeywordManager from './KeywordManager';
 import ContentTypeSelector from './ContentTypeSelector';
 import GenerateButton from './GenerateButton';
+import { toast } from "sonner";
 
 interface ArticleFormProps {
   title: string;
@@ -19,6 +20,8 @@ interface ArticleFormProps {
   setTone: (tone: string) => void;
   onGenerate: () => void;
   isGenerating: boolean;
+  setIsGenerating: (value: boolean) => void;
+  setGeneratedContent: (content: string) => void;
   handleKeywordInput: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   keywordSuggestions: string[];
   addKeyword: (keyword: string) => void;
@@ -39,6 +42,8 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
   setTone,
   onGenerate,
   isGenerating,
+  setIsGenerating,
+  setGeneratedContent,
   handleKeywordInput,
   keywordSuggestions,
   addKeyword,
@@ -79,6 +84,13 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
       <GenerateButton 
         onGenerate={onGenerate}
         isGenerating={isGenerating}
+        title={title}
+        keywords={keywords}
+        contentType={contentType}
+        contentLength={contentLength}
+        tone={tone}
+        setIsGenerating={setIsGenerating}
+        setGeneratedContent={setGeneratedContent}
       />
     </>
   );
