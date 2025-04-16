@@ -20,7 +20,14 @@ const CampaignArticlesList: React.FC<CampaignArticlesListProps> = ({
   return (
     <Card>
       <CardContent className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Articles</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Articles</h2>
+          <Button onClick={onCreateArticle} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Article
+          </Button>
+        </div>
+        
         {articles.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">

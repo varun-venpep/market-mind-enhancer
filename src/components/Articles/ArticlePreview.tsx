@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Edit, Trash2, Eye, ArrowRight, Send, Loader2 } from "lucide-react";
+import { Calendar, Edit, Trash2, Eye, Loader2 } from "lucide-react";
 import { Article } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { deleteArticle } from "@/services/articles";
@@ -48,11 +48,6 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
 
   const handleCardClick = () => {
     navigate(`/dashboard/article/${article.id}`);
-  };
-
-  const handlePublish = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/dashboard/article-publisher/${article.id}`);
   };
 
   // Define status color

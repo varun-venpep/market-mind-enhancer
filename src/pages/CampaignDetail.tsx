@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -71,6 +72,7 @@ const CampaignDetail = () => {
     try {
       const articlesData = await fetchCampaignArticles(campaignId);
       setArticles(articlesData);
+      toast.success("Article deleted successfully");
     } catch (error) {
       console.error("Error refreshing campaign articles:", error);
       toast.error("Failed to refresh articles");

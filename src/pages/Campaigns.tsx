@@ -29,6 +29,7 @@ const Campaigns = () => {
         setIsLoading(true);
         const data = await fetchUserCampaigns();
         setCampaigns(data);
+        console.log("Loaded campaigns:", data);
       } catch (error) {
         console.error("Error fetching campaigns:", error);
         toast.error("Failed to load campaigns");
@@ -63,6 +64,7 @@ const Campaigns = () => {
   };
   
   const handleCampaignClick = (campaignId: string) => {
+    console.log("Navigating to campaign:", campaignId);
     navigate(`/dashboard/campaign/${campaignId}`);
   };
 

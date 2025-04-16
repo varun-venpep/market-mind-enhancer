@@ -5,13 +5,16 @@ import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Editor } from '@tinymce/tinymce-react';
 import { generateArticleContent, generateArticleThumbnail } from '@/services/articles/ai';
 import { createArticle } from '@/services/articles';
 import { ArticleCreationData } from '@/services/articles/types';
 import { ArrowLeft, Loader2, Wand2, Image, Save } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { InfoIcon } from "lucide-react";
 
 const ArticleGenerator = () => {
   const [title, setTitle] = useState('');
@@ -119,6 +122,26 @@ const ArticleGenerator = () => {
       navigate('/dashboard/campaigns');
     }
   };
+
+  const addKeywordBadge = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && e.currentTarget.value) {
+      const newKeyword = e.currentTarget.value.trim();
+      if (newKeyword) {
+        const keywordsArray = keywords ? keywords.split(',').map(k => k.trim()) : [];
+        if (!keywordsArray.includes(newKeyword)) {
+          keywordsArray.push(newKeyword);
+          setKeywords(keywordsArray.join(', '));
+          e.currentTarget.value = '';
+        }
+      }
+    }
+  };
+
+  const removeKeyword = (keywordToRemove: string) => {
+    const keywordsArray = keywords.split(',').map(k => k.trim());
+    const filteredKeywords = keywordsArray.filter(k => k !== keywordToRemove);
+    setKeywords(filteredKeywords.join(', '));
+  };
   
   return (
     <DashboardLayout>
@@ -154,13 +177,42 @@ const ArticleGenerator = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="keywords">Keywords (comma separated)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="keywords">Keywords</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <InfoIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="space-y-2">
+                          <h4 className="font-medium">Keyword Tips</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Enter keywords separated by commas or press Enter after each keyword. 
+                            Good keywords are specific and relevant to your article's topic.
+                          </p>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <Input
                     id="keywords"
-                    placeholder="Enter keywords"
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
+                    placeholder="Enter keywords and press Enter"
+                    onKeyDown={addKeywordBadge}
                   />
+                  {keywords && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {keywords.split(',').map((keyword, idx) => {
+                        const trimmed = keyword.trim();
+                        return trimmed ? (
+                          <Badge key={idx} variant="secondary" className="cursor-pointer" onClick={() => removeKeyword(trimmed)}>
+                            {trimmed} ×
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex flex-col gap-2">
@@ -238,15 +290,29 @@ const ArticleGenerator = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Content</CardTitle>
-                <CardDescription>Write or generate your article content</CardDescription>
+                <CardDescription>
+                  Write or generate your article content using the rich text editor
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <Textarea
-                  id="content"
-                  className="min-h-[500px]"
+                <Editor
+                  apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY || 'no-api-key'}
+                  init={{
+                    height: 500,
+                    menubar: true,
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                      'bold italic forecolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist outdent indent | ' +
+                      'removeformat | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                  }}
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Start writing your article content here, or generate content using the button on the left panel."
+                  onEditorChange={(newContent) => setContent(newContent)}
                 />
               </CardContent>
             </Card>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { Article } from "@/types";
@@ -77,7 +78,12 @@ export function useArticleEditor(article: Article | null) {
     try {
       console.log("Saving article:", article.id);
       
-      const wordCount = content.split(/\s+/).filter(Boolean).length;
+      // Calculate word count properly by removing HTML tags
+      const wordCount = content
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .split(/\s+/)
+        .filter(Boolean)
+        .length;
       
       const updatedArticle = await updateArticle(article.id, {
         title,
@@ -122,7 +128,12 @@ export function useArticleEditor(article: Article | null) {
     try {
       console.log("Force saving article:", article.id);
       
-      const wordCount = content.split(/\s+/).filter(Boolean).length;
+      // Calculate word count properly by removing HTML tags
+      const wordCount = content
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .split(/\s+/)
+        .filter(Boolean)
+        .length;
       
       const updatedArticle = await updateArticle(article.id, {
         title,
