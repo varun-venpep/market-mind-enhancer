@@ -21,7 +21,7 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
-        const key = await getTinyMceApiKey();
+        const key = FALLBACK_API_KEY;
         setApiKey(key);
       } catch (err) {
         console.error("Failed to load TinyMCE API key:", err);
