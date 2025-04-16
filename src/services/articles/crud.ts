@@ -3,6 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Article } from "@/types";
 import { ArticleCreationData, ArticleUpdateData } from "./types";
 
+export async function fetchArticles(): Promise<Article[]> {
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    return data as Article[] || [];
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    throw error;
+  }
+}
+
 export async function fetchArticle(id: string): Promise<Article | null> {
   try {
     const { data, error } = await supabase

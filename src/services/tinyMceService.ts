@@ -9,8 +9,11 @@ export async function getTinyMceApiKey(): Promise<string> {
       throw new Error('No active session');
     }
 
+    // Use the Supabase URL from environment or hardcoded value
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://zcftdyamlgcvnduafxzj.supabase.co";
+    
     // Call the edge function with the access token
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/tiny-key`, {
+    const response = await fetch(`${supabaseUrl}/functions/v1/tiny-key`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
