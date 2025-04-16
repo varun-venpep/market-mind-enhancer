@@ -4,12 +4,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { fetchArticle, deleteArticle } from '@/services/articles';
 import { Article } from "@/types";
 import { ArticleMetadata } from '@/components/Articles/ArticleMetadata';
 import { ArticleActions } from '@/components/Articles/ArticleActions';
+import { ArticleDetailSkeleton } from '@/components/Articles/ArticleDetailSkeleton';
+import { ArticleNotFound } from '@/components/Articles/ArticleNotFound';
 
 const ArticleDetail = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -78,43 +80,11 @@ const ArticleDetail = () => {
   };
 
   if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="container mx-auto py-8 flex items-center justify-center h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </DashboardLayout>
-    );
+    return <ArticleDetailSkeleton />;
   }
 
   if (!article) {
-    return (
-      <DashboardLayout>
-        <div className="container mx-auto py-8">
-          <div className="flex items-center mb-6">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/dashboard/campaigns')}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Campaigns
-            </Button>
-          </div>
-          
-          <Card className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Article Not Found</h2>
-            <p className="text-muted-foreground mb-6">
-              The article you are looking for does not exist or has been deleted.
-            </p>
-            <Button onClick={() => navigate("/dashboard/campaigns")}>
-              Go to Campaigns
-            </Button>
-          </Card>
-        </div>
-      </DashboardLayout>
-    );
+    return <ArticleNotFound />;
   }
 
   return (
@@ -152,7 +122,7 @@ const ArticleDetail = () => {
             />
           </div>
           
-          <Card className="overflow-hidden">
+          <Card>
             <CardContent className="p-6">
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 {article.thumbnail_url && (
