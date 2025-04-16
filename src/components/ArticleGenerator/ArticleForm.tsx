@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import KeywordManager from './KeywordManager';
 import ContentTypeSelector from './ContentTypeSelector';
 import GenerateButton from './GenerateButton';
-import { toast } from "sonner";
 
 interface ArticleFormProps {
   title: string;

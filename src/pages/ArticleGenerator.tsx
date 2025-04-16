@@ -181,6 +181,8 @@ const ArticleGenerator = () => {
                     setTone={setTone}
                     onGenerate={handleGenerate}
                     isGenerating={isGenerating}
+                    setIsGenerating={setIsGenerating}
+                    setGeneratedContent={setGeneratedContent}
                     handleKeywordInput={handleKeywordInput}
                     keywordSuggestions={keywordSuggestions}
                     addKeyword={addKeyword}

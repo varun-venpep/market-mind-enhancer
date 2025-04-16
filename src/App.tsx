@@ -8,7 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import { ShopifyProtected } from './components/ShopifyProtected';
-import { ThemeProvider } from './components/Theme/ThemeProvider';
+import { ThemeProvider } from './components/theme-provider';
 import routes from './routes';
 import './App.css';
 
