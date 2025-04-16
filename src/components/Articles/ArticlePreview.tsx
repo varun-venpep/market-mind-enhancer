@@ -23,7 +23,7 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
 
   const handleView = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.open(`/dashboard/article-preview/${article.id}`, "_blank");
+    navigate(`/dashboard/article/${article.id}`);
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -32,7 +32,7 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
   };
 
   const handleCardClick = () => {
-    navigate(`/dashboard/article-editor/${article.id}`);
+    navigate(`/dashboard/article/${article.id}`);
   };
 
   const handlePublish = (e: React.MouseEvent) => {
@@ -129,7 +129,7 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
             size="icon"
             className="h-8 w-8"
             onClick={handleView}
-            title="Preview article"
+            title="View article"
           >
             <Eye className="h-4 w-4" />
           </Button>

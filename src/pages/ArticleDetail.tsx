@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Loader2, Share, Trash, Bookmark, FileText, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Share, Trash, Bookmark, FileText, Clock, CheckCircle2, CircleDot } from "lucide-react";
 import { toast } from "sonner";
 import { fetchArticle, deleteArticle, updateArticle } from '@/services/articleService';
 import { Article } from '@/types';
 
 const ArticleDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();
   const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,11 +18,11 @@ const ArticleDetail = () => {
 
   useEffect(() => {
     const loadArticle = async () => {
-      if (!id) return;
+      if (!articleId) return;
       
       try {
         setIsLoading(true);
-        const data = await fetchArticle(id);
+        const data = await fetchArticle(articleId);
         console.log("Loaded article:", data);
         setArticle(data);
       } catch (error) {
@@ -33,7 +34,7 @@ const ArticleDetail = () => {
     };
     
     loadArticle();
-  }, [id]);
+  }, [articleId]);
 
   const handleEdit = () => {
     if (article) {
@@ -50,7 +51,7 @@ const ArticleDetail = () => {
       toast.success("Article deleted successfully");
       
       if (article.campaign_id) {
-        navigate(`/dashboard/campaigns/${article.campaign_id}`);
+        navigate(`/dashboard/campaign/${article.campaign_id}`);
       } else {
         navigate("/dashboard/campaigns");
       }
@@ -70,7 +71,7 @@ const ArticleDetail = () => {
   
   const handleGoToCampaign = () => {
     if (article && article.campaign_id) {
-      navigate(`/dashboard/campaigns/${article.campaign_id}`);
+      navigate(`/dashboard/campaign/${article.campaign_id}`);
     } else {
       navigate('/dashboard/campaigns');
     }
@@ -222,22 +223,14 @@ const ArticleDetail = () => {
 const StatusIcon = ({ status }: { status: string }) => {
   switch(status) {
     case 'completed':
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle2 className="h-4 w-4 text-green-500" />;
     case 'draft':
       return <Edit className="h-4 w-4" />;
     case 'in-progress':
       return <Loader2 className="h-4 w-4" />;
     default:
-      return <Circle className="h-4 w-4" />;
+      return <CircleDot className="h-4 w-4" />;
   }
-};
-
-const CheckCircle = ({ className }: { className: string }) => {
-  return <div className={className}>✓</div>;
-};
-
-const Circle = ({ className }: { className: string }) => {
-  return <div className={className}>○</div>;
 };
 
 export default ArticleDetail;
