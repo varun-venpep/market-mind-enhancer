@@ -73,7 +73,7 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
           readonly: readOnly,
         }}
         onEditorChange={onChange}
-        disabled={readOnly}
+        
       />
     </div>
   );
