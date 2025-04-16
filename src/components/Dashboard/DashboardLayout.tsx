@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Moon, Sun, ChevronDown, LogOut, Home, Search, ShoppingBag, Settings, FileText, MessagesSquare, LayoutGrid, FileEdit, ListChecks } from 'lucide-react';
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/Theme/ThemeProvider";
 import { useAuth } from '@/contexts/AuthContext';
 import { WorkspaceSelector } from '@/components/Workspace/WorkspaceSelector';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
