@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -8,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PublishScheduler } from "@/components/Articles/PublishScheduler";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ChevronRight, ExternalLink, Info, Loader2 } from "lucide-react";
-import { fetchArticle } from "@/services/articleService";
+import { fetchArticle } from "@/services/articles";
 import { Article } from "@/types";
 import { formatDate } from "@/lib/utils";
 

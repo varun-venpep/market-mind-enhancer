@@ -1,603 +1,436 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Article } from "@/types";
-import { fetchArticle, updateArticle, optimizeArticleContent, optimizeArticleSection, calculateSEOScore, generateArticleThumbnail } from '@/services/articleService';
-import { ArrowLeft, Check, Edit, Eye, FileText, Image, Loader2, Save, Sparkles, Undo2, X, AlertCircle, HelpCircle } from "lucide-react";
+import { Editor } from '@tinymce/tinymce-react';
+import DashboardLayout from "@/components/Dashboard/DashboardLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Save, Plus, X, Loader2, RefreshCw, Wand2 } from "lucide-react";
+import { useArticleEditor } from "@/hooks/useArticleEditor";
+import { Article } from '@/types';
+import { fetchArticle } from '@/services/articles';
+import { generateArticleContent, generateArticleThumbnail, optimizeArticleContent, calculateSEOScore } from '@/services/articles/ai';
 
 const ArticleEditor = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();
   const [article, setArticle] = useState<Article | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [editMode, setEditMode] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [originalContent, setOriginalContent] = useState("");
-  const [keywords, setKeywords] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [optimizingSection, setOptimizingSection] = useState("");
-  const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isCalculatingScore, setIsCalculatingScore] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [optimizationError, setOptimizationError] = useState<string | null>(null);
+  const [scoreCalculationError, setScoreCalculationError] = useState<string | null>(null);
+  
+  const {
+    title,
+    setTitle,
+    content,
+    setContent,
+    keywords,
+    setKeywords,
+    addKeyword,
+    removeKeyword,
+    isSaving,
+    isDirty,
+    saveChanges,
+    forceSave,
+    saveError,
+    lastSavedAt,
+    autoSaveEnabled,
+    toggleAutoSave
+  } = useArticleEditor(article);
   
   useEffect(() => {
-    if (!articleId) return;
-    
     const loadArticle = async () => {
+      if (!articleId) return;
+      
       try {
-        setLoading(true);
-        const fetchedArticle = await fetchArticle(articleId);
-        
-        if (!fetchedArticle) {
-          toast.error("Article not found");
-          navigate("/dashboard/campaigns");
-          return;
-        }
-        
-        setArticle(fetchedArticle);
-        setTitle(fetchedArticle.title);
-        setContent(fetchedArticle.content || "");
-        setOriginalContent(fetchedArticle.content || "");
-        setKeywords(fetchedArticle.keywords || []);
+        setIsLoading(true);
+        const data = await fetchArticle(articleId);
+        setArticle(data);
       } catch (error) {
         console.error("Error loading article:", error);
         toast.error("Failed to load article");
+        navigate('/dashboard/articles');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     
     loadArticle();
   }, [articleId, navigate]);
-
-  const getSections = () => {
-    if (!content) return [];
-    
-    const headingRegex = /^(#{1,3})\s+(.+)$/gm;
-    const matches = [...content.matchAll(headingRegex)];
-    
-    return matches.map(match => ({
-      level: match[1].length,
-      title: match[2].trim(),
-      position: match.index,
-    }));
+  
+  const handleGoBack = () => {
+    if (article && article.campaign_id) {
+      navigate(`/dashboard/campaign/${article.campaign_id}`);
+    } else {
+      navigate('/dashboard/campaigns');
+    }
   };
-
-  const handleOptimizeFullArticle = async () => {
+  
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+  };
+  
+  const handleContentChange = (value: string, editor: any) => {
+    setContent(value);
+  };
+  
+  const handleKeywordInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const input = e.target as HTMLInputElement;
+      addKeyword(input.value);
+      input.value = '';
+    }
+  };
+  
+  const handleGenerateContent = async () => {
+    if (!title || keywords.length === 0) {
+      toast.error("Please enter a title and at least one keyword before generating content.");
+      return;
+    }
+    
+    setIsGenerating(true);
+    setGenerationError(null);
+    
     try {
-      setIsOptimizing(true);
-      toast.loading("Optimizing article...");
+      const { content: generatedContent, wordCount } = await generateArticleContent(title, keywords);
+      setContent(generatedContent);
       
-      const optimizedContent = await optimizeArticleContent(content, keywords);
-      setContent(optimizedContent);
-      
-      const newScore = await calculateSEOScore(optimizedContent, keywords);
-      
-      const updatedArticle = await updateArticle(articleId!, {
-        content: optimizedContent,
-        score: newScore,
-        updated_at: new Date().toISOString()
+      // Optimistically update the article data with the new word count
+      setArticle(prevArticle => {
+        if (prevArticle) {
+          return { ...prevArticle, word_count: wordCount };
+        }
+        return prevArticle;
       });
       
-      setArticle(updatedArticle);
-      
-      toast.success("Article optimized successfully");
+      toast.success("Article content generated successfully!");
     } catch (error) {
-      console.error("Error optimizing article:", error);
-      toast.error("Failed to optimize article");
+      console.error("Error generating content:", error);
+      setGenerationError("Failed to generate article content. Please try again.");
+      toast.error("Failed to generate article content.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  const handleGenerateThumbnail = async () => {
+    if (!title || keywords.length === 0) {
+      toast.error("Please enter a title and at least one keyword before generating a thumbnail.");
+      return;
+    }
+    
+    setIsGenerating(true);
+    setGenerationError(null);
+    
+    try {
+      const thumbnailUrl = await generateArticleThumbnail(title, keywords);
+      
+      // Optimistically update the article data with the new thumbnail URL
+      setArticle(prevArticle => {
+        if (prevArticle) {
+          return { ...prevArticle, thumbnail_url: thumbnailUrl };
+        }
+        return prevArticle;
+      });
+      
+      // Save the changes to the article
+      if (article) {
+        await forceSave();
+      }
+      
+      toast.success("Article thumbnail generated successfully!");
+    } catch (error) {
+      console.error("Error generating thumbnail:", error);
+      setGenerationError("Failed to generate article thumbnail. Please try again.");
+      toast.error("Failed to generate article thumbnail.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  const handleOptimizeContent = async () => {
+    if (!content || keywords.length === 0) {
+      toast.error("Please enter article content and at least one keyword before optimizing.");
+      return;
+    }
+    
+    setIsOptimizing(true);
+    setOptimizationError(null);
+    
+    try {
+      const optimizedContent = await optimizeArticleContent(content, keywords);
+      setContent(optimizedContent);
+      toast.success("Article content optimized successfully!");
+    } catch (error) {
+      console.error("Error optimizing content:", error);
+      setOptimizationError("Failed to optimize article content. Please try again.");
+      toast.error("Failed to optimize article content.");
     } finally {
       setIsOptimizing(false);
     }
   };
-
-  const handleOptimizeSection = async (section: string) => {
-    try {
-      setOptimizingSection(section);
-      toast.loading(`Optimizing section: ${section}...`);
-      
-      const optimizedContent = await optimizeArticleSection(content, section, keywords);
-      setContent(optimizedContent);
-      
-      const newScore = await calculateSEOScore(optimizedContent, keywords);
-      
-      const updatedArticle = await updateArticle(articleId!, {
-        content: optimizedContent,
-        score: newScore,
-        updated_at: new Date().toISOString()
-      });
-      
-      setArticle(updatedArticle);
-      
-      toast.success(`Section "${section}" optimized successfully`);
-    } catch (error) {
-      console.error(`Error optimizing section ${section}:`, error);
-      toast.error("Failed to optimize section");
-    } finally {
-      setOptimizingSection("");
+  
+  const handleCalculateSEOScore = async () => {
+    if (!content || keywords.length === 0) {
+      toast.error("Please enter article content and at least one keyword before calculating SEO score.");
+      return;
     }
-  };
-
-  const handleRegenerateImage = async () => {
-    try {
-      setIsRegeneratingImage(true);
-      toast.loading("Generating new thumbnail...");
-      
-      const thumbnailUrl = await generateArticleThumbnail(title, keywords);
-      
-      const updatedArticle = await updateArticle(articleId!, {
-        thumbnail_url: thumbnailUrl,
-        updated_at: new Date().toISOString()
-      });
-      
-      setArticle(updatedArticle);
-      
-      toast.success("Thumbnail regenerated successfully");
-    } catch (error) {
-      console.error("Error regenerating thumbnail:", error);
-      toast.error("Failed to regenerate thumbnail");
-    } finally {
-      setIsRegeneratingImage(false);
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      setIsSaving(true);
-      toast.loading("Saving article...");
-      
-      const wordCount = content.split(/\s+/).filter(Boolean).length;
-      const newScore = await calculateSEOScore(content, keywords);
-      
-      const updatedArticle = await updateArticle(articleId!, {
-        title,
-        content,
-        word_count: wordCount,
-        score: newScore,
-        updated_at: new Date().toISOString()
-      });
-      
-      setArticle(updatedArticle);
-      setOriginalContent(content);
-      setEditMode(false);
-      
-      toast.success("Article saved successfully");
-    } catch (error) {
-      console.error("Error saving article:", error);
-      toast.error("Failed to save article");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setContent(originalContent);
-    setTitle(article?.title || "");
-    setEditMode(false);
-  };
-
-  const handleUpdateKeywords = async (newKeywords: string[]) => {
-    if (!article) return;
+    
+    setIsCalculatingScore(true);
+    setScoreCalculationError(null);
     
     try {
-      toast.loading("Updating keywords...");
+      const score = await calculateSEOScore(content, keywords);
       
-      const updatedArticle = await updateArticle(articleId!, {
-        keywords: newKeywords,
-        updated_at: new Date().toISOString()
+      // Optimistically update the article data with the new SEO score
+      setArticle(prevArticle => {
+        if (prevArticle) {
+          return { ...prevArticle, score: score };
+        }
+        return prevArticle;
       });
       
-      setArticle(updatedArticle);
-      setKeywords(newKeywords);
+      // Save the changes to the article
+      if (article) {
+        await forceSave();
+      }
       
-      toast.success("Keywords updated successfully");
+      toast.success(`SEO score calculated successfully: ${score}`);
     } catch (error) {
-      console.error("Error updating keywords:", error);
-      toast.error("Failed to update keywords");
+      console.error("Error calculating SEO score:", error);
+      setScoreCalculationError("Failed to calculate SEO score. Please try again.");
+      toast.error("Failed to calculate SEO score.");
+    } finally {
+      setIsCalculatingScore(false);
     }
   };
-
-  const renderContent = (markdown: string) => {
-    if (!markdown) return "";
-    
-    const formatted = markdown
-      .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mt-8 mb-4">$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mt-6 mb-3">$1</h2>')
-      .replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mt-5 mb-2">$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n- (.*)/g, '<ul class="list-disc pl-6 mb-4"><li>$1</li></ul>')
-      .replace(/\n(\d+)\. (.*)/g, '<ol class="list-decimal pl-6 mb-4"><li>$2</li></ol>')
-      .replace(/\n\n/g, '<p class="mb-4"></p>');
-    
-    return formatted;
-  };
-
-  if (loading) {
+  
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto py-8">
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(-1)}
-                className="gap-1"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back</span>
-              </Button>
-            </div>
-            
-            <div className="flex flex-col gap-4">
-              <Skeleton className="h-12 w-3/4 mb-2" />
-              <Skeleton className="h-6 w-1/2" />
-              
-              <Card className="mt-6">
-                <CardHeader>
-                  <Skeleton className="h-8 w-48 mb-2" />
-                  <Skeleton className="h-4 w-72" />
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col gap-6">
-                    <Skeleton className="h-64 w-full" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+        <div className="container mx-auto py-8 flex items-center justify-center h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </DashboardLayout>
     );
   }
-
+  
   if (!article) {
     return (
       <DashboardLayout>
         <div className="container mx-auto py-8">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              The article could not be found. It may have been deleted.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="flex justify-center mt-8">
-            <Button onClick={() => navigate('/dashboard/campaigns')}>
-              Go Back to Campaigns
+          <Card className="p-8 text-center">
+            <h2 className="text-2xl font-bold mb-4">Article Not Found</h2>
+            <p className="text-muted-foreground mb-6">
+              The article you are looking for does not exist or has been deleted.
+            </p>
+            <Button onClick={() => navigate("/dashboard/campaigns")}>
+              Go to Campaigns
             </Button>
-          </div>
+          </Card>
         </div>
       </DashboardLayout>
     );
   }
-
-  const sections = getSections();
-
+  
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <div className="flex flex-col gap-6">
+        <div className="mb-6 flex items-center justify-between">
+          <Button variant="ghost" onClick={handleGoBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
           <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(-1)}
-              className="gap-1"
+              variant="outline"
+              onClick={() => toggleAutoSave(!autoSaveEnabled)}
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
+              {autoSaveEnabled ? 'Disable Auto-Save' : 'Enable Auto-Save'}
             </Button>
-          </div>
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex-1">
-              {editMode ? (
-                <div className="mb-4">
-                  <Label htmlFor="title">Article Title</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="text-xl font-bold"
-                  />
-                </div>
-              ) : (
-                <h1 className="text-2xl md:text-3xl font-bold gradient-text">{title}</h1>
-              )}
-              
-              <div className="mt-2 flex flex-wrap gap-2">
-                {keywords.map((keyword, index) => (
-                  <Badge key={index} variant="secondary">
-                    {keyword}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              {editMode ? (
+            <Button
+              variant="primary"
+              onClick={forceSave}
+              disabled={isSaving || !isDirty}
+            >
+              {isSaving ? (
                 <>
-                  <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
-                    <X className="mr-2 h-4 w-4" /> Cancel
-                  </Button>
-                  <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" /> Save
-                      </>
-                    )}
-                  </Button>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
                 </>
               ) : (
                 <>
-                  <Button variant="outline" onClick={() => setEditMode(true)}>
-                    <Edit className="mr-2 h-4 w-4" /> Edit
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Article
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  type="text"
+                  id="title"
+                  placeholder="Article Title"
+                  value={title}
+                  onChange={handleTitleChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="keywords">Keywords</Label>
+                <div className="flex items-center">
+                  <Input
+                    type="text"
+                    id="keywords"
+                    placeholder="Enter keywords and press Enter"
+                    onKeyDown={handleKeywordInput}
+                    className="mr-2"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleGenerateContent}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Generate Content
+                      </>
+                    )}
                   </Button>
-                  <Button 
-                    onClick={handleOptimizeFullArticle} 
-                    className="gradient-button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleGenerateThumbnail}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Generate Thumbnail
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleOptimizeContent}
                     disabled={isOptimizing}
                   >
                     {isOptimizing ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Optimizing...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Optimizing...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="mr-2 h-4 w-4" /> Optimize
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Optimize Content
                       </>
                     )}
                   </Button>
-                </>
-              )}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex justify-between items-center">
-                    <div>Article Content</div>
-                    <div className="flex gap-2">
-                      {editMode ? (
-                        <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
-                          Editing
-                        </Badge>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditMode(true)}
-                          className="h-8 px-2"
-                        >
-                          <Edit className="h-3.5 w-3.5 mr-1" />
-                          <span className="text-xs">Edit</span>
-                        </Button>
-                      )}
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {editMode ? (
-                    <Textarea
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      className="min-h-[60vh] font-mono text-sm"
-                    />
-                  ) : (
-                    <div className="prose max-w-none">
-                      {article.thumbnail_url && (
-                        <div className="mb-6">
-                          <img 
-                            src={article.thumbnail_url} 
-                            alt={article.title} 
-                            className="w-full rounded-md border object-cover max-h-[300px]" 
-                          />
-                        </div>
-                      )}
-                      <div dangerouslySetInnerHTML={{ __html: renderContent(content) }} />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Article Info</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">SEO Score</span>
-                      <span className="text-sm font-medium">{article.score || 0}/100</span>
-                    </div>
-                    <Progress value={article.score || 0} className="h-2" />
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Word Count</span>
-                      <span className="text-sm font-medium">{article.word_count || 0}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="status" className="text-sm">Status</Label>
-                    <Select 
-                      value={article.status} 
-                      onValueChange={async (value: 'draft' | 'in-progress' | 'completed') => {
-                        try {
-                          const updatedArticle = await updateArticle(articleId!, {
-                            status: value,
-                            updated_at: new Date().toISOString()
-                          });
-                          setArticle(updatedArticle);
-                          toast.success("Status updated");
-                        } catch (error) {
-                          console.error("Error updating status:", error);
-                          toast.error("Failed to update status");
-                        }
-                      }}
-                    >
-                      <SelectTrigger id="status">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm">Last Updated</Label>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(article.updated_at).toLocaleString()}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Featured Image</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {article.thumbnail_url ? (
-                    <div className="space-y-4">
-                      <img 
-                        src={article.thumbnail_url} 
-                        alt={article.title} 
-                        className="w-full rounded-md border" 
-                      />
-                      <Button 
-                        onClick={handleRegenerateImage} 
-                        variant="outline"
-                        className="w-full"
-                        disabled={isRegeneratingImage}
-                      >
-                        {isRegeneratingImage ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Image className="mr-2 h-4 w-4" /> Regenerate Image
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <Image className="h-12 w-12 text-muted-foreground mb-4" />
-                      <p className="text-sm text-muted-foreground">No featured image available</p>
-                      <Button 
-                        onClick={handleRegenerateImage} 
-                        variant="outline"
-                        className="mt-4"
-                        disabled={isRegeneratingImage}
-                      >
-                        {isRegeneratingImage ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Image className="mr-2 h-4 w-4" /> Generate Image
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {!editMode && sections.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Optimize Sections</CardTitle>
-                    <CardDescription>
-                      Optimize specific sections of your article.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {sections.map((section, index) => (
-                        <div key={index} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                          <span className="text-sm font-medium">{section.title}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8"
-                            onClick={() => handleOptimizeSection(section.title)}
-                            disabled={optimizingSection === section.title}
-                          >
-                            {optimizingSection === section.title ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Sparkles className="h-3.5 w-3.5" />
-                            )}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Keywords</CardTitle>
-                  <CardDescription>
-                    Update keywords to improve SEO.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={keywords.join(', ')}
-                    onChange={(e) => {
-                      const newKeywords = e.target.value
-                        .split(',')
-                        .map(k => k.trim())
-                        .filter(Boolean);
-                      setKeywords(newKeywords);
-                    }}
-                    placeholder="Enter keywords separated by commas"
-                    className="mb-4"
-                  />
-                  <Button 
-                    onClick={() => handleUpdateKeywords(keywords)}
-                    className="w-full"
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleCalculateSEOScore}
+                    disabled={isCalculatingScore}
                   >
-                    <Check className="mr-2 h-4 w-4" /> Update Keywords
+                    {isCalculatingScore ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Calculating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Calculate SEO Score
+                      </>
+                    )}
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {keywords.map((keyword) => (
+                    <div
+                      key={keyword}
+                      className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full px-3 py-1 text-sm flex items-center"
+                    >
+                      {keyword}
+                      <button
+                        onClick={() => removeKeyword(keyword)}
+                        className="ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="content">Content</Label>
+                <Editor
+                  apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                  value={content}
+                  onEditorChange={handleContentChange}
+                  init={{
+                    height: '70vh',
+                    menubar: true,
+                    plugins: [
+                      'advlist autolink lists link image charmap print preview anchor',
+                      'searchreplace visualblocks code fullscreen',
+                      'insertdatetime media table paste code help wordcount'
+                    ],
+                    toolbar: 'undo redo | formatselect | ' +
+                      'bold italic backcolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist outdent indent | ' +
+                      'removeformat | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                  }}
+                />
+              </div>
+              {saveError && (
+                <div className="text-red-500">Error: {saveError}</div>
+              )}
+              {generationError && (
+                <div className="text-red-500">Error: {generationError}</div>
+              )}
+              {optimizationError && (
+                <div className="text-red-500">Error: {optimizationError}</div>
+              )}
+              {scoreCalculationError && (
+                <div className="text-red-500">Error: {scoreCalculationError}</div>
+              )}
+              {lastSavedAt && (
+                <div className="text-sm text-gray-500">
+                  Last saved: {lastSavedAt.toLocaleTimeString()}
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
