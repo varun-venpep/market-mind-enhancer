@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -5,14 +6,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchUserCampaigns } from '@/services/articles';
+import { fetchUserCampaigns, createCampaign } from '@/services/articles';
 import { Campaign } from '@/types';
 import { formatDate, truncateText } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const Campaigns = () => {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignDescription, setCampaignDescription] = useState('');
   
   useEffect(() => {
     const loadCampaigns = async () => {
@@ -31,8 +40,26 @@ const Campaigns = () => {
     loadCampaigns();
   }, []);
   
-  const handleCreateCampaign = () => {
-    navigate('/dashboard/campaign-creator');
+  const handleCreateCampaign = async () => {
+    if (!campaignName.trim()) {
+      toast.error("Campaign name is required");
+      return;
+    }
+    
+    try {
+      setIsCreating(true);
+      const newCampaign = await createCampaign(campaignName, campaignDescription);
+      setCampaigns([newCampaign, ...campaigns]);
+      setCampaignName('');
+      setCampaignDescription('');
+      setOpenDialog(false);
+      toast.success("Campaign created successfully");
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      toast.error("Failed to create campaign");
+    } finally {
+      setIsCreating(false);
+    }
   };
   
   const handleCampaignClick = (campaignId: string) => {
@@ -54,10 +81,55 @@ const Campaigns = () => {
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Campaigns</h1>
-          <Button onClick={handleCreateCampaign}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Campaign
-          </Button>
+          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Campaign
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Campaign</DialogTitle>
+                <DialogDescription>
+                  Create a new campaign to organize your articles
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-name">Campaign Name</Label>
+                  <Input 
+                    id="campaign-name" 
+                    placeholder="Enter campaign name" 
+                    value={campaignName}
+                    onChange={e => setCampaignName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-description">Campaign Description (Optional)</Label>
+                  <Textarea 
+                    id="campaign-description" 
+                    placeholder="Enter campaign description" 
+                    value={campaignDescription}
+                    onChange={e => setCampaignDescription(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancel</Button>
+                <Button onClick={handleCreateCampaign} disabled={isCreating}>
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Campaign'
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
         
         {campaigns.length === 0 ? (
@@ -66,14 +138,18 @@ const Campaigns = () => {
             <p className="text-muted-foreground mb-6">
               Get started by creating your first campaign.
             </p>
-            <Button onClick={handleCreateCampaign}>
+            <Button onClick={() => setOpenDialog(true)}>
               Create Your First Campaign
             </Button>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {campaigns.map((campaign) => (
-              <Card key={campaign.id} className="cursor-pointer hover:opacity-80 transition-opacity duration-200" onClick={() => handleCampaignClick(campaign.id)}>
+              <Card 
+                key={campaign.id} 
+                className="cursor-pointer hover:shadow-md transition-all duration-200" 
+                onClick={() => handleCampaignClick(campaign.id)}
+              >
                 <CardContent className="p-6">
                   <h2 className="text-lg font-semibold mb-2">{campaign.name}</h2>
                   <p className="text-muted-foreground mb-4">

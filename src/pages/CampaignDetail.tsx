@@ -11,11 +11,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { fetchCampaign, fetchCampaignArticles, deleteCampaign, deleteArticle } from '@/services/articles';
 import { Campaign, Article } from '@/types';
 import { formatDate, truncateText } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import ArticlePreview from '@/components/Articles/ArticlePreview';
 
 const CampaignDetail = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -56,7 +67,7 @@ const CampaignDetail = () => {
   };
 
   const handleDeleteCampaign = async () => {
-    if (!campaign || !window.confirm("Are you sure you want to delete this campaign? All associated articles will also be deleted.")) return;
+    if (!campaign) return;
     
     try {
       setIsDeleting(true);
@@ -70,17 +81,16 @@ const CampaignDetail = () => {
     }
   };
 
-  const handleDeleteArticle = async (articleId: string) => {
-    if (!window.confirm("Are you sure you want to delete this article?")) return;
+  const handleArticleDeleted = () => {
+    // Refresh the article list after deletion
+    if (!campaignId) return;
     
-    try {
-      await deleteArticle(articleId);
-      toast.success("Article deleted successfully");
-      setArticles(articles.filter(article => article.id !== articleId));
-    } catch (error) {
-      console.error("Error deleting article:", error);
-      toast.error("Failed to delete article");
-    }
+    fetchCampaignArticles(campaignId)
+      .then(data => setArticles(data))
+      .catch(error => {
+        console.error("Error refreshing campaign articles:", error);
+        toast.error("Failed to refresh articles");
+      });
   };
 
   if (isLoading) {
@@ -147,14 +157,40 @@ const CampaignDetail = () => {
               <Plus className="h-4 w-4 mr-2" />
               Create Article
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteCampaign}
-              disabled={isDeleting}
-            >
-              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
-              Delete Campaign
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete Campaign
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the campaign
+                    and all associated articles.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteCampaign}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete Campaign"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
         
@@ -162,58 +198,21 @@ const CampaignDetail = () => {
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold mb-4">Articles</h2>
             {articles.length === 0 ? (
-              <p className="text-muted-foreground">No articles found for this campaign.</p>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">No articles found for this campaign.</p>
+                <Button onClick={handleCreateArticle}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create First Article
+                </Button>
+              </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {articles.map((article) => (
-                  <Card key={article.id} className="bg-card text-card-foreground shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold">{truncateText(article.title, 50)}</h3>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/dashboard/article-editor/${article.id}`)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate(`/dashboard/article/${article.id}`)}>
-                              View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDeleteArticle(article.id)}>
-                              <Trash className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Updated: {formatDate(article.updated_at)}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => navigate(`/dashboard/article-editor/${article.id}`)}
-                        >
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button 
-                          variant="secondary" 
-                          size="sm"
-                          onClick={() => navigate(`/dashboard/article/${article.id}`)}
-                        >
-                          View Article
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ArticlePreview 
+                    key={article.id} 
+                    article={article} 
+                    onDeleted={handleArticleDeleted}
+                  />
                 ))}
               </div>
             )}

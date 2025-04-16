@@ -1,12 +1,15 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Edit, Trash2, Eye, ArrowRight, Send } from "lucide-react";
+import { Calendar, Edit, Trash2, Eye, ArrowRight, Send, Loader2 } from "lucide-react";
 import { Article } from "@/types";
 import { formatDate } from "@/lib/utils";
+import { deleteArticle } from "@/services/articles";
+import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface ArticlePreviewProps {
   article: Article;
@@ -15,6 +18,7 @@ interface ArticlePreviewProps {
 
 const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
   const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,9 +30,20 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
     navigate(`/dashboard/article/${article.id}`);
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDeleted) onDeleted();
+  const handleDelete = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    try {
+      setIsDeleting(true);
+      await deleteArticle(article.id);
+      toast.success("Article deleted successfully");
+      if (onDeleted) onDeleted();
+    } catch (error) {
+      console.error("Error deleting article:", error);
+      toast.error("Failed to delete article");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleCardClick = () => {
@@ -116,10 +131,36 @@ const ArticlePreview = ({ article, onDeleted }: ArticlePreviewProps) => {
             <Eye className="h-4 w-4 mr-1" />
             View
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4 mr-1" />
-            Delete
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()}>
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your
+                  article.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardFooter>
     </Card>
