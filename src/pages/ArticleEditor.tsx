@@ -4,18 +4,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Article } from '@/types';
-import { generateArticleContent, generateArticleThumbnail } from '@/services/articles/ai';
+import { generateArticleContent } from '@/services/articles/ai';
 import { fetchArticle } from '@/services/articles';
 import { useArticleEditor } from '@/hooks/useArticleEditor';
 import RichTextEditor from '@/components/Articles/RichTextEditor';
-import KeywordsManager from '@/components/Articles/KeywordsManager';
-import { ArticleMetadata } from '@/components/Articles/ArticleMetadata';
-import { ArticleActions } from '@/components/Articles/ArticleActions';
+import ArticleHeader from '@/components/Articles/ArticleHeader';
+import ArticleGenerationControls from '@/components/Articles/ArticleGenerationControls';
+import ErrorDisplay from '@/components/Articles/ErrorDisplay';
 
 const ArticleEditor = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -111,9 +109,6 @@ const ArticleEditor = () => {
             <p className="text-muted-foreground mb-6">
               The article you are looking for does not exist or has been deleted.
             </p>
-            <Button onClick={() => navigate("/dashboard/campaigns")}>
-              Go to Campaigns
-            </Button>
           </Card>
         </div>
       </DashboardLayout>
@@ -123,90 +118,40 @@ const ArticleEditor = () => {
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <Button variant="ghost" onClick={handleGoBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => toggleAutoSave(!autoSaveEnabled)}
-            >
-              {autoSaveEnabled ? 'Disable Auto-Save' : 'Enable Auto-Save'}
-            </Button>
-            <Button
-              variant="default"
-              onClick={forceSave}
-              disabled={isSaving || !isDirty}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Article'
-              )}
-            </Button>
-          </div>
-        </div>
+        <ArticleHeader
+          onBack={handleGoBack}
+          onSave={forceSave}
+          onToggleAutoSave={toggleAutoSave}
+          isSaving={isSaving}
+          isDirty={isDirty}
+          autoSaveEnabled={autoSaveEnabled}
+        />
 
         <Card>
           <CardContent className="p-6">
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  type="text"
-                  id="title"
-                  placeholder="Article Title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
+            <ArticleGenerationControls
+              title={title}
+              onTitleChange={setTitle}
+              keywords={keywords}
+              onAddKeyword={addKeyword}
+              onRemoveKeyword={removeKeyword}
+              onGenerate={handleGenerateContent}
+              isGenerating={isGenerating}
+            />
 
-              <KeywordsManager
-                keywords={keywords}
-                onAddKeyword={addKeyword}
-                onRemoveKeyword={removeKeyword}
+            <div className="mt-4">
+              <Label htmlFor="content">Content</Label>
+              <RichTextEditor
+                content={content}
+                onChange={setContent}
               />
-
-              <Button
-                variant="secondary"
-                onClick={handleGenerateContent}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  'Generate Content'
-                )}
-              </Button>
-
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <RichTextEditor
-                  content={content}
-                  onChange={setContent}
-                />
-              </div>
-
-              {saveError && (
-                <div className="text-red-500">Error: {saveError}</div>
-              )}
-              {generationError && (
-                <div className="text-red-500">Error: {generationError}</div>
-              )}
-              {lastSavedAt && (
-                <div className="text-sm text-gray-500">
-                  Last saved: {lastSavedAt.toLocaleTimeString()}
-                </div>
-              )}
             </div>
+
+            <ErrorDisplay
+              saveError={saveError}
+              generationError={generationError}
+              lastSavedAt={lastSavedAt}
+            />
           </CardContent>
         </Card>
       </div>
