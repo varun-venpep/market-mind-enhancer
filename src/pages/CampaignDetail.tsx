@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { fetchCampaign, fetchCampaignArticles, deleteCampaign } from '@/services/articles';
 import { Campaign, Article } from '@/types';
 import CampaignHeader from '@/components/Campaigns/CampaignHeader';
