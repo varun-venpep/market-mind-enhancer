@@ -257,7 +257,7 @@ const ArticleEditor = () => {
               {autoSaveEnabled ? 'Disable Auto-Save' : 'Enable Auto-Save'}
             </Button>
             <Button
-              variant="primary"
+              variant="default"
               onClick={forceSave}
               disabled={isSaving || !isDirty}
             >

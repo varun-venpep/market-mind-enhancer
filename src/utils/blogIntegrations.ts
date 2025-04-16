@@ -40,7 +40,7 @@ export const saveIntegrationCredentials = async (
       .upsert({
         user_id: user.user.id,
         platform,
-        credentials,
+        credentials: credentials as any, // Cast credentials to any to bypass type check
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, {
