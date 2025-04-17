@@ -14,10 +14,11 @@ import {
   Settings,
   LogIn,
   ShoppingBag,
-  User
+  User,
+  LogOut
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { SignOutButton, UserButton, useUser } from "@clerk/clerk-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   DropdownMenu, 
@@ -32,19 +33,10 @@ import { cn } from "@/lib/utils";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { isPro } = useSubscription();
-  const { user, logout } = useAuth();
+  const { isSignedIn, user } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
   useEffect(() => {
     // Close mobile menu when route changes
     setIsOpen(false);
@@ -58,36 +50,24 @@ const Navbar = () => {
         </Link>
         
         <div className="flex items-center md:order-2">
-          {user ? (
+          {isSignedIn ? (
             <div className="flex items-center gap-3">
               {isPro && (
                 <Badge className="bg-gradient-to-r from-brand-400 to-brand-600 text-white">
                   Pro
                 </Badge>
               )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="" alt={user?.email || "User"} />
-                      <AvatarFallback className="bg-brand-100 text-brand-800">
-                        {user?.email?.charAt(0).toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-900">
-                  <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>Settings</DropdownMenuItem>
-                  {!isPro && (
-                    <DropdownMenuItem onClick={() => navigate('/pricing')}>Upgrade to Pro</DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <UserButton
+                appearance={{
+                  elements: {
+                    userButtonBox: "h-8 w-8",
+                    userButtonTrigger: "h-8 w-8"
+                  }
+                }}
+                afterSignOutUrl="/"
+                userProfileMode="navigation"
+                userProfileUrl="/settings"
+              />
             </div>
           ) : (
             <div className="hidden md:flex items-center gap-2">
@@ -177,6 +157,15 @@ const Navbar = () => {
                 Pricing
               </Link>
             </li>
+            {isSignedIn && (
+              <li className="md:hidden">
+                <SignOutButton>
+                  <button className="flex items-center py-2 px-3 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <LogOut className="h-4 w-4 mr-2" /> Sign out
+                  </button>
+                </SignOutButton>
+              </li>
+            )}
           </ul>
           <div className="hidden md:flex items-center ml-auto">
             <Button variant="ghost" asChild>

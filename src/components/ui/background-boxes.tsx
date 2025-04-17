@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export const BoxesCore = ({ className, ...rest }: { className?: string }) => {
-  const rows = new Array(150).fill(1);
-  const cols = new Array(100).fill(1);
+  const rows = new Array(30).fill(1);
+  const cols = new Array(20).fill(1);
   
+  // Using direct color values instead of CSS variables
   const colors = [
     "rgb(125 211 252)", // sky-300
     "rgb(249 168 212)", // pink-300
@@ -77,3 +78,19 @@ export const BoxesCore = ({ className, ...rest }: { className?: string }) => {
 };
 
 export const Boxes = React.memo(BoxesCore);
+
+export function BackgroundBoxesDemo() {
+  return (
+    <div className="h-full relative w-full overflow-hidden bg-slate-900 flex flex-col items-center justify-center rounded-lg">
+      <div className="absolute inset-0 w-full h-full bg-slate-900 z-20 [mask-image:radial-gradient(transparent,white)] pointer-events-none" />
+
+      <Boxes />
+      <h1 className={cn("md:text-4xl text-xl text-white relative z-20")}>
+        MarketMind AI
+      </h1>
+      <p className="text-center mt-2 text-neutral-300 relative z-20 max-w-md px-4">
+        The intelligent solution for marketing insights, content generation, and SEO optimization
+      </p>
+    </div>
+  );
+}

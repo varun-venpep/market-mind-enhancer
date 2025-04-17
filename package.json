@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.28.1",
     "@hookform/resolvers": "^3.9.0",
     "@material-tailwind/react": "^2.1.8",
     "@radix-ui/react-accordion": "^1.2.0",
