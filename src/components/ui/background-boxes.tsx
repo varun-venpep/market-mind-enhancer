@@ -8,6 +8,7 @@ export const BoxesCore = ({ className, ...rest }: { className?: string }) => {
   const rows = new Array(150).fill(1);
   const cols = new Array(100).fill(1);
   
+  // Using direct color values instead of CSS variables
   const colors = [
     "rgb(125 211 252)", // sky-300
     "rgb(249 168 212)", // pink-300

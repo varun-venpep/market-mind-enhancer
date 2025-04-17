@@ -13,7 +13,7 @@ import {
   Star, 
   Settings,
   LogIn,
-  ShoppingBag,
+  LayoutDashboard,
   User
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -138,19 +138,9 @@ const Navbar = () => {
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/research" className={cn(
+              <Link to="/dashboard/content-briefs" className={cn(
                 "block py-2 px-3 rounded md:p-0",
-                location.pathname === '/dashboard/research' 
-                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
-              )}>
-                <Activity className="h-4 w-4 mr-2 inline md:hidden" /> Research
-              </Link>
-            </li>
-            <li>
-              <Link to="/dashboard/briefs" className={cn(
-                "block py-2 px-3 rounded md:p-0",
-                location.pathname === '/dashboard/briefs' 
+                location.pathname === '/dashboard/content-briefs' 
                   ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
               )}>
@@ -158,29 +148,32 @@ const Navbar = () => {
               </Link>
             </li>
             <li>
-              <Link to="/dashboard/shopify" className={cn(
+              <Link to="/dashboard/article-generator" className={cn(
                 "block py-2 px-3 rounded md:p-0",
-                location.pathname === '/dashboard/shopify' 
+                location.pathname === '/dashboard/article-generator' 
                   ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
               )}>
-                <ShoppingBag className="h-4 w-4 mr-2 inline md:hidden" /> Shopify
+                <Activity className="h-4 w-4 mr-2 inline md:hidden" /> Article Generator
               </Link>
             </li>
             <li className="md:hidden">
-              <Link to="/pricing" className={cn(
+              <Link to="/dashboard" className={cn(
                 "block py-2 px-3 rounded",
-                location.pathname === '/pricing' 
+                location.pathname === '/dashboard' 
                   ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
               )}>
-                Pricing
+                Dashboard
               </Link>
             </li>
           </ul>
           <div className="hidden md:flex items-center ml-auto">
-            <Button variant="ghost" asChild>
-              <Link to="/pricing">Pricing</Link>
+            <Button variant="primary" asChild className="flex items-center gap-2">
+              <Link to="/dashboard">
+                <LayoutDashboard className="h-4 w-4 mr-1" />
+                Dashboard
+              </Link>
             </Button>
           </div>
         </div>
