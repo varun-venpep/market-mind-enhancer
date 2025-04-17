@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -131,8 +130,13 @@ const ArticleGenerator = () => {
   };
 
   const handleSaveArticle = async () => {
-    if (!title || !editedContent) {
-      toast.error("Please provide a title and generate content before saving");
+    if (!title.trim()) {
+      toast.error("Please provide a title before saving");
+      return;
+    }
+
+    if (!editedContent.trim()) {
+      toast.error("Please generate content before saving");
       return;
     }
 
@@ -158,7 +162,6 @@ const ArticleGenerator = () => {
       setIsSaving(false);
       toast.success("Article saved successfully");
       
-      // Navigate to the article editor page
       navigate(`/dashboard/article-editor/${newArticle.id}`);
     } catch (error) {
       console.error("Error saving article:", error);

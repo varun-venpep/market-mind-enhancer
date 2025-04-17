@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/Dashboard/DashboardLayout';
@@ -129,7 +130,13 @@ export default function ContentGenerator() {
   };
 
   const handleSaveArticle = async () => {
-    if (!prompt || !generatedContent) {
+    // Validate inputs
+    if (!prompt.trim()) {
+      toast.error('Please enter a title');
+      return;
+    }
+
+    if (!generatedContent.trim()) {
       toast.error('Please generate content before saving');
       return;
     }
