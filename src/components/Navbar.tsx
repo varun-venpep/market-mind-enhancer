@@ -155,7 +155,7 @@ const Navbar = () => {
             </li>
             <li className="md:hidden">
               <Link to="/dashboard" className={cn(
-                "block py-2 px-3 rounded",
+                "block py-2 px-3 mr-3 rounded",
                 location.pathname === '/dashboard' 
                   ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
