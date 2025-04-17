@@ -17,17 +17,12 @@ export function useArticleSaving() {
   ) => {
     if (!title.trim()) {
       toast.error("Please provide a title before saving");
-      return;
+      return false;
     }
 
     if (!content.trim()) {
       toast.error("Please generate content before saving");
-      return;
-    }
-
-    if (!campaignId) {
-      toast.error("Please select a campaign before saving");
-      return;
+      return false;
     }
 
     setIsSaving(true);
@@ -39,7 +34,7 @@ export function useArticleSaving() {
         title,
         content,
         keywords: keywordsList,
-        campaign_id: campaignId,
+        campaign_id: campaignId || undefined,
         status: 'draft',
         thumbnail_url: imageUrl || undefined
       });
@@ -48,10 +43,12 @@ export function useArticleSaving() {
       toast.success("Article saved successfully");
       
       navigate(`/dashboard/article-editor/${newArticle.id}`);
+      return true;
     } catch (error) {
       console.error("Error saving article:", error);
       setIsSaving(false);
       toast.error("Failed to save article");
+      return false;
     }
   };
 

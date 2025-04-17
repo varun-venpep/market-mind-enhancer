@@ -517,7 +517,7 @@ export type Database = {
         Returns: number
       }
       l2_normalize: {
-        Args: { "": unknown } | { "": unknown } | { "": string }
+        Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: unknown
       }
       match_documents: {

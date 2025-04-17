@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
-import { generateImage } from '@/services/geminiApi';
+import { generateImage, generateContent } from '@/services/geminiApi';
+import { toast } from 'sonner';
 
 export function useArticleGeneration() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -10,8 +11,47 @@ export function useArticleGeneration() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [activeTab, setActiveTab] = useState("settings");
 
+  const generateContent = async (title: string, keywords: string[], contentType: string, contentLength: string, tone: string) => {
+    if (!title) {
+      toast.error('Please enter a title');
+      return false;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      const lengthMap = {
+        short: '500-700',
+        medium: '1000-1200',
+        long: '1500-2000',
+      };
+
+      const contentPrompt = `
+        Create a ${contentType === 'blog-post' ? 'blog post' : contentType} about "${title}" 
+        with a ${tone} tone. 
+        Length: approximately ${lengthMap[contentLength] || '1000-1200'} words.
+        ${keywords.length > 0 ? `Target keywords: ${keywords.join(', ')}` : ''}
+        Use SEO best practices, include a compelling headline, and format with markdown.
+      `;
+
+      const result = await generateContent(contentPrompt);
+      setGeneratedContent(result);
+      setEditedContent(result);
+      return true;
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast.error('Failed to generate content. Please try again.');
+      return false;
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const generateFeaturedImage = async (title: string) => {
-    if (!title) return;
+    if (!title) {
+      toast.error('Please enter a title first');
+      return;
+    }
     
     setIsGeneratingImage(true);
     
@@ -19,8 +59,10 @@ export function useArticleGeneration() {
       const imagePrompt = `Create a professional featured image for a blog post titled: "${title}"`;
       const imageUrl = await generateImage(imagePrompt);
       setGeneratedImageUrl(imageUrl);
+      toast.success('Featured image generated successfully');
     } catch (error) {
       console.error("Error generating image:", error);
+      toast.error('Failed to generate image');
     } finally {
       setIsGeneratingImage(false);
     }
@@ -39,6 +81,7 @@ export function useArticleGeneration() {
     setIsGeneratingImage,
     activeTab,
     setActiveTab,
+    generateContent,
     generateFeaturedImage
   };
 }
