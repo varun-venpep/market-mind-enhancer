@@ -55,7 +55,7 @@ const ArticleDetail = () => {
       toast.success("Article deleted successfully");
       
       if (article.campaign_id) {
-        navigate(`/dashboard/campaign/${article.campaign_id}`);
+        navigate(`/dashboard/campaigns/${article.campaign_id}`);
       } else {
         navigate("/dashboard/campaigns");
       }
@@ -73,7 +73,7 @@ const ArticleDetail = () => {
   
   const handleGoToCampaign = () => {
     if (article && article.campaign_id) {
-      navigate(`/dashboard/campaign/${article.campaign_id}`);
+      navigate(`/dashboard/campaigns/${article.campaign_id}`);
     } else {
       navigate('/dashboard/campaigns');
     }
