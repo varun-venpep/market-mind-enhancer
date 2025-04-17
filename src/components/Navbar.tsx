@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +45,6 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    // Close mobile menu when route changes
     setIsOpen(false);
   }, [location.pathname]);
 
@@ -169,7 +167,7 @@ const Navbar = () => {
             </li>
           </ul>
           <div className="hidden md:flex items-center ml-auto">
-            <Button variant="primary" asChild className="flex items-center gap-2">
+            <Button variant="default" asChild className="flex items-center gap-2">
               <Link to="/dashboard">
                 <LayoutDashboard className="h-4 w-4 mr-1" />
                 Dashboard
