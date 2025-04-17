@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { generateImage, generateContent } from '@/services/geminiApi';
+import { generateImage, generateContent as geminiGenerateContent } from '@/services/geminiApi';
 import { toast } from 'sonner';
 
 export function useArticleGeneration() {
@@ -34,7 +34,7 @@ export function useArticleGeneration() {
         Use SEO best practices, include a compelling headline, and format with markdown.
       `;
 
-      const result = await generateContent(contentPrompt);
+      const result = await geminiGenerateContent(contentPrompt);
       setGeneratedContent(result);
       setEditedContent(result);
       return true;
