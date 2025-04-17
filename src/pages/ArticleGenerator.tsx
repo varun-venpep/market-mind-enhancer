@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ArticleForm from "@/components/ArticleGenerator/ArticleForm";
 import ContentPreview from "@/components/ArticleGenerator/ContentPreview";
 import ImagePreview from "@/components/ArticleGenerator/ImagePreview";
+import ArticlePreviewDialog from "@/components/ArticleGenerator/ArticlePreviewDialog";
 import { useArticleGenerator } from '@/hooks/useArticleGenerator';
 
 const ArticleGenerator = () => {
@@ -28,6 +29,8 @@ const ArticleGenerator = () => {
     setEditedContent,
     activeTab,
     setActiveTab,
+    previewDialogOpen,
+    setPreviewDialogOpen,
     keywordSuggestions,
     isLoadingSuggestions,
     campaigns,
@@ -96,12 +99,23 @@ const ArticleGenerator = () => {
                 <ContentPreview 
                   isGenerating={isGenerating}
                   generatedContent={generatedContent}
-                  onContentChange={setEditedContent}
-                  onSaveArticle={handleSaveArticle}
+                  generatedImageUrl={generatedImageUrl}
+                  handleSaveArticle={handleSaveArticle}
                   isSaving={isSaving}
                 />
               </TabsContent>
             </Tabs>
+            
+            {/* Article Preview Dialog */}
+            <ArticlePreviewDialog
+              isOpen={previewDialogOpen}
+              onOpenChange={setPreviewDialogOpen}
+              title={title}
+              content={generatedContent}
+              imageUrl={generatedImageUrl}
+              isSaving={isSaving}
+              onSave={handleSaveArticle}
+            />
           </CardContent>
         </Card>
       </div>

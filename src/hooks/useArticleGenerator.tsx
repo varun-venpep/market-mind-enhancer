@@ -1,5 +1,4 @@
-
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useArticleForm } from './article/useArticleForm';
 import { useArticleKeywords } from './article/useArticleKeywords';
 import { useArticleGeneration } from './article/useArticleGeneration';
@@ -8,6 +7,8 @@ import { useCampaigns } from './article/useCampaigns';
 import { toast } from 'sonner';
 
 export function useArticleGenerator() {
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  
   const {
     title,
     setTitle,
@@ -78,8 +79,8 @@ export function useArticleGenerator() {
       await generateFeaturedImage(title);
     }
     
-    // Switch to preview tab
-    setActiveTab("preview");
+    // Open the preview dialog instead of switching tabs
+    setPreviewDialogOpen(true);
   };
 
   const handleSaveArticle = async () => {
@@ -96,6 +97,9 @@ export function useArticleGenerator() {
       selectedCampaignId,
       generatedImageUrl
     );
+    
+    // Close the dialog after saving
+    setPreviewDialogOpen(false);
   };
 
   return {
@@ -120,6 +124,10 @@ export function useArticleGenerator() {
     setEditedContent,
     activeTab,
     setActiveTab,
+    
+    // Preview dialog state
+    previewDialogOpen,
+    setPreviewDialogOpen,
     
     // Keyword features
     keywordSuggestions,
