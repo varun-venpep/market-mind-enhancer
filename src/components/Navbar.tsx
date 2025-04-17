@@ -167,7 +167,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center ml-auto">
             <Button variant="default" asChild className="flex items-center gap-2">
               <Link to="/dashboard">
-                <LayoutDashboard className="h-4 w-4 mr-1" />
+                <LayoutDashboard className="h-4 w-4 mr-3" />
                 Dashboard
               </Link>
             </Button>
