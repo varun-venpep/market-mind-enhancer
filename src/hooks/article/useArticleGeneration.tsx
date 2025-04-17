@@ -35,8 +35,15 @@ export function useArticleGeneration() {
       `;
 
       const result = await geminiGenerateContent(contentPrompt);
+      
+      if (!result || result.trim() === '') {
+        toast.error('Generated content is empty. Please try again.');
+        return false;
+      }
+      
       setGeneratedContent(result);
       setEditedContent(result);
+      toast.success('Content generated successfully');
       return true;
     } catch (error) {
       console.error('Error generating content:', error);

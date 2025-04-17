@@ -5,6 +5,7 @@ import { useArticleKeywords } from './article/useArticleKeywords';
 import { useArticleGeneration } from './article/useArticleGeneration';
 import { useArticleSaving } from './article/useArticleSaving';
 import { useCampaigns } from './article/useCampaigns';
+import { toast } from 'sonner';
 
 export function useArticleGenerator() {
   const {
@@ -44,6 +45,7 @@ export function useArticleGenerator() {
     isGeneratingImage,
     activeTab,
     setActiveTab,
+    generateContent,
     generateFeaturedImage
   } = useArticleGeneration();
 
@@ -61,18 +63,32 @@ export function useArticleGenerator() {
     }
   }, [campaigns, selectedCampaignId, setSelectedCampaignId]);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!validateForm()) return;
     
-    if (generateAIImage) {
-      generateFeaturedImage(title);
+    // Generate content first
+    const contentGenerated = await generateContent(title, keywords.split(','), contentType, contentLength, tone);
+    
+    if (!contentGenerated) {
+      return;
     }
     
+    // Then generate image if needed
+    if (generateAIImage) {
+      await generateFeaturedImage(title);
+    }
+    
+    // Switch to preview tab
     setActiveTab("preview");
-    setEditedContent(generatedContent);
   };
 
   const handleSaveArticle = async () => {
+    // Check if we have generated content
+    if (!generatedContent || generatedContent.trim() === '') {
+      toast.error("Please generate content before saving");
+      return;
+    }
+    
     await saveArticle(
       title,
       editedContent,

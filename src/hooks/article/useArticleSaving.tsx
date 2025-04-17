@@ -20,7 +20,7 @@ export function useArticleSaving() {
       return false;
     }
 
-    if (!content.trim()) {
+    if (!content || content.trim() === '') {
       toast.error("Please generate content before saving");
       return false;
     }
