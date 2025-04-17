@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,6 +99,7 @@ const ArticleGenerator = () => {
                   isGenerating={isGenerating}
                   generatedContent={generatedContent}
                   generatedImageUrl={generatedImageUrl}
+                  onContentChange={(content) => setEditedContent(content)}
                   handleSaveArticle={handleSaveArticle}
                   isSaving={isSaving}
                 />
