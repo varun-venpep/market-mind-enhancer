@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CheckedState } from "@radix-ui/react-checkbox";
 import KeywordManager from './KeywordManager';
 import ContentTypeSelector from './ContentTypeSelector';
 import GenerateButton from './GenerateButton';
@@ -62,6 +63,10 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
   generateAIImage,
   setGenerateAIImage
 }) => {
+  const handleCheckedChange = (checked: CheckedState) => {
+    setGenerateAIImage(checked === true);
+  };
+
   return (
     <>
       <div className="space-y-2">
@@ -121,9 +126,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         <Checkbox 
           id="generate-image" 
           checked={generateAIImage}
-          onCheckedChange={(checked) => {
-            setGenerateAIImage(checked === true);
-          }}
+          onCheckedChange={handleCheckedChange}
         />
         <Label htmlFor="generate-image" className="text-sm font-medium">
           Generate featured image with AI
