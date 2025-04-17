@@ -64,7 +64,7 @@ const Campaigns = () => {
   
   const handleCampaignClick = (campaignId: string) => {
     console.log("Navigating to campaign:", campaignId);
-    navigate(`/dashboard/campaign/${campaignId}`);
+    navigate(`/dashboard/campaigns/${campaignId}`);
   };
 
   if (isLoading) {
