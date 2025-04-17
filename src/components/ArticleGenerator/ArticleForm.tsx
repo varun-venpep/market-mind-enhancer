@@ -3,6 +3,7 @@ import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import KeywordManager from './KeywordManager';
 import ContentTypeSelector from './ContentTypeSelector';
 import GenerateButton from './GenerateButton';
@@ -31,6 +32,8 @@ interface ArticleFormProps {
   campaigns: Campaign[];
   selectedCampaignId: string | null;
   setSelectedCampaignId: (id: string) => void;
+  generateAIImage: boolean;
+  setGenerateAIImage: (value: boolean) => void;
 }
 
 const ArticleForm: React.FC<ArticleFormProps> = ({
@@ -55,7 +58,9 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
   getSuggestions,
   campaigns,
   selectedCampaignId,
-  setSelectedCampaignId
+  setSelectedCampaignId,
+  generateAIImage,
+  setGenerateAIImage
 }) => {
   return (
     <>
@@ -111,6 +116,17 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         tone={tone}
         setTone={setTone}
       />
+
+      <div className="flex items-center space-x-2 mt-4">
+        <Checkbox 
+          id="generate-image" 
+          checked={generateAIImage}
+          onCheckedChange={setGenerateAIImage}
+        />
+        <Label htmlFor="generate-image" className="text-sm font-medium">
+          Generate featured image with AI
+        </Label>
+      </div>
 
       <GenerateButton 
         onGenerate={onGenerate}

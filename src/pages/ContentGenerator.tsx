@@ -9,10 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, FileText, Image as ImageIcon, Check, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Image as ImageIcon, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateContent, generateImage } from '@/services/geminiApi';
 import { fetchSerpResults } from '@/services/serpApi';
+import { createArticle } from '@/services/articles';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ContentGenerator() {
   const navigate = useNavigate();
@@ -25,10 +27,12 @@ export default function ContentGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [imagePrompt, setImagePrompt] = useState('');
+  const [generateAIImage, setGenerateAIImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [keywordSuggestions, setKeywordSuggestions] = useState([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleGenerate = async () => {
     if (!prompt) {
@@ -57,7 +61,11 @@ export default function ContentGenerator() {
 
       const result = await generateContent(contentPrompt);
       setGeneratedContent(result);
-      toast.success('Content generated successfully!');
+      
+      // Generate image if option is selected
+      if (generateAIImage) {
+        handleGenerateImage(true);
+      }
     } catch (error) {
       console.error('Error generating content:', error);
       toast.error('Failed to generate content. Please try again.');
@@ -66,8 +74,10 @@ export default function ContentGenerator() {
     }
   };
 
-  const handleGenerateImage = async () => {
-    if (!imagePrompt) {
+  const handleGenerateImage = async (autoGenerate = false) => {
+    const imageDescription = autoGenerate ? prompt : imagePrompt;
+    
+    if (!imageDescription) {
       toast.error('Please enter an image description');
       return;
     }
@@ -76,12 +86,16 @@ export default function ContentGenerator() {
     setGeneratedImageUrl('');
 
     try {
-      const imageUrl = await generateImage(imagePrompt);
+      const imageUrl = await generateImage(imageDescription);
       setGeneratedImageUrl(imageUrl);
-      toast.success('Image generated successfully!');
+      if (!autoGenerate) {
+        toast.success('Image generated successfully!');
+      }
     } catch (error) {
       console.error('Error generating image:', error);
-      toast.error('Failed to generate image. Please try again.');
+      if (!autoGenerate) {
+        toast.error('Failed to generate image. Please try again.');
+      }
     } finally {
       setIsGeneratingImage(false);
     }
@@ -114,7 +128,37 @@ export default function ContentGenerator() {
     if (!currentKeywords.includes(keyword)) {
       const newKeywords = [...currentKeywords, keyword].join(', ');
       setKeywords(newKeywords);
-      toast.success(`Added "${keyword}" to keywords`);
+    }
+  };
+
+  const handleSaveArticle = async () => {
+    if (!prompt || !generatedContent) {
+      toast.error('Please generate content before saving');
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const keywordsList = keywords.split(',').map(k => k.trim()).filter(Boolean);
+      
+      const newArticle = await createArticle({
+        title: prompt,
+        content: generatedContent,
+        keywords: keywordsList,
+        status: 'draft',
+        thumbnail_url: generatedImageUrl || undefined
+      });
+      
+      toast.success('Article saved as draft');
+      
+      // Navigate to the article editor
+      navigate(`/dashboard/article-editor/${newArticle.id}`);
+    } catch (error) {
+      console.error('Error saving article:', error);
+      toast.error('Failed to save article');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -261,6 +305,17 @@ export default function ContentGenerator() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="flex items-center space-x-2 py-2">
+                    <Checkbox 
+                      id="generate-image" 
+                      checked={generateAIImage}
+                      onCheckedChange={setGenerateAIImage}
+                    />
+                    <Label htmlFor="generate-image" className="text-sm font-medium">
+                      Generate featured image with AI
+                    </Label>
+                  </div>
                 </CardContent>
                 <CardFooter>
                   <Button 
@@ -297,8 +352,23 @@ export default function ContentGenerator() {
                       <p className="text-muted-foreground">Generating high-quality content...</p>
                     </div>
                   ) : generatedContent ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none h-[500px] overflow-y-auto border rounded-md p-4">
-                      <div dangerouslySetInnerHTML={{ __html: generatedContent.replace(/\n/g, '<br/>') }} />
+                    <div className="flex flex-col h-[500px]">
+                      <div className="prose prose-sm dark:prose-invert max-w-none flex-grow overflow-y-auto border rounded-md p-4">
+                        <div dangerouslySetInnerHTML={{ __html: generatedContent.replace(/\n/g, '<br/>') }} />
+                      </div>
+                      
+                      {generatedImageUrl && (
+                        <div className="mt-4 border rounded-md p-4">
+                          <h3 className="text-sm font-medium mb-2">Generated Featured Image:</h3>
+                          <div className="flex justify-center">
+                            <img 
+                              src={generatedImageUrl} 
+                              alt="AI Generated" 
+                              className="max-h-48 object-contain"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-[500px] border border-dashed rounded-md">
@@ -320,9 +390,21 @@ export default function ContentGenerator() {
                       >
                         Copy Content
                       </Button>
-                      <Button disabled>
-                        Save as Draft
-                        <ArrowRight className="h-4 w-4 ml-2" />
+                      <Button 
+                        onClick={handleSaveArticle}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            Save as Draft
+                            <ArrowRight className="h-4 w-4 ml-2" />
+                          </>
+                        )}
                       </Button>
                     </>
                   )}
@@ -358,7 +440,7 @@ export default function ContentGenerator() {
                 <CardFooter>
                   <Button 
                     className="w-full gap-2" 
-                    onClick={handleGenerateImage}
+                    onClick={() => handleGenerateImage()}
                     disabled={isGeneratingImage}
                   >
                     {isGeneratingImage ? (

@@ -10,13 +10,15 @@ interface ContentPreviewProps {
   generatedContent: string;
   onContentChange: (content: string) => void;
   onSaveArticle?: () => void;
+  isSaving?: boolean;
 }
 
 const ContentPreview: React.FC<ContentPreviewProps> = ({ 
   isGenerating, 
   generatedContent,
   onContentChange,
-  onSaveArticle
+  onSaveArticle,
+  isSaving = false
 }) => {
   return (
     <>
@@ -54,9 +56,21 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
           >
             Copy Content
           </Button>
-          <Button onClick={onSaveArticle}>
-            Save as Draft
-            <ArrowRight className="h-4 w-4 ml-2" />
+          <Button 
+            onClick={onSaveArticle}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Save as Draft
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </>
+            )}
           </Button>
         </div>
       )}

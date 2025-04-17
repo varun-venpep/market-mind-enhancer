@@ -5,10 +5,12 @@ import { toast } from "sonner";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 import ArticleForm from "@/components/ArticleGenerator/ArticleForm";
 import ContentPreview from "@/components/ArticleGenerator/ContentPreview";
 import { createArticle } from '@/services/articles';
 import { fetchUserCampaigns } from '@/services/articles/campaigns';
+import { generateImage } from '@/services/geminiApi'; 
 import { Campaign } from '@/types';
 
 const ArticleGenerator = () => {
@@ -26,6 +28,10 @@ const ArticleGenerator = () => {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [generateAIImage, setGenerateAIImage] = useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState("");
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const loadCampaigns = async () => {
@@ -45,8 +51,33 @@ const ArticleGenerator = () => {
   }, []);
 
   const handleGenerate = () => {
+    if (!title) {
+      toast.error("Please enter a title before generating content");
+      return;
+    }
+    
+    if (generateAIImage) {
+      generateFeaturedImage();
+    }
+    
     setActiveTab("preview");
     setEditedContent(generatedContent);
+  };
+
+  const generateFeaturedImage = async () => {
+    if (!title) return;
+    
+    setIsGeneratingImage(true);
+    
+    try {
+      const imagePrompt = `Create a professional featured image for a blog post titled: "${title}"`;
+      const imageUrl = await generateImage(imagePrompt);
+      setGeneratedImageUrl(imageUrl);
+    } catch (error) {
+      console.error("Error generating image:", error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   const handleKeywordInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -110,7 +141,7 @@ const ArticleGenerator = () => {
       return;
     }
 
-    const toastId = toast.loading("Saving article...");
+    setIsSaving(true);
     
     try {
       const keywordsList = keywords.split(',').map(k => k.trim()).filter(Boolean);
@@ -120,17 +151,18 @@ const ArticleGenerator = () => {
         content: editedContent,
         keywords: keywordsList,
         campaign_id: selectedCampaignId,
-        status: 'draft'
+        status: 'draft',
+        thumbnail_url: generatedImageUrl || undefined
       });
       
-      toast.dismiss(toastId);
+      setIsSaving(false);
       toast.success("Article saved successfully");
       
       // Navigate to the article editor page
       navigate(`/dashboard/article-editor/${newArticle.id}`);
     } catch (error) {
       console.error("Error saving article:", error);
-      toast.dismiss(toastId);
+      setIsSaving(false);
       toast.error("Failed to save article");
     }
   };
@@ -173,15 +205,36 @@ const ArticleGenerator = () => {
                   campaigns={campaigns}
                   selectedCampaignId={selectedCampaignId}
                   setSelectedCampaignId={setSelectedCampaignId}
+                  generateAIImage={generateAIImage}
+                  setGenerateAIImage={setGenerateAIImage}
                 />
               </TabsContent>
               
               <TabsContent value="preview" className="space-y-4 mt-4">
+                {isGeneratingImage && (
+                  <div className="flex items-center justify-center p-4 bg-muted rounded-md mb-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm">Generating featured image...</span>
+                  </div>
+                )}
+                {generatedImageUrl && (
+                  <div className="mb-4 p-4 border rounded-md">
+                    <h3 className="text-sm font-medium mb-2">Featured Image:</h3>
+                    <div className="flex justify-center">
+                      <img 
+                        src={generatedImageUrl} 
+                        alt="Featured" 
+                        className="max-h-48 object-contain" 
+                      />
+                    </div>
+                  </div>
+                )}
                 <ContentPreview 
                   isGenerating={isGenerating}
                   generatedContent={generatedContent}
                   onContentChange={setEditedContent}
                   onSaveArticle={handleSaveArticle}
+                  isSaving={isSaving}
                 />
               </TabsContent>
             </Tabs>
