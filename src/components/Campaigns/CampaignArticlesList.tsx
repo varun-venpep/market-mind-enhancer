@@ -29,7 +29,7 @@ const CampaignArticlesList: React.FC<CampaignArticlesListProps> = ({
       </Card>
     );
   }
-  console.log("article", articleId);
+  console.log("Article id:", articleId);
 
   return (
     <div className="mt-6">
