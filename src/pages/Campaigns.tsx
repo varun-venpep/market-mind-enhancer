@@ -53,7 +53,7 @@ const Campaigns = () => {
       setOpenDialog(false);
       toast.success("Campaign created successfully");
       // Navigate to the new campaign
-      navigate(`/dashboard/campaign/${newCampaign.id}`);
+      navigate(`/dashboard/campaigns/${newCampaign.id}`);
     } catch (error) {
       console.error("Error creating campaign:", error);
       toast.error("Failed to create campaign");
