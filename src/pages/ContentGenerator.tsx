@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/Dashboard/DashboardLayout';
@@ -44,7 +43,6 @@ export default function ContentGenerator() {
     setGeneratedContent('');
 
     try {
-      // Get length in words
       const lengthMap = {
         short: '500-700',
         medium: '1000-1200',
@@ -62,7 +60,6 @@ export default function ContentGenerator() {
       const result = await generateContent(contentPrompt);
       setGeneratedContent(result);
       
-      // Generate image if option is selected
       if (generateAIImage) {
         handleGenerateImage(true);
       }
@@ -152,7 +149,6 @@ export default function ContentGenerator() {
       
       toast.success('Article saved as draft');
       
-      // Navigate to the article editor
       navigate(`/dashboard/article-editor/${newArticle.id}`);
     } catch (error) {
       console.error('Error saving article:', error);
@@ -310,7 +306,9 @@ export default function ContentGenerator() {
                     <Checkbox 
                       id="generate-image" 
                       checked={generateAIImage}
-                      onCheckedChange={setGenerateAIImage}
+                      onCheckedChange={(checked) => {
+                        setGenerateAIImage(checked === true);
+                      }}
                     />
                     <Label htmlFor="generate-image" className="text-sm font-medium">
                       Generate featured image with AI

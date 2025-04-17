@@ -121,7 +121,9 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         <Checkbox 
           id="generate-image" 
           checked={generateAIImage}
-          onCheckedChange={setGenerateAIImage}
+          onCheckedChange={(checked) => {
+            setGenerateAIImage(checked === true);
+          }}
         />
         <Label htmlFor="generate-image" className="text-sm font-medium">
           Generate featured image with AI
