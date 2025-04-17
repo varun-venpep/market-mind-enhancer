@@ -41,6 +41,7 @@ const CampaignArticlesList: React.FC<CampaignArticlesListProps> = ({
             onDeleted={() => onArticleDeleted(article.id)}
             onClick={() => navigate(`/dashboard/article/${article.id}`)}
           />
+          console.log("article id:", article.id)
         ))}
       </div>
     </div>
