@@ -9,10 +9,12 @@ import { Boxes } from "@/components/ui/background-boxes";
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900">
-      {/* Background with gradient mask */}
+    <div className="min-h-screen flex flex-col bg-slate-900 relative overflow-hidden">
+      {/* Background with boxes and gradient mask - exact implementation from 21st dev */}
       <div className="absolute inset-0 w-full h-full bg-slate-900 z-20 [mask-image:radial-gradient(transparent,white)] pointer-events-none" />
-      <Boxes />
+      <div className="absolute inset-0 z-10">
+        <Boxes />
+      </div>
       
       <Navbar />
       <main className="flex-grow relative z-30">

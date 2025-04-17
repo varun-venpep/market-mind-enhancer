@@ -1,19 +1,17 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Search, 
   Menu, 
   X, 
   Home, 
   Database, 
   Activity, 
   Star, 
-  Settings,
   LogIn,
   LayoutDashboard,
-  User
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAuth } from "@/contexts/AuthContext";
