@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
 
@@ -6,11 +5,6 @@ export interface ShopifyProductsResponse {
   products: ShopifyProduct[];
   status: string;
   message?: string;
-}
-
-export interface ShopifyCredentials {
-  storeUrl: string;
-  accessToken: string;
 }
 
 const getAuthToken = async () => {

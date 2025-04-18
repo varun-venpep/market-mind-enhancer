@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,12 +19,12 @@ import { OptimizationItem } from './AuditReportComponents/OptimizationItem';
 import { IssueItem } from './AuditReportComponents/IssueItem';
 import { HistoryItem } from './AuditReportComponents/HistoryItem';
 import { SiteStatsSection } from './AuditReportComponents/SiteStatsSection';
-import type { SEOIssue, SEOOptimization } from '@/types/shopify';
+import type { SEOIssue, SEOOptimization, ShopifyOptimizationHistory } from '@/types/shopify';
 
 interface SiteAuditReportProps {
   audit: any;
   onApplyOptimization: (optimization: any) => Promise<void>;
-  optimizationHistory: any[];
+  optimizationHistory: ShopifyOptimizationHistory[];
 }
 
 export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistory }: SiteAuditReportProps) {

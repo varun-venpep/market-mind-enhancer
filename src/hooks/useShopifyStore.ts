@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
@@ -6,12 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchShopifyProducts } from '@/services/api';
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
 import type { ShopifyStore, ShopifyProduct, SEOAnalysisResult, SEOIssue, SEOOptimization } from '@/types/shopify';
-
-export interface ShopifyProductsResponse {
-  products: ShopifyProduct[];
-  status: string;
-  message?: string;
-}
+import type { ShopifyProductsResponse } from '@/services/api';
 
 export function useShopifyStore(storeId: string | undefined) {
   const [store, setStore] = useState<ShopifyStore | null>(null);

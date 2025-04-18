@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
@@ -13,12 +12,13 @@ import { ProductList } from '@/components/Shopify/ProductList';
 import { SiteAuditReport } from '@/components/Shopify/SiteAuditReport';
 import { MarketInsights } from '@/components/Shopify/MarketInsights';
 import { BlogGenerator } from '@/components/Shopify/BlogGenerator';
-import { useShopifyStore, ShopifyProductsResponse } from '@/hooks/useShopifyStore';
+import { useShopifyStore } from '@/hooks/useShopifyStore';
 import { useShopifySiteAudit } from '@/hooks/useShopifySiteAudit';
 import { useToast } from "@/components/ui/use-toast";
 import { bulkOptimizeSEO, fetchShopifyProducts } from '@/services/api';
 import { supabase } from '@/integrations/supabase/client';
 import type { SEOAnalysisResult, SEOIssue, SEOOptimization } from '@/types/shopify';
+import type { ShopifyProductsResponse } from '@/services/api';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
