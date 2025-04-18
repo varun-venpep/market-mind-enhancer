@@ -6,10 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Menu, 
   X, 
-  Home, 
-  Database, 
-  Activity, 
-  Star, 
+  Home,
+  Star,
   LogIn,
   LayoutDashboard,
 } from "lucide-react";
@@ -53,14 +51,20 @@ const Navbar = () => {
           <span className="self-center text-xl font-bold whitespace-nowrap gradient-text">MarketMind</span>
         </Link>
         
-        <div className="flex items-center md:order-2">
+        <div className="flex items-center md:order-2 gap-4">
           {user ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               {isPro && (
                 <Badge className="bg-gradient-to-r from-brand-400 to-brand-600 text-white">
                   Pro
                 </Badge>
               )}
+              <Button variant="default" asChild>
+                <Link to="/dashboard" className="flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -133,45 +137,7 @@ const Navbar = () => {
                 <Star className="h-4 w-4 mr-2 inline md:hidden" /> Features
               </Link>
             </li>
-            <li>
-              <Link to="/dashboard/content-briefs" className={cn(
-                "block py-2 px-3 rounded md:p-0",
-                location.pathname === '/dashboard/content-briefs' 
-                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
-              )}>
-                <Database className="h-4 w-4 mr-2 inline md:hidden" /> Content Briefs
-              </Link>
-            </li>
-            <li>
-              <Link to="/dashboard/article-generator" className={cn(
-                "block py-2 px-3 rounded md:p-0",
-                location.pathname === '/dashboard/article-generator' 
-                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
-              )}>
-                <Activity className="h-4 w-4 mr-2 inline md:hidden" /> Article Generator
-              </Link>
-            </li>
-            <li className="md:hidden">
-              <Link to="/dashboard" className={cn(
-                "block py-2 px-3 mr-3 rounded",
-                location.pathname === '/dashboard' 
-                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
-              )}>
-                Dashboard
-              </Link>
-            </li>
           </ul>
-          <div className="hidden md:flex items-center ml-auto">
-            <Button variant="default" asChild className="flex items-center gap-2">
-              <Link to="/dashboard">
-                <LayoutDashboard className="h-4 w-4 mr-3" />
-                Dashboard
-              </Link>
-            </Button>
-          </div>
         </div>
       </div>
     </nav>
