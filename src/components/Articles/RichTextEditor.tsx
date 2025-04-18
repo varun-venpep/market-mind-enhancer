@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +10,7 @@ interface RichTextEditorProps {
   readOnly?: boolean;
 }
 
-const RichTextEditor = ({ content, onChange, readOnly = true }: RichTextEditorProps) => {
+const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +22,7 @@ const RichTextEditor = ({ content, onChange, readOnly = true }: RichTextEditorPr
         console.log('TinyMCE API Key:', key); // Debug log
         setApiKey(key);
       } catch (err) {
-        console.error('Failed to   TinyMCE API key:', err);
+        console.error('Failed to get TinyMCE API key:', err);
         setError('Using basic editor mode. Some features may be limited.');
       } finally {
         setIsLoading(false);
@@ -47,7 +48,7 @@ const RichTextEditor = ({ content, onChange, readOnly = true }: RichTextEditorPr
         </div>
       )}
       <Editor
-        apiKey='sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk'
+        apiKey={apiKey || 'sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk'}
         initialValue={content}
         onInit={() => setIsLoading(false)}
         init={{
@@ -70,7 +71,14 @@ const RichTextEditor = ({ content, onChange, readOnly = true }: RichTextEditorPr
           contextmenu: 'link image table',
           powerpaste_word_import: 'clean',
           powerpaste_html_import: 'clean',
+          inline_styles: true,
+          setup: (editor) => {
+            editor.on('init', () => {
+              console.log("TinyMCE editor initialized");
+            });
+          }
         }}
+        onEditorChange={onChange}
       />
     </div>
   );

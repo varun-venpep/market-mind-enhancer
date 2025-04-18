@@ -3,10 +3,136 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-  /* Custom variant for info alert */
-  .alert-info {
-    @apply bg-blue-50 border-blue-200 text-blue-800 
-           dark:bg-blue-950/20 dark:border-blue-900/50 dark:text-blue-300;
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* White background */
+    --foreground: 240 10% 3.9%; /* Dark text */
+    --card: 0 0% 100%; /* White card background */
+    --card-foreground: 240 10% 3.9%; /* Dark card text */
+    --popover: 0 0% 100%; /* White popover background */
+    --popover-foreground: 240 10% 3.9%; /* Dark popover text */
+    --primary: 220 80% 20%; /* Deep blue primary color */
+    --primary-foreground: 0 0% 98%; /* Light text on primary */
+    --secondary: 220 15% 92%; /* Light gray secondary */
+    --secondary-foreground: 220 45% 16%; /* Dark secondary text */
+    --muted: 220 15% 92%; /* Light muted background */
+    --muted-foreground: 220 10% 46%; /* Muted text */
+    --accent: 220 15% 88%; /* Light accent */
+    --accent-foreground: 220 45% 16%; /* Dark accent text */
+    --destructive: 0 84.2% 60.2%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
+    --border: 220 15% 90%; /* Light border */
+    --input: 220 15% 90%; /* Light input border */
+    --ring: 220 80% 20%; /* Ring color matching primary */
+    --radius: 0.5rem;
   }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-600 to-blue-500 text-transparent bg-clip-text;
+  }
+  
+  .card-glass {
+    @apply backdrop-blur-sm bg-white/5 border border-white/10 shadow-lg;
+  }
+  
+  .hover-card {
+    @apply transition-all hover:shadow-md hover:shadow-blue-500/10;
+  }
+}
+
+/* Fix for TinyMCE dropdown menus in dialogs */
+.tox-tinymce-aux,
+.tox-silver-sink {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+.tox-tinymce-aux > *,
+.tox-silver-sink > * {
+  pointer-events: auto !important;
+}
+
+.tox-menu,
+.tox-collection,
+.tox-dialog,
+.tox-dialog__header,
+.tox-dialog__body,
+.tox-dialog__footer {
+  z-index: 9999999 !important;
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.tox-collection__item {
+  padding: 8px !important;
+}
+
+/* Make sure dialogs have proper z-index */
+.radix-dialog-content {
+  z-index: 9000 !important;
+}
+
+/* Make sure TinyMCE doesn't break the UI */
+.tox-tinymce {
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Fix for alerts and popups */
+.tox-notifications-container {
+  z-index: 9999999 !important;
+}
+
+/* Improved spacing for article generator components */
+.editor-container {
+  margin-bottom: 1.5rem;
+}
+
+.article-content {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+
+/* Dialog content styling improvements */
+.DialogContent {
+  padding: 1.5rem !important;
+}
+
+/* Fix for TinyMCE toolbar visibility */
+.tox-toolbar__primary {
+  background-color: white !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Enhanced article preview styling */
+.prose img {
+  border-radius: 0.375rem;
+  margin: 1.5rem 0;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  color: hsl(var(--foreground));
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
 }

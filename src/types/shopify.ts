@@ -1,3 +1,4 @@
+
 export interface ShopifyStore {
   id: string;
   store_url: string;
@@ -93,65 +94,16 @@ export interface SEOAnalysisResult {
 }
 
 export interface SEOIssue {
-  type: 'title' | 'description' | 'image' | 'content' | 'url' | 'technical' | string;
+  type: 'title' | 'description' | 'image' | 'content' | 'url';
   severity: 'high' | 'medium' | 'low';
   message: string;
   details?: string;
-  location?: string;
-  entity_id?: string | number;
-  entity_name?: string;
 }
 
 export interface SEOOptimization {
-  type: 'title' | 'description' | 'image' | 'content' | 'url' | 'technical' | string;
+  type: 'title' | 'description' | 'image' | 'content' | 'url';
   field: string;
   original: string;
   suggestion: string;
   applied: boolean;
-  entity_id?: string | number;
-  location?: string;
-  entity_name?: string;
-}
-
-export interface SiteAuditResult {
-  store_id: string;
-  store_url: string;
-  store_name: string;
-  theme: string;
-  pages_count: number;
-  blogs_count: number;
-  issues: SEOIssue[];
-  score: number;
-  optimizations: SEOOptimization[];
-  created_at: string;
-}
-
-export interface ShopifyOptimizationHistory {
-  id: string;
-  store_id: string;
-  optimization_type: string;
-  entity_id: string | number;
-  entity_type: string;
-  field: string;
-  original_value: string;
-  new_value: string;
-  applied_at: string;
-}
-
-export interface SiteAudit {
-  id?: string;
-  store_id: string;
-  audit_data: {
-    store_url: string;
-    store_name: string;
-    theme: string;
-    pages_count: number;
-    blogs_count: number;
-    issues: SEOIssue[];
-    score: number;
-    optimizations: SEOOptimization[];
-    created_at: string;
-  };
-  created_at: string;
-  score: number;
 }

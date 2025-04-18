@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 import withMT from "@material-tailwind/react/utils/withMT";
 
@@ -74,16 +75,6 @@ export default withMT({
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
-        },
-        blue: {
-          950: {
-            DEFAULT: '#102a4c',
-            '20': 'rgba(16, 42, 76, 0.2)'
-          },
-          900: {
-            DEFAULT: '#0e2545',
-            '50': 'rgba(14, 37, 69, 0.5)'
-          }
         }
       },
       borderRadius: {

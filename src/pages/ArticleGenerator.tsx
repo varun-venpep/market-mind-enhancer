@@ -1,11 +1,9 @@
+
 import React from 'react';
-import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ArticleForm from "@/components/ArticleGenerator/ArticleForm";
-import ContentPreview from "@/components/ArticleGenerator/ContentPreview";
-import ImagePreview from "@/components/ArticleGenerator/ImagePreview";
-import ArticlePreviewDialog from "@/components/ArticleGenerator/ArticlePreviewDialog";
+import DashboardLayout from '@/components/Dashboard/DashboardLayout';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import ArticleForm from '@/components/ArticleGenerator/ArticleForm';
+import ArticlePreviewDialog from '@/components/ArticleGenerator/ArticlePreviewDialog';
 import { useArticleGenerator } from '@/hooks/useArticleGenerator';
 
 const ArticleGenerator = () => {
@@ -26,8 +24,6 @@ const ArticleGenerator = () => {
     setGeneratedContent,
     editedContent,
     setEditedContent,
-    activeTab,
-    setActiveTab,
     previewDialogOpen,
     setPreviewDialogOpen,
     keywordSuggestions,
@@ -38,7 +34,6 @@ const ArticleGenerator = () => {
     generateAIImage,
     setGenerateAIImage,
     generatedImageUrl,
-    isGeneratingImage,
     isSaving,
     handleGenerate,
     handleKeywordInput,
@@ -55,66 +50,43 @@ const ArticleGenerator = () => {
             <CardTitle>AI Content Generator</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-                <TabsTrigger value="preview">Content Preview</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="settings" className="space-y-4 mt-4">
-                <ArticleForm
-                  title={title}
-                  setTitle={setTitle}
-                  keywords={keywords}
-                  setKeywords={setKeywords}
-                  contentType={contentType}
-                  setContentType={setContentType}
-                  contentLength={contentLength}
-                  setContentLength={setContentLength}
-                  tone={tone}
-                  setTone={setTone}
-                  onGenerate={handleGenerate}
-                  isGenerating={isGenerating}
-                  setIsGenerating={setIsGenerating}
-                  setGeneratedContent={setGeneratedContent}
-                  handleKeywordInput={handleKeywordInput}
-                  keywordSuggestions={keywordSuggestions}
-                  addKeyword={addKeyword}
-                  isLoadingSuggestions={isLoadingSuggestions}
-                  getSuggestions={getSuggestions}
-                  campaigns={campaigns}
-                  selectedCampaignId={selectedCampaignId}
-                  setSelectedCampaignId={setSelectedCampaignId}
-                  generateAIImage={generateAIImage}
-                  setGenerateAIImage={setGenerateAIImage}
-                />
-              </TabsContent>
-              
-              <TabsContent value="preview" className="space-y-4 mt-4">
-                <ImagePreview 
-                  isGeneratingImage={isGeneratingImage}
-                  generatedImageUrl={generatedImageUrl}
-                />
-                <ContentPreview 
-                  isGenerating={isGenerating}
-                  generatedContent={generatedContent}
-                  generatedImageUrl={generatedImageUrl}
-                  onContentChange={(content) => setEditedContent(content)}
-                  handleSaveArticle={handleSaveArticle}
-                  isSaving={isSaving}
-                />
-              </TabsContent>
-            </Tabs>
+            <ArticleForm
+              title={title}
+              setTitle={setTitle}
+              keywords={keywords}
+              setKeywords={setKeywords}
+              contentType={contentType}
+              setContentType={setContentType}
+              contentLength={contentLength}
+              setContentLength={setContentLength}
+              tone={tone}
+              setTone={setTone}
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              setIsGenerating={setIsGenerating}
+              setGeneratedContent={setGeneratedContent}
+              handleKeywordInput={handleKeywordInput}
+              keywordSuggestions={keywordSuggestions}
+              addKeyword={addKeyword}
+              isLoadingSuggestions={isLoadingSuggestions}
+              getSuggestions={getSuggestions}
+              campaigns={campaigns}
+              selectedCampaignId={selectedCampaignId}
+              setSelectedCampaignId={setSelectedCampaignId}
+              generateAIImage={generateAIImage}
+              setGenerateAIImage={setGenerateAIImage}
+            />
             
             {/* Article Preview Dialog */}
             <ArticlePreviewDialog
               isOpen={previewDialogOpen}
               onOpenChange={setPreviewDialogOpen}
               title={title}
-              content={generatedContent}
+              content={editedContent || generatedContent}
               imageUrl={generatedImageUrl}
               isSaving={isSaving}
               onSave={handleSaveArticle}
+              onContentChange={(content) => setEditedContent(content)}
             />
           </CardContent>
         </Card>
