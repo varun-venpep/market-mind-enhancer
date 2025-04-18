@@ -78,7 +78,12 @@ const ArticlePreviewDialog = ({
                   readOnly={false}
                 />
               ) : (
-                <div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br/>') }} />
+                <div 
+                  className="article-content" 
+                  dangerouslySetInnerHTML={{ 
+                    __html: content 
+                  }} 
+                />
               )}
             </div>
           </div>
@@ -133,7 +138,7 @@ const ArticlePreviewDialog = ({
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </Dialog>
     </>
   );
 };

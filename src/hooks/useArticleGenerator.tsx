@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useArticleForm } from './article/useArticleForm';
 import { useArticleKeywords } from './article/useArticleKeywords';
@@ -67,10 +68,15 @@ export function useArticleGenerator() {
   const handleGenerate = async () => {
     if (!validateForm()) return;
     
-    // Generate content first
+    // Open the preview dialog immediately
+    setPreviewDialogOpen(true);
+    
+    // Generate content
     const contentGenerated = await generateContent(title, keywords.split(','), contentType, contentLength, tone);
     
     if (!contentGenerated) {
+      // If content generation failed, close the dialog
+      setPreviewDialogOpen(false);
       return;
     }
     
@@ -78,9 +84,6 @@ export function useArticleGenerator() {
     if (generateAIImage) {
       await generateFeaturedImage(title);
     }
-    
-    // Open the preview dialog automatically after generation
-    setPreviewDialogOpen(true);
   };
 
   const handleSaveArticle = async () => {
