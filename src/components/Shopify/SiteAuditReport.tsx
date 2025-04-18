@@ -1,13 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, AlertTriangle, Info, CheckCircle } from 'lucide-react';
-import type { SEOIssue, SEOOptimization } from '@/types/shopify';
+import { 
+  AlertCircle, 
+  AlertTriangle, 
+  Info, 
+  CheckCircle, 
+  ExternalLink, 
+  Cog,
+  FileText,
+  ArrowUpRight
+} from 'lucide-react';
 import { OptimizationItem } from './AuditReportComponents/OptimizationItem';
 import { IssueItem } from './AuditReportComponents/IssueItem';
 import { HistoryItem } from './AuditReportComponents/HistoryItem';
+import { SiteStatsSection } from './AuditReportComponents/SiteStatsSection';
 
 interface SiteAuditReportProps {
   audit: any;
@@ -16,7 +27,7 @@ interface SiteAuditReportProps {
 }
 
 export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistory }: SiteAuditReportProps) {
-  const [activeTab, setActiveTab] = useState("issues");
+  const [activeTab, setActiveTab] = React.useState("issues");
   
   if (!audit) {
     return (
@@ -27,100 +38,25 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
     );
   }
   
-  const optimizationsByType = ((audit.optimizations || []) as SEOOptimization[]).reduce((acc, opt) => {
+  const optimizationsByType = (audit.optimizations || []).reduce((acc, opt) => {
     if (!acc[opt.type]) {
       acc[opt.type] = [];
     }
     acc[opt.type].push(opt);
     return acc;
-  }, {} as Record<string, SEOOptimization[]>);
+  }, {});
   
-  const issuesBySeverity = ((audit.issues || []) as SEOIssue[]).reduce((acc, issue) => {
+  const issuesBySeverity = (audit.issues || []).reduce((acc, issue) => {
     if (!acc[issue.severity]) {
       acc[issue.severity] = [];
     }
     acc[issue.severity].push(issue);
     return acc;
-  }, {} as Record<string, SEOIssue[]>);
+  }, {});
   
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="col-span-1 md:col-span-2">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between">
-              <CardTitle className="text-lg">Overall SEO Score</CardTitle>
-              <Badge className="ml-2" variant={audit.score >= 80 ? 'default' : audit.score >= 60 ? 'secondary' : 'destructive'}>
-                {audit.score}/100
-              </Badge>
-            </div>
-            <CardDescription>Last analyzed on {new Date(audit.created_at).toLocaleString()}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mt-2">
-              <Progress 
-                value={audit.score} 
-                className="h-2.5" 
-              />
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4 mt-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold">{audit.issues.length}</div>
-                <div className="text-xs text-muted-foreground mt-1">Issues Found</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{audit.optimizations.length}</div>
-                <div className="text-xs text-muted-foreground mt-1">Optimizations</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold">{optimizationHistory.length}</div>
-                <div className="text-xs text-muted-foreground mt-1">Applied Changes</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Store Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div>
-                <div className="text-sm font-medium">Store URL</div>
-                <div className="text-sm text-muted-foreground flex items-center">
-                  <a 
-                    href={`https://${audit.store_url}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:underline flex items-center"
-                  >
-                    {audit.store_url}
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </a>
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Store Name</div>
-                <div className="text-sm text-muted-foreground">{audit.store_name || "Not available"}</div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Theme</div>
-                <div className="text-sm text-muted-foreground">{audit.theme || "Not available"}</div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Pages</div>
-                <div className="text-sm text-muted-foreground">{audit.pages_count}</div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Blogs</div>
-                <div className="text-sm text-muted-foreground">{audit.blogs_count}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <SiteStatsSection audit={audit} />
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
