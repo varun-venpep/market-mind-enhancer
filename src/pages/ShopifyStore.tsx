@@ -1,3 +1,4 @@
+
 import React from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
@@ -6,19 +7,48 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { bulkOptimizeSEO, fetchShopifyProducts, ShopifyProductsResponse } from '@/services/api';
+import { 
+  bulkOptimizeSEO, 
+  fetchShopifyProducts, 
+  runSiteAudit, 
+  getSiteAuditHistory, 
+  getOptimizationHistory 
+} from '@/services/api';
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
-import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore, SEOIssue, SEOOptimization } from '@/types/shopify';
+import type { 
+  SEOAnalysisResult, 
+  ShopifyProduct, 
+  ShopifyStore, 
+  SEOIssue, 
+  SEOOptimization, 
+  WebsiteSEOAudit, 
+  ShopifyOptimizationHistory,
+  ShopifyProductsResponse
+} from '@/types/shopify';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/Shopify/LoadingState';
 import { StoreHeader } from '@/components/Shopify/StoreHeader';
 import { ProductList } from '@/components/Shopify/ProductList';
-import { ArrowLeft, BarChart2, TrendingUp, Share2, FileText, ArrowRight, Loader2, Pencil } from 'lucide-react';
+import SiteAuditReport from '@/components/Shopify/SiteAuditReport';
+import { 
+  ArrowLeft, 
+  BarChart2, 
+  TrendingUp, 
+  Share2, 
+  FileText, 
+  ArrowRight, 
+  Loader2, 
+  Pencil,
+  ShoppingBag,
+  Globe,
+  AlertCircle
+} from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { generateContent } from '@/services/geminiApi';
+import RichTextEditor from '@/components/Articles/RichTextEditor';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -34,6 +64,9 @@ const ShopifyStore = () => {
   const [blogKeywords, setBlogKeywords] = useState("");
   const [blogContent, setBlogContent] = useState("");
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
+  const [siteAudit, setSiteAudit] = useState<WebsiteSEOAudit | null>(null);
+  const [isRunningAudit, setIsRunningAudit] = useState(false);
+  const [optimizationHistory, setOptimizationHistory] = useState<ShopifyOptimizationHistory[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -83,6 +116,24 @@ const ShopifyStore = () => {
           }, {} as Record<string, SEOAnalysisResult>);
           
           setAnalysisResults(analysisMap);
+        }
+        
+        // Fetch site audit
+        try {
+          const audits = await getSiteAuditHistory(storeId);
+          if (audits && audits.length > 0) {
+            setSiteAudit(audits[0]); // Most recent audit
+          }
+        } catch (error) {
+          console.error("Error fetching site audit:", error);
+        }
+        
+        // Fetch optimization history
+        try {
+          const history = await getOptimizationHistory(storeId);
+          setOptimizationHistory(history || []);
+        } catch (error) {
+          console.error("Error fetching optimization history:", error);
         }
         
         // Fetch SERP data for this store's main product category
@@ -221,6 +272,40 @@ const ShopifyStore = () => {
     }
   };
   
+  const handleRunSiteAudit = async () => {
+    if (!storeId) return;
+    
+    setIsRunningAudit(true);
+    
+    try {
+      toast({
+        title: "Site Audit Started",
+        description: "Running a comprehensive SEO audit of your entire store..."
+      });
+      
+      const auditResult = await runSiteAudit(storeId);
+      setSiteAudit(auditResult);
+      
+      // Also refresh optimization history
+      const history = await getOptimizationHistory(storeId);
+      setOptimizationHistory(history || []);
+      
+      toast({
+        title: "Site Audit Complete",
+        description: `Your store scored ${auditResult.score}/100. We found ${auditResult.issues.length} issues to fix.`
+      });
+    } catch (error) {
+      console.error('Error running site audit:', error);
+      toast({
+        title: "Audit Failed",
+        description: "Failed to complete the site audit. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRunningAudit(false);
+    }
+  };
+  
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -258,6 +343,7 @@ const ShopifyStore = () => {
               variant="ghost" 
               size="sm" 
               onClick={() => navigate('/dashboard/shopify')} 
+              className="mb-2"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Back to Stores
@@ -288,25 +374,28 @@ const ShopifyStore = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="text-3xl font-bold">{averageScore}/100</div>
+                    <div className="text-3xl font-bold">{siteAudit?.score || averageScore}/100</div>
                     <span className={`text-sm ${
-                      averageScore >= 80 ? 'text-green-600 dark:text-green-400' : 
-                      averageScore >= 60 ? 'text-amber-600 dark:text-amber-400' : 
+                      (siteAudit?.score || averageScore) >= 80 ? 'text-green-600 dark:text-green-400' : 
+                      (siteAudit?.score || averageScore) >= 60 ? 'text-amber-600 dark:text-amber-400' : 
                       'text-red-600 dark:text-red-400'
                     }`}>
-                      {averageScore >= 80 ? 'Good' : averageScore >= 60 ? 'Needs Improvement' : 'Poor'}
+                      {(siteAudit?.score || averageScore) >= 80 ? 'Good' : (siteAudit?.score || averageScore) >= 60 ? 'Needs Improvement' : 'Poor'}
                     </span>
                   </div>
                   <Progress 
-                    value={averageScore} 
+                    value={siteAudit?.score || averageScore} 
                     className={`h-2 ${
-                      averageScore >= 80 ? 'bg-green-100 dark:bg-green-950' : 
-                      averageScore >= 60 ? 'bg-amber-100 dark:bg-amber-950' : 
+                      (siteAudit?.score || averageScore) >= 80 ? 'bg-green-100 dark:bg-green-950' : 
+                      (siteAudit?.score || averageScore) >= 60 ? 'bg-amber-100 dark:bg-amber-950' : 
                       'bg-red-100 dark:bg-red-950'
                     }`} 
                   />
                   <p className="text-muted-foreground text-sm mt-2">
-                    Based on {allScores.length} product{allScores.length !== 1 ? 's' : ''}
+                    {siteAudit ? 
+                      `Based on full site audit (${siteAudit.meta.pages_analyzed} pages)` : 
+                      `Based on ${allScores.length} product${allScores.length !== 1 ? 's' : ''}`
+                    }
                   </p>
                 </CardContent>
               </Card>
@@ -366,7 +455,9 @@ const ShopifyStore = () => {
               <Card className="mb-6">
                 <CardHeader>
                   <CardTitle className="text-lg">Trending Keywords</CardTitle>
-                  <CardDescription>Popular keywords related to your store that could drive traffic</CardDescription>
+                  <CardDescription>
+                    Popular keywords related to your store that could drive traffic
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
@@ -386,6 +477,10 @@ const ShopifyStore = () => {
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
             <TabsList className="mb-6">
+              <TabsTrigger value="site-audit" className="flex items-center gap-1">
+                <Globe className="h-4 w-4" />
+                <span>Site Audit</span>
+              </TabsTrigger>
               <TabsTrigger value="products" className="flex items-center gap-1">
                 <ShoppingBag className="h-4 w-4" />
                 <span>Products</span>
@@ -394,11 +489,67 @@ const ShopifyStore = () => {
                 <FileText className="h-4 w-4" />
                 <span>Blog Content</span>
               </TabsTrigger>
-              <TabsTrigger value="site-audit" className="flex items-center gap-1">
-                <Globe className="h-4 w-4" />
-                <span>Site Audit</span>
-              </TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="site-audit">
+              {isRunningAudit ? (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                      Analyzing Your Store
+                    </CardTitle>
+                    <CardDescription>
+                      Running a comprehensive SEO audit of your entire Shopify store...
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+                    <p className="text-center text-muted-foreground mb-4">
+                      This may take a few minutes to complete. We're analyzing all aspects of your store 
+                      including product pages, collections, blogs, and more.
+                    </p>
+                    <Progress value={65} className="w-full max-w-md h-2" />
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {!siteAudit && (
+                    <Card className="mb-6">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <AlertCircle className="h-5 w-5 text-yellow-500" />
+                          No Site Audit Yet
+                        </CardTitle>
+                        <CardDescription>
+                          Run a comprehensive SEO audit to get insights and recommendations for your entire store
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <Globe className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                        <h3 className="text-lg font-medium mb-2">Analyze Your Entire Store</h3>
+                        <p className="text-center text-muted-foreground max-w-md mb-6">
+                          Our comprehensive site audit will analyze your entire Shopify store for technical SEO issues, 
+                          content optimization opportunities, and structural improvements.
+                        </p>
+                        <Button onClick={handleRunSiteAudit} className="gap-2">
+                          <Globe className="h-4 w-4" />
+                          Run Site Audit
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  <SiteAuditReport 
+                    audit={siteAudit}
+                    storeId={storeId}
+                    onRefresh={handleRunSiteAudit}
+                    optimizationHistory={optimizationHistory}
+                    isLoading={isRunningAudit}
+                  />
+                </>
+              )}
+            </TabsContent>
             
             <TabsContent value="products">
               <ProductList 
@@ -468,7 +619,7 @@ const ShopifyStore = () => {
                 
                 <Card className="lg:col-span-2">
                   <CardHeader>
-                    <CardTitle>Generated Blog Content</CardTitle>
+                    <CardTitle>Blog Content</CardTitle>
                     <CardDescription>
                       Your AI-generated blog post will appear here
                     </CardDescription>
@@ -480,9 +631,10 @@ const ShopifyStore = () => {
                         <p className="text-muted-foreground">Creating your SEO-optimized blog post...</p>
                       </div>
                     ) : blogContent ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none h-[500px] overflow-y-auto border rounded-md p-4">
-                        <div dangerouslySetInnerHTML={{ __html: blogContent.replace(/\n/g, '<br/>') }} />
-                      </div>
+                      <RichTextEditor 
+                        content={blogContent}
+                        onChange={(content) => setBlogContent(content)}
+                      />
                     ) : (
                       <div className="flex flex-col items-center justify-center h-[500px] border border-dashed rounded-md">
                         <FileText className="h-12 w-12 text-muted-foreground mb-2 opacity-20" />
@@ -508,7 +660,7 @@ const ShopifyStore = () => {
                         >
                           Copy Content
                         </Button>
-                        <Button disabled>
+                        <Button>
                           Publish to Store
                         </Button>
                       </>
@@ -517,81 +669,11 @@ const ShopifyStore = () => {
                 </Card>
               </div>
             </TabsContent>
-            
-            <TabsContent value="site-audit">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Site Audit</CardTitle>
-                  <CardDescription>
-                    Comprehensive SEO audit for your Shopify store
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <Globe className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                    <h3 className="text-lg font-medium mb-2">Site Audit Coming Soon</h3>
-                    <p className="text-center text-muted-foreground max-w-md">
-                      Our comprehensive site audit feature is currently in development. 
-                      It will analyze your entire Shopify store for technical SEO issues, 
-                      content optimization opportunities, and more.
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <Button disabled>
-                    Start Audit
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
       </ShopifyProtected>
     </DashboardLayout>
   );
 };
-
-// Helper components for icons
-function ShoppingBag(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-      <path d="M3 6h18"></path>
-      <path d="M16 10a4 4 0 0 1-8 0"></path>
-    </svg>
-  );
-}
-
-function Globe(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="2" x2="22" y1="12" y2="12"></line>
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-    </svg>
-  );
-}
 
 export default ShopifyStore;

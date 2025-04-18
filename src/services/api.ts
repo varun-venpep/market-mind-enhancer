@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
+import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore, WebsiteSEOAudit, ShopifyOptimizationHistory } from '@/types/shopify';
 
 // Define the interface for the response from fetchShopifyProducts
 export interface ShopifyProductsResponse {
@@ -157,6 +157,96 @@ export async function bulkOptimizeSEO(storeId: string) {
   }
 }
 
+export async function runSiteAudit(storeId: string): Promise<WebsiteSEOAudit> {
+  try {
+    // Call our Supabase Edge Function for site audit
+    const data = await invokeFunction('shopify-site-audit', { storeId });
+    return data as WebsiteSEOAudit;
+  } catch (error) {
+    console.error('Error running site audit:', error);
+    throw error;
+  }
+}
+
+export async function getSiteAuditHistory(storeId: string): Promise<WebsiteSEOAudit[]> {
+  try {
+    const { data, error } = await supabase
+      .from('shopify_site_audits')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data.map(item => ({
+      id: item.id,
+      store_id: item.store_id,
+      created_at: item.created_at,
+      score: item.score,
+      issues: item.audit_data.issues || [],
+      optimizations: item.audit_data.optimizations || [],
+      meta: item.audit_data.meta || {
+        pages_analyzed: 0,
+        product_pages: 0,
+        collection_pages: 0,
+        blog_pages: 0,
+        other_pages: 0
+      }
+    })) as WebsiteSEOAudit[];
+  } catch (error) {
+    console.error('Error fetching site audit history:', error);
+    throw error;
+  }
+}
+
+export async function applyOptimization(storeId: string, optimization: any) {
+  try {
+    // Call our Supabase Edge Function
+    const data = await invokeFunction('shopify-apply-optimization', { 
+      storeId, 
+      optimization 
+    });
+    return data;
+  } catch (error) {
+    console.error('Error applying optimization:', error);
+    throw error;
+  }
+}
+
+export async function revertOptimization(optimizationId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('shopify_optimization_history')
+      .update({ reverted: true, reverted_at: new Date().toISOString() })
+      .eq('id', optimizationId)
+      .select();
+    
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Error reverting optimization:', error);
+    throw error;
+  }
+}
+
+export async function getOptimizationHistory(storeId: string): Promise<ShopifyOptimizationHistory[]> {
+  try {
+    const { data, error } = await supabase
+      .from('shopify_optimization_history')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('applied_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data as ShopifyOptimizationHistory[];
+  } catch (error) {
+    console.error('Error fetching optimization history:', error);
+    throw error;
+  }
+}
+
 export async function searchKeywords(keyword: string, options = {}) {
   try {
     const token = await getAuthToken();
@@ -188,5 +278,10 @@ export default {
   analyzeSEO,
   optimizeSEO,
   bulkOptimizeSEO,
-  searchKeywords
+  searchKeywords,
+  runSiteAudit,
+  getSiteAuditHistory,
+  applyOptimization,
+  revertOptimization,
+  getOptimizationHistory
 };

@@ -107,3 +107,118 @@ export interface SEOOptimization {
   suggestion: string;
   applied: boolean;
 }
+
+// Website Level SEO Analysis
+export interface WebsiteSEOAudit {
+  id: string;
+  store_id: string;
+  created_at: string;
+  score: number;
+  issues: WebsiteSEOIssue[];
+  optimizations: WebsiteSEOOptimization[];
+  meta: {
+    pages_analyzed: number;
+    product_pages: number;
+    collection_pages: number;
+    blog_pages: number;
+    other_pages: number;
+  };
+}
+
+export interface WebsiteSEOIssue {
+  id: string;
+  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  details: string;
+  affected_urls?: string[];
+  impact_score: number;
+}
+
+export interface WebsiteSEOOptimization {
+  id: string;
+  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
+  entity: string;
+  field: string;
+  original: string;
+  suggestion: string;
+  applied: boolean;
+  impact_score: number;
+  affected_urls?: string[];
+}
+
+export interface ShopifyProductsResponse {
+  products: ShopifyProduct[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
+export interface ShopifyTheme {
+  id: number;
+  name: string;
+  role: string;
+  theme_store_id: number | null;
+  previewable: boolean;
+  processing: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShopifyPage {
+  id: number;
+  title: string;
+  shop_id: number;
+  handle: string;
+  body_html: string;
+  author: string;
+  created_at: string;
+  updated_at: string;
+  published_at: string;
+  template_suffix: string | null;
+  admin_graphql_api_id: string;
+}
+
+export interface ShopifyBlog {
+  id: number;
+  title: string;
+  handle: string;
+  created_at: string;
+  updated_at: string;
+  commentable: string;
+  admin_graphql_api_id: string;
+}
+
+export interface ShopifyArticle {
+  id: number;
+  title: string;
+  blog_id: number;
+  created_at: string;
+  updated_at: string;
+  published_at: string;
+  body_html: string;
+  summary_html: string;
+  handle: string;
+  author: string;
+  user_id: number;
+  tags: string;
+  admin_graphql_api_id: string;
+  image?: {
+    src: string;
+    alt?: string;
+  };
+}
+
+export interface ShopifyOptimizationHistory {
+  id: string;
+  store_id: string;
+  entity_id: string;
+  entity_type: 'product' | 'page' | 'blog' | 'article' | 'theme' | 'global';
+  field: string;
+  original_value: string;
+  new_value: string;
+  applied_at: string;
+  applied_by: string;
+  reverted: boolean;
+  reverted_at?: string;
+}

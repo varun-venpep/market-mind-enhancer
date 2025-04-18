@@ -253,6 +253,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shopify_optimization_history: {
+        Row: {
+          applied_at: string
+          entity_id: string
+          entity_type: string
+          field: string
+          id: string
+          new_value: string
+          optimization_type: string
+          original_value: string | null
+          store_id: string
+        }
+        Insert: {
+          applied_at?: string
+          entity_id: string
+          entity_type: string
+          field: string
+          id?: string
+          new_value: string
+          optimization_type: string
+          original_value?: string | null
+          store_id: string
+        }
+        Update: {
+          applied_at?: string
+          entity_id?: string
+          entity_type?: string
+          field?: string
+          id?: string
+          new_value?: string
+          optimization_type?: string
+          original_value?: string | null
+          store_id?: string
+        }
+        Relationships: []
+      }
       shopify_seo_analyses: {
         Row: {
           created_at: string
@@ -299,6 +335,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shopify_site_audits: {
+        Row: {
+          audit_data: Json
+          created_at: string
+          id: string
+          score: number
+          store_id: string
+        }
+        Insert: {
+          audit_data: Json
+          created_at?: string
+          id?: string
+          score: number
+          store_id: string
+        }
+        Update: {
+          audit_data?: Json
+          created_at?: string
+          id?: string
+          score?: number
+          store_id?: string
+        }
+        Relationships: []
       }
       shopify_stores: {
         Row: {
