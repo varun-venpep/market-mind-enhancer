@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -50,16 +51,19 @@
 }
 
 /* Fix for TinyMCE dropdown menus in dialogs */
-.tox-tinymce-aux {
-  z-index: 99999 !important;
-}
-
+.tox-tinymce-aux,
 .tox-silver-sink {
-  z-index: 99999 !important;
+  z-index: 9999999 !important;
+  position: relative !important;
 }
 
-.tox-menu {
-  z-index: 99999 !important;
+.tox-menu,
+.tox-collection,
+.tox-dialog,
+.tox-dialog__header,
+.tox-dialog__body,
+.tox-dialog__footer {
+  z-index: 9999999 !important;
   background-color: white !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
@@ -69,6 +73,17 @@
   padding: 8px !important;
 }
 
-.tox-dialog {
-  z-index: 100000 !important;
+/* Make sure dialogs have proper z-index */
+.radix-dialog-content {
+  z-index: 9000 !important;
+}
+
+/* Make sure TinyMCE doesn't break the UI */
+.tox-tinymce {
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Fix for alerts and popups */
+.tox-notifications-container {
+  z-index: 9999999 !important;
 }

@@ -10,7 +10,7 @@ interface RichTextEditorProps {
   readOnly?: boolean;
 }
 
-const RichTextEditor = ({ content, onChange, readOnly = true }: RichTextEditorProps) => {
+const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -41,14 +41,14 @@ const RichTextEditor = ({ content, onChange, readOnly = true }: RichTextEditorPr
   }
 
   return (
-    <div className="relative min-h-[400px] rounded-md border" style={{ zIndex: 1 }}>
+    <div className="relative min-h-[400px] rounded-md border">
       {error && (
         <div className="bg-yellow-50 text-yellow-800 px-4 py-2 mb-2 rounded-md text-sm">
           {error}
         </div>
       )}
       <Editor
-        apiKey='sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk'
+        apiKey={apiKey || 'sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk'}
         initialValue={content}
         onInit={() => setIsLoading(false)}
         init={{
@@ -71,18 +71,11 @@ const RichTextEditor = ({ content, onChange, readOnly = true }: RichTextEditorPr
           contextmenu: 'link image table',
           powerpaste_word_import: 'clean',
           powerpaste_html_import: 'clean',
-          fixed_toolbar_container: 'tinymce-toolbar',
-          // Add z-index to make sure dropdowns appear above other elements
           inline_styles: true,
           setup: (editor) => {
             editor.on('init', () => {
-              // Set high z-index for TinyMCE UI elements to appear above other elements
-              const iframes = document.querySelectorAll('.tox-tinymce-aux, .tox-tinymce');
-              iframes.forEach(iframe => {
-                if (iframe instanceof HTMLElement) {
-                  iframe.style.zIndex = '9999';
-                }
-              });
+              // Make sure the editor is initialized correctly
+              console.log("TinyMCE editor initialized");
             });
           }
         }}

@@ -46,7 +46,7 @@ const ArticlePreviewDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" style={{ zIndex: 50 }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex flex-row items-center justify-between">
             <div>
               <DialogTitle className="text-xl">{title || "Generated Article"}</DialogTitle>
@@ -54,9 +54,7 @@ const ArticlePreviewDialog = ({
                 Review and edit your AI-generated article before saving
               </DialogDescription>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClose}>
-              <X className="h-4 w-4" />
-            </Button>
+            {/* Removed duplicate X button as Dialog already provides a close button */}
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto mt-4">
@@ -70,9 +68,9 @@ const ArticlePreviewDialog = ({
               </div>
             )}
             
-            <div className="prose prose-sm dark:prose-invert max-w-none relative" style={{ zIndex: 40 }}>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
               {onContentChange ? (
-                <div className="editor-container" style={{ position: 'relative', zIndex: 30 }}>
+                <div className="editor-container">
                   <RichTextEditor 
                     content={content} 
                     onChange={onContentChange}
