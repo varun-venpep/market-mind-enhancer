@@ -79,7 +79,7 @@ export function useArticleGenerator() {
       await generateFeaturedImage(title);
     }
     
-    // Open the preview dialog instead of switching tabs
+    // Open the preview dialog automatically after generation
     setPreviewDialogOpen(true);
   };
 
