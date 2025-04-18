@@ -46,7 +46,7 @@ const ArticlePreviewDialog = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" style={{ zIndex: 50 }}>
           <DialogHeader className="flex flex-row items-center justify-between">
             <div>
               <DialogTitle className="text-xl">{title || "Generated Article"}</DialogTitle>
@@ -70,13 +70,15 @@ const ArticlePreviewDialog = ({
               </div>
             )}
             
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="prose prose-sm dark:prose-invert max-w-none relative" style={{ zIndex: 40 }}>
               {onContentChange ? (
-                <RichTextEditor 
-                  content={content} 
-                  onChange={onContentChange}
-                  readOnly={false}
-                />
+                <div className="editor-container" style={{ position: 'relative', zIndex: 30 }}>
+                  <RichTextEditor 
+                    content={content} 
+                    onChange={onContentChange}
+                    readOnly={false}
+                  />
+                </div>
               ) : (
                 <div 
                   className="article-content" 
