@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
@@ -64,6 +63,8 @@ interface SiteAudit {
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const [store, setStore] = useState<ShopifyStore | null>(null);
+  const [currentAudit, setCurrentAudit] = useState<SiteAudit | null>(null);
+  const [optimizationHistory, setOptimizationHistory] = useState<any[]>([]);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [analysisResults, setAnalysisResults] = useState<Record<string, SEOAnalysisResult>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -76,7 +77,6 @@ const ShopifyStore = () => {
   const [blogContent, setBlogContent] = useState("");
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
   const [isAuditLoading, setIsAuditLoading] = useState(false);
-  const [currentAudit, setCurrentAudit] = useState<SiteAudit | null>(null);
   const [optimizationHistory, setOptimizationHistory] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();

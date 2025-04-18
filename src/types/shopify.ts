@@ -1,4 +1,3 @@
-
 export interface ShopifyStore {
   id: string;
   store_url: string;
@@ -137,4 +136,22 @@ export interface ShopifyOptimizationHistory {
   original_value: string;
   new_value: string;
   applied_at: string;
+}
+
+export interface SiteAudit {
+  id?: string;
+  store_id: string;
+  audit_data: {
+    store_url: string;
+    store_name: string;
+    theme: string;
+    pages_count: number;
+    blogs_count: number;
+    issues: SEOIssue[];
+    score: number;
+    optimizations: SEOOptimization[];
+    created_at: string;
+  };
+  created_at: string;
+  score: number;
 }

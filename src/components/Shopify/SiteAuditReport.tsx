@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertCircle, AlertTriangle, ArrowUpRight, Check, CheckCircle, Cog, ExternalLink, Info, Zap } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowUpRight, Check, CheckCircle, Cog, ExternalLink, Info, Zap, FileText } from 'lucide-react';
+import type { SEOIssue, SEOOptimization } from '@/types/shopify';
 
 interface OptimizationProps {
   optimization: any;
@@ -263,25 +263,23 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
     );
   }
   
-  // Group optimizations by type
-  const optimizationsByType = audit.optimizations.reduce((acc, opt) => {
+  const optimizationsByType = (audit.optimizations || []).reduce((acc, opt) => {
     const type = opt.type;
     if (!acc[type]) {
       acc[type] = [];
     }
     acc[type].push(opt);
     return acc;
-  }, {});
+  }, {} as Record<string, SEOOptimization[]>);
   
-  // Group issues by severity
-  const issuesBySeverity = audit.issues.reduce((acc, issue) => {
+  const issuesBySeverity = (audit.issues || []).reduce((acc, issue) => {
     const severity = issue.severity;
     if (!acc[severity]) {
       acc[severity] = [];
     }
     acc[severity].push(issue);
     return acc;
-  }, {});
+  }, {} as Record<string, SEOIssue[]>);
   
   return (
     <div className="space-y-6">
