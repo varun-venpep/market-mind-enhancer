@@ -1,3 +1,4 @@
+
 import React from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
@@ -6,19 +7,59 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { bulkOptimizeSEO, fetchShopifyProducts, ShopifyProductsResponse } from '@/services/api';
+import { 
+  bulkOptimizeSEO, 
+  fetchShopifyProducts, 
+  ShopifyProductsResponse, 
+  performSiteAudit,
+  applyOptimization 
+} from '@/services/api';
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
 import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore, SEOIssue, SEOOptimization } from '@/types/shopify';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/Shopify/LoadingState';
 import { StoreHeader } from '@/components/Shopify/StoreHeader';
 import { ProductList } from '@/components/Shopify/ProductList';
-import { ArrowLeft, BarChart2, TrendingUp, Share2, FileText, ArrowRight, Loader2, Pencil } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  BarChart2, 
+  TrendingUp, 
+  Share2, 
+  FileText, 
+  ArrowRight, 
+  Loader2, 
+  Pencil,
+  AlertTriangle,
+  Check,
+  CheckCircle,
+  ExternalLink,
+  XCircle,
+  AlertCircle
+} from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { generateContent } from '@/services/geminiApi';
+import { SiteAuditReport } from '@/components/Shopify/SiteAuditReport';
+
+interface SiteAudit {
+  id?: string;
+  store_id: string;
+  audit_data: {
+    store_url: string;
+    store_name: string;
+    theme: string;
+    pages_count: number;
+    blogs_count: number;
+    issues: any[];
+    score: number;
+    optimizations: any[];
+    created_at: string;
+  };
+  created_at: string;
+  score: number;
+}
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -34,6 +75,9 @@ const ShopifyStore = () => {
   const [blogKeywords, setBlogKeywords] = useState("");
   const [blogContent, setBlogContent] = useState("");
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
+  const [isAuditLoading, setIsAuditLoading] = useState(false);
+  const [currentAudit, setCurrentAudit] = useState<SiteAudit | null>(null);
+  const [optimizationHistory, setOptimizationHistory] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -83,6 +127,30 @@ const ShopifyStore = () => {
           }, {} as Record<string, SEOAnalysisResult>);
           
           setAnalysisResults(analysisMap);
+        }
+        
+        // Fetch most recent site audit if any
+        const { data: auditData, error: auditError } = await supabase
+          .from('shopify_site_audits')
+          .select('*')
+          .eq('store_id', storeId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+          
+        if (!auditError && auditData) {
+          setCurrentAudit(auditData as SiteAudit);
+        }
+        
+        // Fetch optimization history
+        const { data: historyData, error: historyError } = await supabase
+          .from('shopify_optimization_history')
+          .select('*')
+          .eq('store_id', storeId)
+          .order('applied_at', { ascending: false });
+          
+        if (!historyError && historyData) {
+          setOptimizationHistory(historyData);
         }
         
         // Fetch SERP data for this store's main product category
@@ -218,6 +286,91 @@ const ShopifyStore = () => {
       });
     } finally {
       setIsGeneratingBlog(false);
+    }
+  };
+  
+  const handleRunAudit = async () => {
+    if (!storeId) return;
+    
+    setIsAuditLoading(true);
+    
+    try {
+      const auditResult = await performSiteAudit(storeId);
+      setCurrentAudit({
+        store_id: storeId,
+        audit_data: auditResult,
+        created_at: new Date().toISOString(),
+        score: auditResult.score
+      });
+      
+      toast({
+        title: "Site Audit Complete",
+        description: "Full site SEO audit has been completed successfully"
+      });
+    } catch (error) {
+      console.error("Error running site audit:", error);
+      toast({
+        title: "Audit Failed",
+        description: "Failed to complete site SEO audit",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAuditLoading(false);
+    }
+  };
+  
+  const handleApplyOptimization = async (optimization: any) => {
+    if (!storeId || !currentAudit) return;
+    
+    try {
+      await applyOptimization(storeId, optimization, currentAudit.id);
+      
+      // Update the current audit to mark this optimization as applied
+      setCurrentAudit(prev => {
+        if (!prev) return null;
+        
+        const updatedAuditData = { ...prev.audit_data };
+        updatedAuditData.optimizations = updatedAuditData.optimizations.map(opt => {
+          if (opt.location === optimization.location && 
+              opt.entity_id === optimization.entity_id && 
+              opt.field === optimization.field) {
+            return { ...opt, applied: true };
+          }
+          return opt;
+        });
+        
+        return {
+          ...prev,
+          audit_data: updatedAuditData
+        };
+      });
+      
+      // Update the optimization history
+      const newHistoryItem = {
+        id: crypto.randomUUID(),
+        store_id: storeId,
+        optimization_type: optimization.type,
+        entity_id: optimization.entity_id,
+        entity_type: optimization.location,
+        field: optimization.field,
+        original_value: optimization.original,
+        new_value: optimization.suggestion,
+        applied_at: new Date().toISOString()
+      };
+      
+      setOptimizationHistory(prev => [newHistoryItem, ...prev]);
+      
+      toast({
+        title: "Optimization Applied",
+        description: "SEO optimization has been successfully applied"
+      });
+    } catch (error) {
+      console.error("Error applying optimization:", error);
+      toast({
+        title: "Optimization Failed",
+        description: "Failed to apply SEO optimization",
+        variant: "destructive"
+      });
     }
   };
   
@@ -508,7 +661,7 @@ const ShopifyStore = () => {
                         >
                           Copy Content
                         </Button>
-                        <Button disabled>
+                        <Button>
                           Publish to Store
                         </Button>
                       </>
@@ -519,30 +672,67 @@ const ShopifyStore = () => {
             </TabsContent>
             
             <TabsContent value="site-audit">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Site Audit</CardTitle>
-                  <CardDescription>
-                    Comprehensive SEO audit for your Shopify store
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <Globe className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                    <h3 className="text-lg font-medium mb-2">Site Audit Coming Soon</h3>
-                    <p className="text-center text-muted-foreground max-w-md">
-                      Our comprehensive site audit feature is currently in development. 
-                      It will analyze your entire Shopify store for technical SEO issues, 
-                      content optimization opportunities, and more.
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <Button disabled>
-                    Start Audit
-                  </Button>
-                </CardFooter>
-              </Card>
+              <div className="grid grid-cols-1 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                      <CardTitle>Full Site SEO Audit</CardTitle>
+                      <CardDescription>
+                        Comprehensive SEO audit for your entire Shopify store
+                      </CardDescription>
+                    </div>
+                    <Button 
+                      onClick={handleRunAudit} 
+                      disabled={isAuditLoading}
+                    >
+                      {isAuditLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Running Audit...
+                        </>
+                      ) : (
+                        <>
+                          Run New Audit
+                        </>
+                      )}
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {isAuditLoading ? (
+                      <div className="flex flex-col items-center justify-center py-20">
+                        <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+                        <h3 className="text-lg font-medium mb-2">Analyzing Your Store</h3>
+                        <p className="text-center text-muted-foreground max-w-md">
+                          We're performing a comprehensive SEO audit of your entire Shopify store.
+                          This may take a few moments.
+                        </p>
+                      </div>
+                    ) : currentAudit ? (
+                      <SiteAuditReport 
+                        audit={currentAudit.audit_data} 
+                        onApplyOptimization={handleApplyOptimization}
+                        optimizationHistory={optimizationHistory}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12">
+                        <AlertCircle className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                        <h3 className="text-lg font-medium mb-2">No Audit Data Available</h3>
+                        <p className="text-center text-muted-foreground max-w-md">
+                          Run your first comprehensive site audit to identify SEO issues 
+                          and get recommendations for improvement.
+                        </p>
+                        <Button 
+                          className="mt-6"
+                          onClick={handleRunAudit} 
+                          disabled={isAuditLoading}
+                        >
+                          Start Site Audit
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

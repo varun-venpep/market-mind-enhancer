@@ -157,6 +157,28 @@ export async function bulkOptimizeSEO(storeId: string) {
   }
 }
 
+export async function performSiteAudit(storeId: string) {
+  try {
+    // Call our Supabase Edge Function for full site audit
+    const data = await invokeFunction('shopify-site-audit', { storeId });
+    return data;
+  } catch (error) {
+    console.error('Error performing site audit:', error);
+    throw error;
+  }
+}
+
+export async function applyOptimization(storeId: string, optimization: any, auditId?: string) {
+  try {
+    // Call our Supabase Edge Function to apply an optimization
+    const data = await invokeFunction('shopify-apply-optimization', { storeId, optimization, auditId });
+    return data;
+  } catch (error) {
+    console.error('Error applying optimization:', error);
+    throw error;
+  }
+}
+
 export async function searchKeywords(keyword: string, options = {}) {
   try {
     const token = await getAuthToken();
@@ -188,5 +210,7 @@ export default {
   analyzeSEO,
   optimizeSEO,
   bulkOptimizeSEO,
-  searchKeywords
+  searchKeywords,
+  performSiteAudit,
+  applyOptimization
 };
