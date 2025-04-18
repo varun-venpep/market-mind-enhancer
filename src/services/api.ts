@@ -7,6 +7,11 @@ export interface ShopifyProductsResponse {
   message?: string;
 }
 
+export interface ShopifyCredentials {
+  storeUrl: string;
+  accessToken?: string;
+}
+
 const getAuthToken = async () => {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token;
