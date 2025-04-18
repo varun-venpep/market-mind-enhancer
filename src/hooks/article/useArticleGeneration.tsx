@@ -31,10 +31,7 @@ export function useArticleGeneration() {
         with a ${tone} tone. 
         Length: approximately ${lengthMap[contentLength] || '1000-1200'} words.
         ${keywords.length > 0 ? `Target keywords: ${keywords.join(', ')}` : ''}
-        Use proper HTML formatting with h1, h2, h3 tags for headings.
-        Format with markdown and ensure proper headings hierarchy.
-        Include useful formatting like bullet points, numbered lists, and emphasis where appropriate.
-        Make key phrases bold to improve readability.
+        Use SEO best practices, include a compelling headline, and format with markdown.
       `;
 
       const result = await geminiGenerateContent(contentPrompt);
