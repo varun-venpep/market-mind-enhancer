@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchShopifyProducts, ShopifyProductsResponse } from '@/services/api';
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
-import type { ShopifyStore, SEOAnalysisResult, SEOIssue, SEOOptimization } from '@/types/shopify';
+import type { ShopifyStore, ShopifyProduct, SEOAnalysisResult, SEOIssue, SEOOptimization } from '@/types/shopify';
 
 export function useShopifyStore(storeId: string | undefined) {
   const [store, setStore] = useState<ShopifyStore | null>(null);

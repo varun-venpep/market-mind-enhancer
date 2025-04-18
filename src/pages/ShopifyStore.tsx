@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, FileText, Globe, Loader2, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState } from '@/components/Shopify/LoadingState';
 import { StoreHeader } from '@/components/Shopify/StoreHeader';
 import { ProductList } from '@/components/Shopify/ProductList';
@@ -14,12 +14,16 @@ import { MarketInsights } from '@/components/Shopify/MarketInsights';
 import { BlogGenerator } from '@/components/Shopify/BlogGenerator';
 import { useShopifyStore } from '@/hooks/useShopifyStore';
 import { useShopifySiteAudit } from '@/hooks/useShopifySiteAudit';
+import { useToast } from "@/components/ui/use-toast";
+import { bulkOptimizeSEO } from '@/services/api';
+import type { SEOAnalysisResult, SEOIssue, SEOOptimization, ShopifyProductsResponse } from '@/types/shopify';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState("products");
   const [isOptimizing, setIsOptimizing] = React.useState(false);
+  const { toast } = useToast();
   
   const {
     store,
@@ -60,12 +64,10 @@ const ShopifyStore = () => {
         description: `SEO optimization for ${result.total} products has been initiated`
       });
       
-      // Refresh the data after a delay to allow for processing
       setTimeout(async () => {
         const productsData: ShopifyProductsResponse = await fetchShopifyProducts(storeId);
         setProducts(productsData.products);
         
-        // Refresh analyses
         const { data: analyses } = await supabase
           .from('shopify_seo_analyses')
           .select('*')
@@ -123,7 +125,6 @@ const ShopifyStore = () => {
     );
   }
 
-  // Calculate overall SEO score
   const allScores = Object.values(analysisResults).map(result => result.score);
   const averageScore = allScores.length > 0 
     ? Math.round(allScores.reduce((sum, score) => sum + score, 0) / allScores.length) 

@@ -1,13 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
 
-// Define the interface for the response from fetchShopifyProducts
 export interface ShopifyProductsResponse {
-  products: ShopifyProduct[];
-  page: number;
-  limit: number;
-  total: number;
+  products: any[];
+  status: string;
+  message?: string;
 }
 
 export interface ShopifyCredentials {
@@ -15,13 +12,11 @@ export interface ShopifyCredentials {
   accessToken: string;
 }
 
-// Get the current session token
 const getAuthToken = async () => {
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token;
 };
 
-// Create a function to invoke edge functions with proper authentication
 const invokeFunction = async (functionName: string, payload: any) => {
   const token = await getAuthToken();
   
@@ -46,7 +41,6 @@ const invokeFunction = async (functionName: string, payload: any) => {
       throw response.error;
     }
     
-    // Make sure we have data
     if (!response.data) {
       console.error(`Function ${functionName} returned no data`);
       throw new Error(`${functionName} returned no data`);
@@ -99,7 +93,6 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
       accessToken: credentials.accessToken ? '***' : undefined
     });
     
-    // Call the Supabase Edge Function to connect to Shopify
     const data = await invokeFunction('shopify-connect', credentials);
     
     if (!data.store) {
@@ -113,11 +106,22 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
   }
 }
 
-export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20): Promise<ShopifyProductsResponse> {
+export const fetchShopifyProducts = async (storeId: string): Promise<ShopifyProductsResponse> => {
   try {
-    // Call the Supabase Edge Function to fetch products
-    const data = await invokeFunction('shopify-products', { storeId, page, limit });
-    return data as ShopifyProductsResponse;
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopify-products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ store_id: storeId })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch products');
+    }
+    
+    return await response.json();
   } catch (error) {
     console.error('Error fetching Shopify products:', error);
     throw error;
@@ -126,7 +130,6 @@ export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20
 
 export async function analyzeSEO(storeId: string, productId: string): Promise<SEOAnalysisResult> {
   try {
-    // Call our Supabase Edge Function
     const data = await invokeFunction('shopify-seo', { storeId, productId });
     return data as SEOAnalysisResult;
   } catch (error) {
@@ -137,7 +140,6 @@ export async function analyzeSEO(storeId: string, productId: string): Promise<SE
 
 export async function optimizeSEO(storeId: string, productId: string, optimizations: any[]) {
   try {
-    // Call our Supabase Edge Function
     const data = await invokeFunction('shopify-optimize', { storeId, productId, optimizations });
     return data;
   } catch (error) {
@@ -146,20 +148,30 @@ export async function optimizeSEO(storeId: string, productId: string, optimizati
   }
 }
 
-export async function bulkOptimizeSEO(storeId: string) {
+export const bulkOptimizeSEO = async (storeId: string) => {
   try {
-    // Call our Supabase Edge Function for bulk optimization
-    const data = await invokeFunction('shopify-bulk-optimize', { storeId });
-    return data;
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopify-bulk-optimize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ store_id: storeId })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to start bulk optimization');
+    }
+    
+    return await response.json();
   } catch (error) {
-    console.error('Error running bulk SEO optimization:', error);
+    console.error('Error in bulk optimizing SEO:', error);
     throw error;
   }
-}
+};
 
 export async function performSiteAudit(storeId: string) {
   try {
-    // Call our Supabase Edge Function for full site audit
     const data = await invokeFunction('shopify-site-audit', { storeId });
     return data;
   } catch (error) {
@@ -170,7 +182,6 @@ export async function performSiteAudit(storeId: string) {
 
 export async function applyOptimization(storeId: string, optimization: any, auditId?: string) {
   try {
-    // Call our Supabase Edge Function to apply an optimization
     const data = await invokeFunction('shopify-apply-optimization', { storeId, optimization, auditId });
     return data;
   } catch (error) {
