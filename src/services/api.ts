@@ -1,8 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore } from '@/types/shopify';
 
 export interface ShopifyProductsResponse {
-  products: any[];
+  products: ShopifyProduct[];
   status: string;
   message?: string;
 }
@@ -126,7 +127,7 @@ export const fetchShopifyProducts = async (storeId: string): Promise<ShopifyProd
     console.error('Error fetching Shopify products:', error);
     throw error;
   }
-}
+};
 
 export async function analyzeSEO(storeId: string, productId: string): Promise<SEOAnalysisResult> {
   try {

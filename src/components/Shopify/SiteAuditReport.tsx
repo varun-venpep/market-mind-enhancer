@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { OptimizationItem } from './AuditReportComponents/OptimizationItem';
 import { IssueItem } from './AuditReportComponents/IssueItem';
 import { HistoryItem } from './AuditReportComponents/HistoryItem';
 import { SiteStatsSection } from './AuditReportComponents/SiteStatsSection';
+import type { SEOIssue, SEOOptimization } from '@/types/shopify';
 
 interface SiteAuditReportProps {
   audit: any;
@@ -38,7 +40,7 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
     );
   }
   
-  const optimizationsByType = (audit.optimizations || []).reduce((acc, opt) => {
+  const optimizationsByType = (audit.optimizations || []).reduce((acc: Record<string, SEOOptimization[]>, opt: SEOOptimization) => {
     if (!acc[opt.type]) {
       acc[opt.type] = [];
     }
@@ -46,7 +48,7 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
     return acc;
   }, {});
   
-  const issuesBySeverity = (audit.issues || []).reduce((acc, issue) => {
+  const issuesBySeverity = (audit.issues || []).reduce((acc: Record<string, SEOIssue[]>, issue: SEOIssue) => {
     if (!acc[issue.severity]) {
       acc[issue.severity] = [];
     }
