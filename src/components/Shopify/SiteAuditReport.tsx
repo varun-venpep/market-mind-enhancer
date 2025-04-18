@@ -1,249 +1,13 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertCircle, AlertTriangle, ArrowUpRight, Check, CheckCircle, Cog, ExternalLink, Info, Zap, FileText } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import type { SEOIssue, SEOOptimization } from '@/types/shopify';
-
-interface OptimizationProps {
-  optimization: any;
-  onApply: (optimization: any) => void;
-  isApplied: boolean;
-}
-
-function OptimizationItem({ optimization, onApply, isApplied }: OptimizationProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
-  const getEntityTypeLabel = (location: string) => {
-    switch (location) {
-      case 'store': return 'Store';
-      case 'page': return 'Page';
-      case 'blog': return 'Blog';
-      case 'product': return 'Product';
-      default: return location;
-    }
-  };
-  
-  const getFieldLabel = (field: string) => {
-    switch (field) {
-      case 'title': return 'Title';
-      case 'meta_description': return 'Meta Description';
-      case 'body_html': return 'Content';
-      case 'handle': return 'URL';
-      case 'name': return 'Name';
-      case 'robots_txt': return 'Robots.txt';
-      case 'sitemap': return 'Sitemap';
-      default: return field;
-    }
-  };
-  
-  return (
-    <div className="border rounded-md hover:shadow-sm transition-shadow p-4 mb-3 bg-card">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant={optimization.type === 'title' ? 'default' : 
-                          optimization.type === 'description' ? 'secondary' : 
-                          optimization.type === 'technical' ? 'destructive' : 
-                          'outline'}>
-              {getFieldLabel(optimization.field)}
-            </Badge>
-            <Badge variant="outline">{getEntityTypeLabel(optimization.location)}</Badge>
-          </div>
-          <div className="text-sm font-medium mb-1">
-            {optimization.entity_name || `${getEntityTypeLabel(optimization.location)} - ${getFieldLabel(optimization.field)}`}
-          </div>
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-            {optimization.original ? 
-              optimization.original.length > 100 ? `${optimization.original.substring(0, 100)}...` : optimization.original : 
-              'No content'}
-          </p>
-        </div>
-        {isApplied ? (
-          <div className="flex items-center text-green-600 dark:text-green-500 text-sm font-medium">
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Applied
-          </div>
-        ) : (
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="flex gap-1 items-center"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Zap className="h-3.5 w-3.5" />
-            View
-          </Button>
-        )}
-      </div>
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Apply SEO Optimization</DialogTitle>
-            <DialogDescription>
-              Review and approve this suggested SEO change
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Location</h4>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">{getEntityTypeLabel(optimization.location)}</Badge>
-                {optimization.entity_name && (
-                  <Badge variant="secondary">{optimization.entity_name}</Badge>
-                )}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Current {getFieldLabel(optimization.field)}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <div className="border rounded-md p-3 bg-muted/50 min-h-[100px] max-h-[200px] overflow-y-auto">
-                    {optimization.original || <span className="text-muted-foreground italic">No content</span>}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-green-200 dark:border-green-800">
-                <CardHeader className="pb-2 bg-green-50/50 dark:bg-green-900/20">
-                  <CardTitle className="text-base text-green-700 dark:text-green-300">Suggested {getFieldLabel(optimization.field)}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <div className="border border-green-200 dark:border-green-800 rounded-md p-3 bg-green-50/30 dark:bg-green-900/10 min-h-[100px] max-h-[200px] overflow-y-auto">
-                    {optimization.suggestion || <span className="text-muted-foreground italic">No suggestion</span>}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-          
-          <Alert className="alert-info">
-            <Info className="h-4 w-4" />
-            <AlertTitle>SEO Impact</AlertTitle>
-            <AlertDescription className="text-sm">
-              Applying this change can improve your store's search engine visibility and ranking.
-            </AlertDescription>
-          </Alert>
-          
-          <DialogFooter className="gap-2">
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={() => {
-                onApply(optimization);
-                setIsDialogOpen(false);
-              }}
-              className="gap-2"
-            >
-              <Zap className="h-4 w-4" />
-              Apply Optimization
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-interface IssueItemProps {
-  issue: any;
-}
-
-function IssueItem({ issue }: IssueItemProps) {
-  return (
-    <div className="border rounded-md p-4 mb-3">
-      <div className="flex gap-3">
-        <div className="flex-shrink-0">
-          {issue.severity === 'high' ? (
-            <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-full">
-              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-            </div>
-          ) : issue.severity === 'medium' ? (
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-full">
-              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            </div>
-          ) : (
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-          )}
-        </div>
-        <div>
-          <h4 className="font-medium">{issue.message}</h4>
-          {issue.details && (
-            <p className="text-sm text-muted-foreground mt-1">{issue.details}</p>
-          )}
-          {issue.entity_name && (
-            <div className="mt-2">
-              <Badge variant="outline">{issue.entity_name}</Badge>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface HistoryItemProps {
-  item: any;
-}
-
-function HistoryItem({ item }: HistoryItemProps) {
-  const date = new Date(item.applied_at);
-  
-  return (
-    <div className="flex items-start gap-4 border-b pb-4 pt-2">
-      <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-full flex-shrink-0 mt-0.5">
-        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
-            {item.entity_type === 'store' ? 'Store' : 
-             item.entity_type === 'product' ? 'Product' : 
-             item.entity_type === 'page' ? 'Page' : 
-             item.entity_type === 'blog' ? 'Blog' : 
-             item.entity_type}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {item.field === 'title' ? 'Title' : 
-             item.field === 'meta_description' ? 'Meta Description' : 
-             item.field === 'body_html' ? 'Content' : 
-             item.field === 'handle' ? 'URL' : 
-             item.field}
-          </span>
-        </div>
-        <div className="mt-1 text-xs text-muted-foreground">
-          Applied on {date.toLocaleDateString()} at {date.toLocaleTimeString()}
-        </div>
-        <div className="mt-2 grid grid-cols-1 gap-2 text-sm">
-          <div className="rounded bg-muted/30 p-2">
-            <div className="text-xs text-muted-foreground mb-1">From:</div>
-            <div className="line-clamp-1">{item.original_value || <em>Empty</em>}</div>
-          </div>
-          <div className="rounded bg-green-50 dark:bg-green-900/20 p-2">
-            <div className="text-xs text-muted-foreground mb-1">To:</div>
-            <div className="line-clamp-1">{item.new_value}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { OptimizationItem } from './AuditReportComponents/OptimizationItem';
+import { IssueItem } from './AuditReportComponents/IssueItem';
+import { HistoryItem } from './AuditReportComponents/HistoryItem';
 
 interface SiteAuditReportProps {
   audit: any;
@@ -264,20 +28,18 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
   }
   
   const optimizationsByType = ((audit.optimizations || []) as SEOOptimization[]).reduce((acc, opt) => {
-    const type = opt.type;
-    if (!acc[type]) {
-      acc[type] = [];
+    if (!acc[opt.type]) {
+      acc[opt.type] = [];
     }
-    acc[type].push(opt);
+    acc[opt.type].push(opt);
     return acc;
   }, {} as Record<string, SEOOptimization[]>);
   
   const issuesBySeverity = ((audit.issues || []) as SEOIssue[]).reduce((acc, issue) => {
-    const severity = issue.severity;
-    if (!acc[severity]) {
-      acc[severity] = [];
+    if (!acc[issue.severity]) {
+      acc[issue.severity] = [];
     }
-    acc[severity].push(issue);
+    acc[issue.severity].push(issue);
     return acc;
   }, {} as Record<string, SEOIssue[]>);
   
@@ -383,69 +145,67 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
               </p>
             </div>
           ) : (
-            <div>
-              <Accordion type="multiple" defaultValue={['high']} className="space-y-4">
-                {issuesBySeverity.high && issuesBySeverity.high.length > 0 && (
-                  <AccordionItem value="high">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 bg-red-100 dark:bg-red-900/20 rounded-full">
-                          <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                        </div>
-                        <span>High Priority Issues ({issuesBySeverity.high.length})</span>
+            <Accordion type="multiple" defaultValue={['high']} className="space-y-4">
+              {issuesBySeverity.high && issuesBySeverity.high.length > 0 && (
+                <AccordionItem value="high">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 bg-red-100 dark:bg-red-900/20 rounded-full">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pl-8 pt-2">
-                        {issuesBySeverity.high.map((issue, index) => (
-                          <IssueItem key={index} issue={issue} />
-                        ))}
+                      <span>High Priority Issues ({issuesBySeverity.high.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="pl-8 pt-2">
+                      {issuesBySeverity.high.map((issue, index) => (
+                        <IssueItem key={index} issue={issue} />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+              
+              {issuesBySeverity.medium && issuesBySeverity.medium.length > 0 && (
+                <AccordionItem value="medium">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 bg-amber-100 dark:bg-amber-900/20 rounded-full">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                
-                {issuesBySeverity.medium && issuesBySeverity.medium.length > 0 && (
-                  <AccordionItem value="medium">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 bg-amber-100 dark:bg-amber-900/20 rounded-full">
-                          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <span>Medium Priority Issues ({issuesBySeverity.medium.length})</span>
+                      <span>Medium Priority Issues ({issuesBySeverity.medium.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="pl-8 pt-2">
+                      {issuesBySeverity.medium.map((issue, index) => (
+                        <IssueItem key={index} issue={issue} />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+              
+              {issuesBySeverity.low && issuesBySeverity.low.length > 0 && (
+                <AccordionItem value="low">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pl-8 pt-2">
-                        {issuesBySeverity.medium.map((issue, index) => (
-                          <IssueItem key={index} issue={issue} />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-                
-                {issuesBySeverity.low && issuesBySeverity.low.length > 0 && (
-                  <AccordionItem value="low">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <span>Low Priority Issues ({issuesBySeverity.low.length})</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pl-8 pt-2">
-                        {issuesBySeverity.low.map((issue, index) => (
-                          <IssueItem key={index} issue={issue} />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-              </Accordion>
-            </div>
+                      <span>Low Priority Issues ({issuesBySeverity.low.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="pl-8 pt-2">
+                      {issuesBySeverity.low.map((issue, index) => (
+                        <IssueItem key={index} issue={issue} />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
           )}
         </TabsContent>
         
@@ -459,42 +219,40 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
               </p>
             </div>
           ) : (
-            <div>
-              <Accordion type="multiple" defaultValue={Object.keys(optimizationsByType)} className="space-y-4">
-                {Object.entries(optimizationsByType).map(([type, optimizations]) => (
-                  <AccordionItem key={type} value={type}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                          {type === 'title' ? (
-                            <Cog className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          ) : type === 'description' ? (
-                            <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          ) : type === 'content' ? (
-                            <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          ) : (
-                            <ArrowUpRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                        <span>{type.charAt(0).toUpperCase() + type.slice(1)} Optimizations ({optimizations.length})</span>
+            <Accordion type="multiple" defaultValue={Object.keys(optimizationsByType)} className="space-y-4">
+              {Object.entries(optimizationsByType).map(([type, optimizations]) => (
+                <AccordionItem key={type} value={type}>
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                        {type === 'title' ? (
+                          <Cog className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        ) : type === 'description' ? (
+                          <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        ) : type === 'content' ? (
+                          <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <ArrowUpRight className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        )}
                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="pl-8 pt-2">
-                        {optimizations.map((optimization, index) => (
-                          <OptimizationItem 
-                            key={index} 
-                            optimization={optimization} 
-                            onApply={onApplyOptimization}
-                            isApplied={optimization.applied}
-                          />
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
+                      <span>{type.charAt(0).toUpperCase() + type.slice(1)} Optimizations ({optimizations.length})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="pl-8 pt-2">
+                      {optimizations.map((optimization, index) => (
+                        <OptimizationItem
+                          key={index}
+                          optimization={optimization}
+                          onApply={onApplyOptimization}
+                          isApplied={optimization.applied}
+                        />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           )}
         </TabsContent>
         
