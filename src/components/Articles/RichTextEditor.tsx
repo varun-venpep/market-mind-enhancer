@@ -74,7 +74,6 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
           inline_styles: true,
           setup: (editor) => {
             editor.on('init', () => {
-              // Make sure the editor is initialized correctly
               console.log("TinyMCE editor initialized");
             });
           }

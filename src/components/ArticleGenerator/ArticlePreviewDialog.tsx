@@ -54,10 +54,9 @@ const ArticlePreviewDialog = ({
                 Review and edit your AI-generated article before saving
               </DialogDescription>
             </div>
-            {/* Removed duplicate X button as Dialog already provides a close button */}
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto mt-4">
+          <div className="flex-1 overflow-y-auto mt-4 mb-6 px-1">
             {imageUrl && (
               <div className="mb-6">
                 <img 

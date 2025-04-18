@@ -54,7 +54,17 @@
 .tox-tinymce-aux,
 .tox-silver-sink {
   z-index: 9999999 !important;
-  position: relative !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+.tox-tinymce-aux > *,
+.tox-silver-sink > * {
+  pointer-events: auto !important;
 }
 
 .tox-menu,
@@ -86,4 +96,43 @@
 /* Fix for alerts and popups */
 .tox-notifications-container {
   z-index: 9999999 !important;
+}
+
+/* Improved spacing for article generator components */
+.editor-container {
+  margin-bottom: 1.5rem;
+}
+
+.article-content {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+
+/* Dialog content styling improvements */
+.DialogContent {
+  padding: 1.5rem !important;
+}
+
+/* Fix for TinyMCE toolbar visibility */
+.tox-toolbar__primary {
+  background-color: white !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Enhanced article preview styling */
+.prose img {
+  border-radius: 0.375rem;
+  margin: 1.5rem 0;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  color: hsl(var(--foreground));
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
 }
