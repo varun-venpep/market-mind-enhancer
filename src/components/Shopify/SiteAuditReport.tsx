@@ -127,7 +127,7 @@ function OptimizationItem({ optimization, onApply, isApplied }: OptimizationProp
             </div>
           </div>
           
-          <Alert variant="info" className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <Alert className="alert-info">
             <Info className="h-4 w-4" />
             <AlertTitle>SEO Impact</AlertTitle>
             <AlertDescription className="text-sm">
@@ -263,7 +263,7 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
     );
   }
   
-  const optimizationsByType = (audit.optimizations || []).reduce((acc, opt) => {
+  const optimizationsByType = ((audit.optimizations || []) as SEOOptimization[]).reduce((acc, opt) => {
     const type = opt.type;
     if (!acc[type]) {
       acc[type] = [];
@@ -272,7 +272,7 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
     return acc;
   }, {} as Record<string, SEOOptimization[]>);
   
-  const issuesBySeverity = (audit.issues || []).reduce((acc, issue) => {
+  const issuesBySeverity = ((audit.issues || []) as SEOIssue[]).reduce((acc, issue) => {
     const severity = issue.severity;
     if (!acc[severity]) {
       acc[severity] = [];
@@ -363,10 +363,10 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="issues">
-            Issues ({audit.issues.length})
+            Issues ({(audit.issues || []).length})
           </TabsTrigger>
           <TabsTrigger value="optimizations">
-            Recommendations ({audit.optimizations.length})
+            Recommendations ({(audit.optimizations || []).length})
           </TabsTrigger>
           <TabsTrigger value="history">
             History ({optimizationHistory.length})
@@ -374,7 +374,7 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
         </TabsList>
         
         <TabsContent value="issues" className="space-y-4">
-          {audit.issues.length === 0 ? (
+          {(audit.issues || []).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 border rounded-md bg-muted/5">
               <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
               <h3 className="text-lg font-medium mb-2">No Issues Found</h3>
@@ -450,7 +450,7 @@ export function SiteAuditReport({ audit, onApplyOptimization, optimizationHistor
         </TabsContent>
         
         <TabsContent value="optimizations">
-          {audit.optimizations.length === 0 ? (
+          {(audit.optimizations || []).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 border rounded-md bg-muted/5">
               <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
               <h3 className="text-lg font-medium mb-2">No Optimizations Needed</h3>

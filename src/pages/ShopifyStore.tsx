@@ -1,3 +1,4 @@
+
 import React from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
@@ -77,7 +78,6 @@ const ShopifyStore = () => {
   const [blogContent, setBlogContent] = useState("");
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
   const [isAuditLoading, setIsAuditLoading] = useState(false);
-  const [optimizationHistory, setOptimizationHistory] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
   
