@@ -217,6 +217,7 @@ export interface ShopifyOptimizationHistoryRecord {
   new_value: string;
   applied_at: string;
   optimization_type: string;
+  reverted_at?: string;
 }
 
 export interface ShopifyOptimizationHistory {

@@ -209,7 +209,7 @@ export async function applyOptimization(storeId: string, optimization: any) {
 
 export async function revertOptimization(optimizationId: string) {
   try {
-    const updateData = { 
+    const updateData: Partial<ShopifyOptimizationHistoryRecord> = { 
       reverted_at: new Date().toISOString() 
     };
     
@@ -248,8 +248,8 @@ export async function getOptimizationHistory(storeId: string): Promise<ShopifyOp
       new_value: item.new_value,
       applied_at: item.applied_at,
       applied_by: 'system',
-      reverted: false,
-      reverted_at: undefined,
+      reverted: item.reverted_at ? true : false,
+      reverted_at: item.reverted_at,
       optimization_type: item.optimization_type
     }));
   } catch (error) {
