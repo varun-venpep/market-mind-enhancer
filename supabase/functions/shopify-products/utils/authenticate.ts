@@ -6,6 +6,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
     auth: {
       autoRefreshToken: true,
       persistSession: true,
+      storage: globalThis.localStorage || null,
     },
   });
   
@@ -32,6 +33,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
           auth: {
             autoRefreshToken: true,
             persistSession: true,
+            storage: globalThis.localStorage || null,
           },
         });
         
@@ -40,22 +42,31 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
         let refreshError;
         
         try {
+          console.log("Trying token as refresh token");
           // First try as a refresh token
           ({ data: refreshData, error: refreshError } = await tempClient.auth.refreshSession({
             refresh_token: token,
           }));
+          
+          if (refreshData?.session) {
+            console.log("Successfully refreshed session using refresh token");
+          }
         } catch (e) {
-          console.log("Error using token as refresh token, will try other methods:", e);
+          console.log("Error using token as refresh token:", e);
         }
         
         // If that fails, try accessing the session directly
         if (refreshError || !refreshData?.session) {
           console.log("Trying alternative authentication method");
           ({ data: refreshData, error: refreshError } = await tempClient.auth.getSession());
+          
+          if (refreshData?.session) {
+            console.log("Successfully got session using getSession");
+          }
         }
         
         if (refreshError || !refreshData?.session) {
-          console.error("Failed to refresh session:", refreshError);
+          console.error("Failed to refresh or retrieve session:", refreshError);
           return { user: null, error: "Authentication failed: " + (refreshError?.message || "Invalid token"), supabase: null };
         }
         

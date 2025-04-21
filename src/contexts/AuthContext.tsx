@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,24 +42,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authInitialized, setAuthInitialized] = useState(false);
   const [sessionRefreshTimer, setSessionRefreshTimer] = useState<ReturnType<typeof setInterval> | null>(null);
   
-  // Only show one toast per session
   const [authToastShown, setAuthToastShown] = useState(false);
+  const [isActivelyRefreshing, setIsActivelyRefreshing] = useState(false);
 
-  // Start session refresh timer
   const startSessionRefreshTimer = () => {
-    // Clear existing timer if any
     if (sessionRefreshTimer) {
       clearInterval(sessionRefreshTimer);
     }
     
-    // Create new timer - refresh every 5 minutes
     const timer = setInterval(async () => {
-      if (session) {
+      if (session && !isActivelyRefreshing) {
         try {
+          setIsActivelyRefreshing(true);
           console.log('Auto-refreshing session...');
           const { data, error } = await supabase.auth.refreshSession();
           if (error) {
             console.error('Error auto-refreshing session:', error);
+            const localSession = localStorage.getItem('supabase.auth.token');
+            if (localSession) {
+              try {
+                const parsedSession = JSON.parse(localSession);
+                if (parsedSession.refresh_token) {
+                  console.log('Trying fallback refresh with stored token');
+                  const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+                    refresh_token: parsedSession.refresh_token,
+                  });
+                  
+                  if (!refreshError && refreshData.session) {
+                    console.log('Fallback refresh successful');
+                    setSession(refreshData.session);
+                    setUser(refreshData.session.user);
+                    localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+                  }
+                }
+              } catch (e) {
+                console.error('Error in fallback refresh:', e);
+              }
+            }
           } else if (data.session) {
             console.log('Session auto-refreshed successfully');
             setSession(data.session);
@@ -69,169 +87,212 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } catch (error) {
           console.error('Exception in auto-refresh session:', error);
+        } finally {
+          setIsActivelyRefreshing(false);
         }
       }
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 3 * 60 * 1000);
     
     setSessionRefreshTimer(timer);
     return timer;
   };
 
-  // Configure persistent session
   useEffect(() => {
-    // Set session persistence to localStorage for better persistence
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log('Auth state changed:', event, !!currentSession);
       
-      // Update state
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      // Store session data in localStorage for backup persistence
       if (currentSession) {
+        setSession(currentSession);
+        setUser(currentSession.user);
+        
         localStorage.setItem('supabase.auth.token', JSON.stringify(currentSession));
         
-        // Show success toast only once per session and only for explicit sign-ins
         if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && !authToastShown) {
-          // Avoid showing toast on page refresh or initial load
           if (authInitialized) {
             toast.success("Successfully signed in");
             setAuthToastShown(true);
           }
         }
         
-        // Start the session refresh timer
         startSessionRefreshTimer();
       } else {
-        localStorage.removeItem('supabase.auth.token');
-        
-        // Show sign out toast only for explicit sign outs
-        if (event === 'SIGNED_OUT' && authInitialized) {
-          toast.info("You have been signed out");
-          setAuthToastShown(false);
-        }
-        
-        // Clear the session refresh timer
-        if (sessionRefreshTimer) {
-          clearInterval(sessionRefreshTimer);
-          setSessionRefreshTimer(null);
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          localStorage.removeItem('supabase.auth.token');
+          
+          if (authInitialized) {
+            toast.info("You have been signed out");
+            setAuthToastShown(false);
+          }
+          
+          if (sessionRefreshTimer) {
+            clearInterval(sessionRefreshTimer);
+            setSessionRefreshTimer(null);
+          }
         }
       }
     });
 
-    // Check for existing session on mount
+    const MAX_INIT_RETRIES = 3;
+    
     const initializeAuth = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        console.log('Initial session check:', !!data.session);
-        
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-        
-        // If we have a valid session at initialization, mark as shown and start refresh timer
-        if (data.session) {
-          setAuthToastShown(true);
-          startSessionRefreshTimer();
-        }
-        
-        // If no session from API but we have one in localStorage, try to restore it
-        if (!data.session) {
-          const localSession = localStorage.getItem('supabase.auth.token');
-          if (localSession) {
-            console.log('Found local session data, attempting to restore');
-            try {
-              const parsedSession = JSON.parse(localSession);
-              // Attempt to refresh the session
-              const { data: refreshData } = await supabase.auth.refreshSession({
-                refresh_token: parsedSession.refresh_token,
-              });
-              
-              if (refreshData.session) {
-                console.log('Successfully restored session from localStorage');
-                setSession(refreshData.session);
-                setUser(refreshData.session.user);
-                setAuthToastShown(true);
-                startSessionRefreshTimer();
-              } else {
-                // Invalid local session, remove it
+      for (let attempt = 0; attempt < MAX_INIT_RETRIES; attempt++) {
+        try {
+          if (attempt > 0) {
+            console.log(`Auth initialization attempt ${attempt + 1}/${MAX_INIT_RETRIES}`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 500));
+          }
+          
+          const { data } = await supabase.auth.getSession();
+          console.log('Initial session check:', !!data.session);
+          
+          if (data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
+            
+            localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+            setAuthToastShown(true);
+            startSessionRefreshTimer();
+            
+            break;
+          }
+          
+          if (attempt === MAX_INIT_RETRIES - 1 && !data.session) {
+            const localSession = localStorage.getItem('supabase.auth.token');
+            if (localSession) {
+              console.log('Found local session data, attempting to restore');
+              try {
+                const parsedSession = JSON.parse(localSession);
+                if (parsedSession.refresh_token) {
+                  const { data: refreshData } = await supabase.auth.refreshSession({
+                    refresh_token: parsedSession.refresh_token,
+                  });
+                  
+                  if (refreshData.session) {
+                    console.log('Successfully restored session from localStorage');
+                    setSession(refreshData.session);
+                    setUser(refreshData.session.user);
+                    localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+                    setAuthToastShown(true);
+                    startSessionRefreshTimer();
+                  } else {
+                    localStorage.removeItem('supabase.auth.token');
+                    setSession(null);
+                    setUser(null);
+                  }
+                }
+              } catch (error) {
+                console.error('Error restoring local session:', error);
                 localStorage.removeItem('supabase.auth.token');
+                setSession(null);
+                setUser(null);
               }
-            } catch (error) {
-              console.error('Error restoring local session:', error);
-              localStorage.removeItem('supabase.auth.token');
+            } else {
+              setSession(null);
+              setUser(null);
             }
           }
+        } catch (error) {
+          console.error(`Error checking session (attempt ${attempt + 1}):`, error);
+          if (attempt === MAX_INIT_RETRIES - 1) {
+            setSession(null);
+            setUser(null);
+          }
         }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setIsLoading(false);
-        setAuthInitialized(true);
       }
+      
+      setIsLoading(false);
+      setAuthInitialized(true);
     };
 
     initializeAuth();
+    
+    const sessionValidityCheck = setInterval(() => {
+      if (!isActivelyRefreshing) {
+        refreshSession();
+      }
+    }, 5 * 60 * 1000);
     
     return () => {
       subscription.unsubscribe();
       if (sessionRefreshTimer) {
         clearInterval(sessionRefreshTimer);
       }
+      clearInterval(sessionValidityCheck);
     };
-  }, [authToastShown, authInitialized]);
+  }, [authToastShown, authInitialized, sessionRefreshTimer]);
 
   const refreshSession = async (): Promise<boolean> => {
+    if (isActivelyRefreshing) {
+      console.log('Session refresh already in progress');
+      return true;
+    }
+    
+    setIsActivelyRefreshing(true);
+    
     try {
       console.log('Manually refreshing session...');
       
-      // First try with the current session
-      const { data, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        console.error('Failed to refresh session with current token, trying localStorage backup:', error);
-        
-        // Try with localStorage backup
-        const localSession = localStorage.getItem('supabase.auth.token');
-        if (localSession) {
-          try {
-            const parsedSession = JSON.parse(localSession);
-            if (parsedSession.refresh_token) {
-              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
-                refresh_token: parsedSession.refresh_token,
-              });
-              
-              if (refreshError) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { data, error } = await supabase.auth.refreshSession();
+          
+          if (!error && data.session) {
+            console.log('Session refreshed successfully');
+            setSession(data.session);
+            setUser(data.session.user);
+            localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+            setIsActivelyRefreshing(false);
+            return true;
+          }
+          
+          console.warn('Failed to refresh with current token, trying localStorage backup');
+          
+          const localSession = localStorage.getItem('supabase.auth.token');
+          if (localSession) {
+            try {
+              const parsedSession = JSON.parse(localSession);
+              if (parsedSession.refresh_token) {
+                const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+                  refresh_token: parsedSession.refresh_token,
+                });
+                
+                if (!refreshError && refreshData.session) {
+                  console.log('Session refreshed successfully from localStorage');
+                  setSession(refreshData.session);
+                  setUser(refreshData.session.user);
+                  localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+                  setIsActivelyRefreshing(false);
+                  return true;
+                }
+                
                 console.error('Failed to refresh with localStorage token:', refreshError);
-                return false;
               }
-              
-              if (refreshData.session) {
-                console.log('Session refreshed successfully from localStorage');
-                setSession(refreshData.session);
-                setUser(refreshData.session.user);
-                localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
-                return true;
-              }
+            } catch (localError) {
+              console.error('Error using localStorage token:', localError);
+              localStorage.removeItem('supabase.auth.token');
             }
-          } catch (localError) {
-            console.error('Error using localStorage token:', localError);
+          }
+          
+          if (attempt < 2) {
+            console.log(`Retry attempt ${attempt + 1}/3...`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        } catch (attemptError) {
+          console.error(`Exception in refreshSession attempt ${attempt + 1}:`, attemptError);
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
-        return false;
       }
       
-      if (data.session) {
-        console.log('Session refreshed successfully');
-        setSession(data.session);
-        setUser(data.session.user);
-        localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-        return true;
-      }
-      
-      console.warn('No session returned from refresh');
+      console.warn('No session returned from refresh after all attempts');
+      setIsActivelyRefreshing(false);
       return false;
     } catch (error) {
       console.error('Exception in refreshSession:', error);
+      setIsActivelyRefreshing(false);
       return false;
     }
   };
@@ -255,7 +316,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('Starting Google sign-in process...');
       
-      // Get origin for proper redirect
       const origin = window.location.origin;
       const redirectTo = `${origin}/dashboard`;
       
@@ -264,8 +324,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         options: {
           redirectTo,
           queryParams: {
-            // For sign-in flow, use select_account to force account selection
-            // This ensures users always select which account to use
             prompt: 'select_account',
             access_type: 'offline'
           }
@@ -289,7 +347,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       console.log('Starting Google sign-up process...');
       
-      // Get origin for proper redirect
       const origin = window.location.origin;
       const redirectTo = `${origin}/dashboard`;
       
@@ -298,7 +355,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         options: {
           redirectTo,
           queryParams: {
-            // For sign-up, always ask for Google account selection and consent
             prompt: 'consent select_account',
             access_type: 'offline'
           }
@@ -321,10 +377,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
-      // Clear localStorage backup
       localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('redirectAfterLogin');
-      // We don't need to manually update state here as the onAuthStateChange handler will do it
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;

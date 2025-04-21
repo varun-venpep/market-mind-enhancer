@@ -5,7 +5,7 @@ import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, ArrowLeft, Loader2, RefreshCw } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import ShopifyConnect from '@/components/ShopifyConnect';
 import { getConnectedShopifyStores, disconnectShopifyStore } from '@/services/shopify';
@@ -18,6 +18,7 @@ import ShopifyStoreList from '@/components/Shopify/ShopifyStoreList';
 import ShopifyNoStores from '@/components/Shopify/ShopifyNoStores';
 import { supabase } from '@/integrations/supabase/client';
 import { refreshSession } from '@/services/supabaseUtils';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ShopifyStores() {
   const [stores, setStores] = useState<ShopifyStore[]>([]);
@@ -30,7 +31,9 @@ export default function ShopifyStores() {
     totalOrganicResults: 0
   });
   const [authChecked, setAuthChecked] = useState(false);
-  const { user, session } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const { user, session, refreshSession: authRefresh } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -38,38 +41,72 @@ export default function ShopifyStores() {
   useEffect(() => {
     const checkAuth = async () => {
       setIsRefreshing(true);
-      if (!user || !session) {
-        // Try to refresh the session
-        const refreshed = await refreshSession();
-        if (!refreshed) {
-          toast({
-            title: "Authentication required",
-            description: "Please sign in to access this feature",
-            variant: "destructive"
-          });
+      setAuthError(null);
+      console.log("Checking authentication status...");
+      
+      try {
+        if (!user || !session) {
+          console.log("No active session found, attempting refresh");
+          // Try to refresh with the auth context's refresh method first
+          const authRefreshed = await authRefresh();
           
-          // Redirect to login after a short delay
-          setTimeout(() => navigate('/login'), 1500);
+          if (!authRefreshed) {
+            console.log("Auth context refresh failed, trying utility function");
+            // Then try with the utility function as backup
+            const utilRefreshed = await refreshSession();
+            
+            if (!utilRefreshed) {
+              console.error("All session refresh attempts failed");
+              setAuthError("Authentication required. Please sign in to continue.");
+              toast({
+                title: "Authentication required",
+                description: "Please sign in to access this feature",
+                variant: "destructive"
+              });
+              
+              // Redirect to login after a short delay
+              setTimeout(() => navigate('/login'), 2000);
+              return;
+            }
+          }
         }
+        
+        console.log("Authentication check complete, session is valid");
+        setAuthChecked(true);
+      } catch (error) {
+        console.error("Error during auth check:", error);
+        setAuthError("Authentication check failed. Please try again.");
+      } finally {
+        setIsRefreshing(false);
       }
-      setAuthChecked(true);
-      setIsRefreshing(false);
     };
     
     checkAuth();
-  }, [user, session, navigate, toast]);
+  }, [user, session, navigate, toast, authRefresh]);
   
   const fetchStores = useCallback(async () => {
     try {
       setIsLoading(true);
+      setLoadError(null);
       
-      // Ensure fresh session
-      await refreshSession();
+      // Ensure fresh session first
+      console.log("Refreshing session before fetching stores");
+      const refreshed = await refreshSession();
       
+      if (!refreshed) {
+        console.error("Session refresh failed before fetch");
+        setLoadError("Could not refresh authentication. Please sign in again.");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Fetching connected Shopify stores");
       const data = await getConnectedShopifyStores();
+      console.log(`Fetched ${data?.length || 0} stores`);
       setStores(data || []);
     } catch (error) {
       console.error("Error fetching stores:", error);
+      setLoadError("Failed to load connected Shopify stores. Please try again.");
       toast({
         title: "Error",
         description: "Failed to load connected Shopify stores",
@@ -81,37 +118,31 @@ export default function ShopifyStores() {
   }, [toast]);
   
   useEffect(() => {
-    if (authChecked && user) {
+    if (authChecked && user && session) {
+      console.log("Auth checked and session valid, fetching data");
+      
+      // Set a timeout to ensure loading state doesn't hang forever
       const loadingTimeout = setTimeout(() => {
         setIsLoading(false);
-      }, 5000); // Set a maximum timeout for loading
+        setLoadError("Loading timeout. Please refresh the page.");
+      }, 15000);
       
-      // Check if session is valid and refresh if needed
-      supabase.auth.getSession().then(({ data, error }) => {
-        if (error || !data.session) {
-          refreshSession().then(success => {
-            if (success) {
-              fetchStores();
-              fetchSerpData();
-            }
-          });
-        } else {
-          fetchStores();
-          fetchSerpData();
-        }
-      });
+      // Continue with data loading
+      fetchStores();
+      fetchSerpData();
       
       return () => {
         clearTimeout(loadingTimeout);
       };
     }
-  }, [user, fetchStores, authChecked]);
+  }, [user, fetchStores, authChecked, session]);
   
   // Add periodic session refresh to prevent auth issues
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
+      console.log("Periodic session refresh");
       await refreshSession();
-    }, 60000); // Every minute
+    }, 3 * 60 * 1000); // Every 3 minutes
     
     return () => clearInterval(refreshInterval);
   }, []);
@@ -141,6 +172,7 @@ export default function ShopifyStores() {
       };
 
       try {
+        console.log("Fetching SERP results");
         const result = await fetchSerpResults("e-commerce seo best practices");
         const data = extractSerpData(result);
         
@@ -201,23 +233,41 @@ export default function ShopifyStores() {
   
   const handleRefreshSession = async () => {
     setIsRefreshing(true);
-    const success = await refreshSession();
-    if (success) {
+    setAuthError(null);
+    try {
+      // Try both refresh methods for maximum reliability
+      const authSuccess = await authRefresh();
+      const utilSuccess = await refreshSession();
+      
+      const success = authSuccess || utilSuccess;
+      
+      if (success) {
+        toast({
+          title: "Session Refreshed",
+          description: "Authentication session has been refreshed",
+          variant: "default"
+        });
+        await fetchStores();
+      } else {
+        setAuthError("Session refresh failed. Please sign in again.");
+        toast({
+          title: "Session Refresh Failed",
+          description: "Please try signing in again",
+          variant: "destructive"
+        });
+        setTimeout(() => navigate('/login'), 2000);
+      }
+    } catch (error) {
+      console.error("Error refreshing session:", error);
+      setAuthError("Session refresh error. Please sign in again.");
       toast({
-        title: "Session Refreshed",
-        description: "Authentication session has been refreshed",
-        variant: "default"
-      });
-      fetchStores();
-    } else {
-      toast({
-        title: "Session Refresh Failed",
-        description: "Please try signing in again",
+        title: "Session Refresh Error",
+        description: "An error occurred refreshing your session",
         variant: "destructive"
       });
-      setTimeout(() => navigate('/login'), 1500);
+    } finally {
+      setIsRefreshing(false);
     }
-    setIsRefreshing(false);
   };
   
   // Show a loading indicator until auth is checked
@@ -230,6 +280,35 @@ export default function ShopifyStores() {
             {isRefreshing ? "Refreshing Session..." : "Checking Authentication..."}
           </h2>
           <p className="text-muted-foreground">Please wait while we verify your credentials</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Show auth error if any
+  if (authError) {
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto py-8">
+          <div className="text-center py-12 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-4">Authentication Error</h1>
+            <p className="text-muted-foreground mb-6">{authError}</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button onClick={() => navigate('/login')} className="gap-2">
+                Go to Login
+              </Button>
+              <Button 
+                onClick={handleRefreshSession} 
+                variant="outline" 
+                className="gap-2"
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Try Again
+              </Button>
+            </div>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -286,7 +365,37 @@ export default function ShopifyStores() {
               </Dialog>
             </div>
           </div>
+          
+          {loadError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error Loading Data</AlertTitle>
+              <AlertDescription>{loadError}</AlertDescription>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={fetchStores}
+                  disabled={isLoading}
+                  className="gap-2"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Try Again
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleRefreshSession}
+                  disabled={isRefreshing}
+                  className="gap-2"
+                >
+                  {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Refresh Session
+                </Button>
+              </div>
+            </Alert>
+          )}
+          
           <ShopifySerpStatsCards isLoading={isLoading} serpStats={serpStats} />
+          
           {isLoading ? (
             <ShopifyStoreList
               stores={[]} 

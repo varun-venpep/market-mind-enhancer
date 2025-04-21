@@ -2,8 +2,19 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Maximum number of retries for token refresh
+const MAX_REFRESH_RETRIES = 3;
+// Flag to track ongoing refresh operations to prevent duplication
+let isRefreshingSession = false;
+
 export async function getAuthToken(): Promise<string | null> {
   try {
+    // First check if we're already refreshing to avoid infinite loops
+    if (isRefreshingSession) {
+      console.log('Session refresh already in progress, waiting...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
     // First check the existing session
     const { data, error } = await supabase.auth.getSession();
     
@@ -41,6 +52,8 @@ export async function getAuthToken(): Promise<string | null> {
             }
           } catch (parseError) {
             console.error('Error parsing local session:', parseError);
+            // Clear invalid session data
+            localStorage.removeItem('supabase.auth.token');
           }
         }
       } catch (refreshError) {
@@ -60,15 +73,15 @@ export async function getAuthToken(): Promise<string | null> {
 
 export async function invokeFunction(functionName: string, payload: any): Promise<any> {
   try {
-    const token = await getAuthToken();
+    let token = await getAuthToken();
     if (!token) {
       console.error('Authentication required. Please sign in.');
       toast.error('Authentication required. Please sign in.');
       
       // Attempt to refresh the session one more time
       if (await refreshSession()) {
-        const newToken = await getAuthToken();
-        if (!newToken) {
+        token = await getAuthToken();
+        if (!token) {
           throw new Error('Authentication required');
         }
       } else {
@@ -167,14 +180,40 @@ export function handleApiError(error: any, defaultMessage: string = 'An error oc
 }
 
 export async function refreshSession(): Promise<boolean> {
+  // Don't attempt refresh if one is already in progress
+  if (isRefreshingSession) {
+    console.log('Session refresh already in progress, waiting...');
+    // Wait for the existing refresh to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Return true since another refresh is handling it
+    return true;
+  }
+  
+  isRefreshingSession = true;
+  
   try {
     console.log('Attempting to refresh session...');
     
-    // First, try to refresh with the current session
-    const { data, error } = await supabase.auth.refreshSession();
-    
-    if (error) {
-      console.error('Failed to refresh session with current token:', error);
+    // Try with exponential backoff for reliability
+    for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
+      if (attempt > 0) {
+        console.log(`Refresh attempt ${attempt + 1}/${MAX_REFRESH_RETRIES}`);
+        // Add exponential backoff
+        await new Promise(resolve => setTimeout(resolve, attempt * 500));
+      }
+      
+      // First, try to refresh with the current session
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (!error && data.session) {
+        console.log('Session refreshed successfully');
+        // Update localStorage backup to ensure we have the latest tokens
+        localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+        isRefreshingSession = false;
+        return true;
+      }
+      
+      console.warn('Failed to refresh with current token, trying localStorage backup:', error);
       
       // Try with localStorage backup if current session fails
       const localSession = localStorage.getItem('supabase.auth.token');
@@ -187,35 +226,29 @@ export async function refreshSession(): Promise<boolean> {
               refresh_token: parsedSession.refresh_token,
             });
             
-            if (refreshError) {
-              console.error('Failed to refresh with localStorage token:', refreshError);
-              return false;
-            }
-            
-            if (refreshData.session) {
+            if (!refreshError && refreshData.session) {
               console.log('Session refreshed successfully from localStorage token');
               localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+              isRefreshingSession = false;
               return true;
             }
+            
+            console.error('Failed to refresh with localStorage token:', refreshError);
           }
         } catch (parseError) {
           console.error('Error parsing local session data:', parseError);
+          // Clear invalid session data
+          localStorage.removeItem('supabase.auth.token');
         }
       }
-      return false;
     }
     
-    if (data && data.session) {
-      console.log('Session refreshed successfully');
-      // Update localStorage backup to ensure we have the latest tokens
-      localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-      return true;
-    } else {
-      console.warn('Session refresh returned no session');
-      return false;
-    }
+    console.error(`Failed to refresh session after ${MAX_REFRESH_RETRIES} attempts`);
+    isRefreshingSession = false;
+    return false;
   } catch (error) {
     console.error('Exception in refreshSession:', error);
+    isRefreshingSession = false;
     return false;
   }
 }
