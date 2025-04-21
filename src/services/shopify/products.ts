@@ -29,11 +29,9 @@ export async function applyOptimization(storeId: string, optimization: any) {
 }
 
 export async function revertOptimization(optimizationId: string) {
-  const { supabase } = await import("@/integrations/supabase/client");
-  const updateData = { reverted_at: new Date().toISOString() };
   const { data, error } = await supabase
     .from('shopify_optimization_history')
-    .update(updateData)
+    .update({ reverted_at: new Date().toISOString() })
     .eq('id', optimizationId)
     .select();
   if (error) throw error;

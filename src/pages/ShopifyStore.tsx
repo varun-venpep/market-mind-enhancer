@@ -9,7 +9,7 @@ import {
   runSiteAudit, 
   getSiteAuditHistory, 
   getOptimizationHistory 
-} from '@/services/shopifyApi';
+} from '@/services/shopify';
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
 import type { 
   SEOAnalysisResult, 
@@ -260,7 +260,6 @@ const ShopifyStore = () => {
     );
   }
 
-  // Calculate overall SEO score
   const allScores = Object.values(analysisResults).map(result => result.score);
   const averageScore = allScores.length > 0 
     ? Math.round(allScores.reduce((sum, score) => sum + score, 0) / allScores.length) 

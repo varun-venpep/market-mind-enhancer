@@ -7,7 +7,7 @@ import { RotateCcw, ChevronUp, ChevronDown, Clock, FileText, ShoppingBag, Globe,
 import { ShopifyOptimizationHistory } from '@/types/shopify';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
-import { revertOptimization } from '@/services/shopifyApi';
+import { revertOptimization } from '@/services/shopify';
 
 interface OptimizationHistoryProps {
   history: ShopifyOptimizationHistory[];

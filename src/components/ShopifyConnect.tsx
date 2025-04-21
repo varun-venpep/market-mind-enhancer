@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, ShoppingBag } from "lucide-react";
-import { connectShopifyStore } from "@/services/shopifyApi";
+import { connectShopifyStore } from "@/services/shopify";
 
 // Form schema validation
 const formSchema = z.object({

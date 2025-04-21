@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Search, ShoppingBag, Zap } from "lucide-react";
-import { analyzeSEO, optimizeSEO } from '@/services/shopifyApi';
+import { analyzeSEO, optimizeSEO } from '@/services/shopify'; // Updated import path
 import type { SEOAnalysisResult, ShopifyProduct } from '@/types/shopify';
 
 interface ProductCardProps {
