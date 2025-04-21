@@ -4,18 +4,32 @@ import type { ShopifyProductsResponse, ShopifyStore, ShopifyProduct, SEOAnalysis
 import { invokeFunction } from "../supabaseUtils";
 
 export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20): Promise<ShopifyProductsResponse> {
-  const data = await invokeFunction('shopify-products', { storeId, page, limit });
-  return data as ShopifyProductsResponse;
+  try {
+    const data = await invokeFunction('shopify-products', { storeId, page, limit });
+    return data as ShopifyProductsResponse;
+  } catch (error) {
+    console.error("Error fetching Shopify products:", error);
+    throw error;
+  }
 }
 
 export async function analyzeSEO(storeId: string, productId: string): Promise<SEOAnalysisResult> {
-  const data = await invokeFunction('shopify-seo', { storeId, productId });
-  return data as SEOAnalysisResult;
+  try {
+    console.log("Analyzing SEO for product:", { storeId, productId });
+    const data = await invokeFunction('shopify-seo', { storeId, productId });
+    console.log("SEO analysis complete:", data);
+    return data as SEOAnalysisResult;
+  } catch (error) {
+    console.error("Error in analyzeSEO:", error);
+    throw error;
+  }
 }
 
 export async function optimizeSEO(storeId: string, productId: string, optimizations: any[]) {
   try {
+    console.log("Optimizing SEO for product:", { storeId, productId, optimizationsCount: optimizations.length });
     const data = await invokeFunction('shopify-optimize', { storeId, productId, optimizations });
+    console.log("SEO optimization complete:", data);
     return data || { success: true, message: "Optimization complete" };
   } catch (error) {
     console.error("Error in optimizeSEO:", error);
@@ -24,28 +38,53 @@ export async function optimizeSEO(storeId: string, productId: string, optimizati
 }
 
 export async function bulkOptimizeSEO(storeId: string) {
-  const data = await invokeFunction('shopify-bulk-optimize', { storeId });
-  return data;
+  try {
+    console.log("Starting bulk SEO optimization for store:", storeId);
+    const data = await invokeFunction('shopify-bulk-optimize', { storeId });
+    console.log("Bulk optimization complete:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in bulkOptimizeSEO:", error);
+    throw error;
+  }
 }
 
 export async function applyOptimization(storeId: string, optimization: any) {
-  const data = await invokeFunction('shopify-apply-optimization', { storeId, optimization });
-  return data;
+  try {
+    console.log("Applying optimization:", { storeId, optimization });
+    const data = await invokeFunction('shopify-apply-optimization', { storeId, optimization });
+    console.log("Optimization applied:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in applyOptimization:", error);
+    throw error;
+  }
 }
 
 export async function revertOptimization(optimizationId: string) {
-  const currentDate = new Date().toISOString();
+  try {
+    console.log("Reverting optimization:", optimizationId);
+    const currentDate = new Date().toISOString();
 
-  const updateData: Partial<ShopifyOptimizationHistoryRecord> = { 
-    reverted_at: currentDate 
-  };
+    const updateData: Partial<ShopifyOptimizationHistoryRecord> = { 
+      reverted_at: currentDate 
+    };
 
-  const { data, error } = await supabase
-    .from('shopify_optimization_history')
-    .update(updateData)
-    .eq('id', optimizationId)
-    .select();
+    const { data, error } = await supabase
+      .from('shopify_optimization_history')
+      .update(updateData)
+      .eq('id', optimizationId)
+      .select();
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error("Error reverting optimization:", error);
+      throw error;
+    }
+    
+    console.log("Optimization reverted successfully:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in revertOptimization:", error);
+    throw error;
+  }
 }

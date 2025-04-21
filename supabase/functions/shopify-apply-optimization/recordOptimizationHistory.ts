@@ -9,6 +9,13 @@ export async function recordOptimizationHistory(
   newValue: string,
   userId: string
 ) {
+  console.log('Recording optimization history:', {
+    storeId,
+    entityId,
+    entityType,
+    field
+  });
+  
   try {
     const { data, error } = await supabase
       .from('shopify_optimization_history')
@@ -31,9 +38,10 @@ export async function recordOptimizationHistory(
       throw error;
     }
 
+    console.log('Successfully recorded optimization history with ID:', data.id);
     return data.id;
   } catch (error) {
-    console.error('Error recording optimization history:', error);
+    console.error('Error in recordOptimizationHistory:', error);
     throw error;
   }
 }

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,13 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
     setIsAnalyzing(true);
     
     try {
+      console.log(`Starting SEO analysis for product: ${productId}`);
       const result = await analyzeSEO(storeId, productId);
+      
+      if (!result) {
+        throw new Error("Analysis returned no results");
+      }
+      
       setAnalysis(result);
       
       if (onAnalysisComplete) {
@@ -35,6 +42,7 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
         title: "Analysis Complete",
         description: "SEO analysis has been completed for this product"
       });
+      console.log(`SEO analysis complete for product: ${productId}`);
     } catch (error) {
       console.error("Error analyzing SEO:", error);
       toast({
@@ -54,7 +62,25 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
     
     try {
       setIsAnalyzing(true);
-      await optimizeSEO(storeId, productId, analysis.optimizations);
+      console.log(`Starting SEO optimization for product: ${productId}`);
+      
+      // Filter out already applied optimizations
+      const pendingOptimizations = analysis.optimizations.filter(opt => !opt.applied);
+      
+      if (pendingOptimizations.length === 0) {
+        toast({
+          title: "No Changes Needed",
+          description: "All optimizations have already been applied to this product"
+        });
+        setIsAnalyzing(false);
+        return;
+      }
+      
+      const result = await optimizeSEO(storeId, productId, analysis.optimizations);
+      
+      if (!result || !result.success) {
+        throw new Error(result?.error || "Failed to apply optimizations");
+      }
       
       toast({
         title: "Optimization Complete",
@@ -63,8 +89,14 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
       
       // Refresh analysis after a brief delay
       setTimeout(async () => {
-        await handleAnalyzeSEO();
+        try {
+          await handleAnalyzeSEO();
+        } catch (error) {
+          console.error("Error refreshing analysis after optimization:", error);
+        }
       }, 1500);
+      
+      console.log(`SEO optimization complete for product: ${productId}`);
     } catch (error) {
       console.error("Error optimizing SEO:", error);
       toast({
@@ -132,18 +164,22 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
               <div className="mt-4">
                 <h3 className="font-medium mb-2">SEO Issues:</h3>
                 <ul className="space-y-2">
-                  {analysis.issues.map((issue, index) => (
-                    <li key={index} className="text-sm flex items-start gap-2">
-                      <span 
-                        className={`w-2 h-2 rounded-full mt-1.5 ${
-                          issue.severity === 'high' ? 'bg-red-500' :
-                          issue.severity === 'medium' ? 'bg-yellow-500' :
-                          'bg-blue-500'
-                        }`}
-                      ></span>
-                      {issue.message}
-                    </li>
-                  ))}
+                  {analysis.issues.length > 0 ? (
+                    analysis.issues.map((issue, index) => (
+                      <li key={index} className="text-sm flex items-start gap-2">
+                        <span 
+                          className={`w-2 h-2 rounded-full mt-1.5 ${
+                            issue.severity === 'high' ? 'bg-red-500' :
+                            issue.severity === 'medium' ? 'bg-yellow-500' :
+                            'bg-blue-500'
+                          }`}
+                        ></span>
+                        {issue.message}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-sm text-green-600">No SEO issues found!</li>
+                  )}
                 </ul>
               </div>
             ) : null}
@@ -164,7 +200,7 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
         ) : (
           <Button
             onClick={handleOptimizeSEO}
-            disabled={isAnalyzing || analysis.optimizations.length === 0}
+            disabled={isAnalyzing || analysis.optimizations.filter(opt => !opt.applied).length === 0}
             className="gap-2"
           >
             <Zap className="h-4 w-4" />

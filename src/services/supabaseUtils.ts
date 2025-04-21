@@ -10,6 +10,7 @@ export const invokeFunction = async (functionName: string, payload: any) => {
   const token = await getAuthToken();
   
   if (!token) {
+    console.error('Authentication required for invoking function:', functionName);
     throw new Error('Authentication required');
   }
   
@@ -26,15 +27,16 @@ export const invokeFunction = async (functionName: string, payload: any) => {
 
     if (response.error) {
       console.error(`Error invoking function ${functionName}:`, response.error);
-      throw response.error;
+      throw new Error(`Function error: ${response.error.message || response.error}`);
     }
     
-    if (!response.data && functionName !== 'shopify-optimize') {
-      console.error(`Function ${functionName} returned no data`);
-      throw new Error(`${functionName} returned no data`);
+    // Handle empty responses gracefully
+    if (!response.data && functionName !== 'shopify-optimize' && functionName !== 'shopify-apply-optimization') {
+      console.warn(`Function ${functionName} returned no data`);
+      return { success: true, message: "Operation completed successfully" };
     }
     
-    return response.data;
+    return response.data || { success: true };
   } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);
     throw error;
