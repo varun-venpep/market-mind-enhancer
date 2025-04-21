@@ -1,4 +1,3 @@
-
 export interface ShopifyStore {
   id: string;
   store_url: string;
@@ -207,6 +206,20 @@ export interface ShopifyArticle {
     src: string;
     alt?: string;
   };
+}
+
+export interface ShopifyOptimizationHistory {
+  id: string;
+  store_id: string;
+  entity_id: string;
+  entity_type: 'product' | 'page' | 'blog' | 'article' | 'theme' | 'global';
+  field: string;
+  original_value: string;
+  new_value: string;
+  applied_at: string;
+  applied_by: string;
+  reverted: boolean;
+  reverted_at?: string;
 }
 
 export interface ShopifyOptimizationHistory {
