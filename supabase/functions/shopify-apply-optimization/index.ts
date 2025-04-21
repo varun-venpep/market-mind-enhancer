@@ -185,7 +185,40 @@ async function optimizeProduct(store, optimization) {
   console.log('Extracted product ID:', productId);
   
   try {
-    // Fetch the product first
+    // Check if productId is a number or gid://shopify/Product/ID format
+    if (productId.includes('/')) {
+      // Handle gid://shopify/Product/123456789 format
+      productId = productId.split('/').pop();
+    } else if (isNaN(Number(productId))) {
+      // Handle product handles (strings)
+      // Find the product by handle first
+      const productsUrl = `https://${store.store_url}/admin/api/2023-07/products.json?handle=${productId}`;
+      console.log('Looking up product by handle:', productsUrl);
+      
+      const productsResponse = await fetch(productsUrl, {
+        headers: {
+          'X-Shopify-Access-Token': store.access_token,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!productsResponse.ok) {
+        const responseText = await productsResponse.text();
+        console.error('Shopify API error response:', responseText);
+        throw new Error(`Failed to fetch products from Shopify: ${productsResponse.statusText}`);
+      }
+      
+      const productsData = await productsResponse.json();
+      if (!productsData.products || productsData.products.length === 0) {
+        throw new Error(`No product found with handle: ${productId}`);
+      }
+      
+      // Use the numeric ID
+      productId = productsData.products[0].id;
+      console.log('Resolved product handle to ID:', productId);
+    }
+    
+    // Fetch the product using numeric ID
     const getUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
     console.log('Fetching product from Shopify:', getUrl);
     
