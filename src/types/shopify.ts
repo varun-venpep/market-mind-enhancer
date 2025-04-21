@@ -84,7 +84,7 @@ export interface ShopifyMetafield {
 }
 
 export interface SEOAnalysisResult {
-  product_id: string | number; // Updated to accept both string and number
+  product_id: string | number;
   title: string;
   handle: string;
   issues: SEOIssue[];
@@ -107,7 +107,6 @@ export interface SEOOptimization {
   applied: boolean;
 }
 
-// Website Level SEO Analysis
 export interface WebsiteSEOAudit {
   id: string;
   store_id: string;
@@ -208,19 +207,16 @@ export interface ShopifyArticle {
   };
 }
 
-export interface ShopifyOptimizationHistory {
+export interface ShopifyOptimizationHistoryRecord {
   id: string;
   store_id: string;
   entity_id: string;
   entity_type: 'product' | 'page' | 'blog' | 'article' | 'theme' | 'global';
   field: string;
-  original_value: string;
+  original_value: string | null;
   new_value: string;
   applied_at: string;
-  applied_by: string;
-  reverted: boolean;
-  reverted_at?: string;
-  optimization_type?: string; // Added to match database schema
+  optimization_type: string;
 }
 
 export interface ShopifyOptimizationHistory {
@@ -235,4 +231,5 @@ export interface ShopifyOptimizationHistory {
   applied_by: string;
   reverted: boolean;
   reverted_at?: string;
+  optimization_type: string;
 }

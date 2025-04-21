@@ -209,12 +209,13 @@ export async function applyOptimization(storeId: string, optimization: any) {
 
 export async function revertOptimization(optimizationId: string) {
   try {
+    const updateData = { 
+      reverted_at: new Date().toISOString() 
+    };
+    
     const { data, error } = await supabase
       .from('shopify_optimization_history')
-      .update({ 
-        reverted: true, 
-        reverted_at: new Date().toISOString() 
-      })
+      .update(updateData)
       .eq('id', optimizationId)
       .select();
     
@@ -246,11 +247,11 @@ export async function getOptimizationHistory(storeId: string): Promise<ShopifyOp
       original_value: item.original_value || '',
       new_value: item.new_value,
       applied_at: item.applied_at,
-      applied_by: item.applied_by || 'system',
-      reverted: item.reverted || false,
-      reverted_at: item.reverted_at,
+      applied_by: 'system',
+      reverted: false,
+      reverted_at: undefined,
       optimization_type: item.optimization_type
-    })) as ShopifyOptimizationHistory[];
+    }));
   } catch (error) {
     console.error('Error fetching optimization history:', error);
     throw error;
