@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from '@/integrations/supabase/client';
 import { 
   bulkOptimizeSEO, 
@@ -21,7 +21,7 @@ import type {
   ShopifyProductsResponse
 } from '@/types/shopify';
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate as useRouterNavigate } from "react-router-dom";
+import { Json } from '@/integrations/supabase/types';
 
 interface UseShopifyStoreDataProps {
   storeId: string | undefined;
@@ -45,7 +45,7 @@ export const useShopifyStoreData = ({ storeId }: UseShopifyStoreDataProps) => {
   const [blogContent, setBlogContent] = useState("");
   const [isGeneratingBlog, setIsGeneratingBlog] = useState(false);
 
-  const navigate = useRouterNavigate();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // Load all main Shopify Store data
@@ -97,9 +97,20 @@ export const useShopifyStoreData = ({ storeId }: UseShopifyStoreDataProps) => {
                 product_id: analysis.product_id,
                 title: analysis.title,
                 handle: analysis.handle,
-                issues: analysis.issues as SEOIssue[],
+                issues: (analysis.issues as Json[]).map(issue => ({
+                  type: (issue as any).type,
+                  severity: (issue as any).severity,
+                  message: (issue as any).message,
+                  details: (issue as any).details
+                })) as SEOIssue[],
                 score: analysis.score,
-                optimizations: analysis.optimizations as SEOOptimization[]
+                optimizations: (analysis.optimizations as Json[]).map(opt => ({
+                  type: (opt as any).type,
+                  field: (opt as any).field,
+                  original: (opt as any).original,
+                  suggestion: (opt as any).suggestion,
+                  applied: (opt as any).applied
+                })) as SEOOptimization[]
               };
               acc[analysis.product_id] = typedAnalysis;
               return acc;
@@ -170,9 +181,20 @@ export const useShopifyStoreData = ({ storeId }: UseShopifyStoreDataProps) => {
               product_id: analysis.product_id,
               title: analysis.title,
               handle: analysis.handle,
-              issues: analysis.issues as SEOIssue[],
+              issues: (analysis.issues as Json[]).map(issue => ({
+                type: (issue as any).type,
+                severity: (issue as any).severity,
+                message: (issue as any).message,
+                details: (issue as any).details
+              })) as SEOIssue[],
               score: analysis.score,
-              optimizations: analysis.optimizations as SEOOptimization[]
+              optimizations: (analysis.optimizations as Json[]).map(opt => ({
+                type: (opt as any).type,
+                field: (opt as any).field,
+                original: (opt as any).original,
+                suggestion: (opt as any).suggestion,
+                applied: (opt as any).applied
+              })) as SEOOptimization[]
             };
             acc[analysis.product_id] = typedAnalysis;
             return acc;
