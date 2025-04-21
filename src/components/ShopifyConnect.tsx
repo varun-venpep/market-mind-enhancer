@@ -40,7 +40,7 @@ const ShopifyConnect: React.FC = () => {
     }
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const processSubmit = async (data: FormValues) => {
     setIsConnecting(true);
     setAuthError(null);
     setConnectionError(null);
@@ -87,7 +87,7 @@ const ShopifyConnect: React.FC = () => {
       <ShopifyConnectForm
         isConnecting={isConnecting}
         disabled={false}
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(processSubmit)}
         errors={errors}
         register={register}
         reset={reset}

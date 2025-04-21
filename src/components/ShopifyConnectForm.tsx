@@ -1,8 +1,7 @@
 
 import React from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { UseFormRegister, FieldErrors, UseFormReset } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,22 +22,16 @@ type FormValues = z.infer<typeof formSchema>;
 type Props = {
   isConnecting: boolean;
   disabled: boolean;
-  onSubmit: (data: FormValues) => Promise<void>;
-  errors: Record<string, { message?: string }>;
-  register: ReturnType<typeof useForm<FormValues>>['register'];
-  reset: () => void;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  errors: FieldErrors<FormValues>;
+  register: UseFormRegister<FormValues>;
+  reset: UseFormReset<FormValues>;
 };
 
 const ShopifyConnectForm: React.FC<Props> = ({
   isConnecting, disabled, onSubmit, errors, register
 }) => (
-  <form onSubmit={e => {
-    e.preventDefault();
-    void onSubmit(
-      // @ts-ignore
-      { storeUrl: e.target.storeUrl.value, accessToken: e.target.accessToken.value }
-    );
-  }} className="space-y-5">
+  <form onSubmit={onSubmit} className="space-y-5">
     <div className="space-y-3">
       <Label htmlFor="storeUrl" className="text-base">Store URL</Label>
       <div className="flex">
