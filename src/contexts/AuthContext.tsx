@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ interface AuthContextType {
   signUpWithGoogle: () => Promise<AuthResult>;
   logout: () => Promise<void>;
   isLoading: boolean;
+  refreshSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,6 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   signUpWithGoogle: async () => ({ error: null }),
   logout: async () => {},
   isLoading: true,
+  refreshSession: async () => false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -38,9 +41,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [sessionRefreshTimer, setSessionRefreshTimer] = useState<ReturnType<typeof setInterval> | null>(null);
   
   // Only show one toast per session
   const [authToastShown, setAuthToastShown] = useState(false);
+
+  // Start session refresh timer
+  const startSessionRefreshTimer = () => {
+    // Clear existing timer if any
+    if (sessionRefreshTimer) {
+      clearInterval(sessionRefreshTimer);
+    }
+    
+    // Create new timer - refresh every 5 minutes
+    const timer = setInterval(async () => {
+      if (session) {
+        try {
+          console.log('Auto-refreshing session...');
+          const { data, error } = await supabase.auth.refreshSession();
+          if (error) {
+            console.error('Error auto-refreshing session:', error);
+          } else if (data.session) {
+            console.log('Session auto-refreshed successfully');
+            setSession(data.session);
+            setUser(data.session.user);
+            localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+          }
+        } catch (error) {
+          console.error('Exception in auto-refresh session:', error);
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    setSessionRefreshTimer(timer);
+    return timer;
+  };
 
   // Configure persistent session
   useEffect(() => {
@@ -64,6 +99,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setAuthToastShown(true);
           }
         }
+        
+        // Start the session refresh timer
+        startSessionRefreshTimer();
       } else {
         localStorage.removeItem('supabase.auth.token');
         
@@ -71,6 +109,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (event === 'SIGNED_OUT' && authInitialized) {
           toast.info("You have been signed out");
           setAuthToastShown(false);
+        }
+        
+        // Clear the session refresh timer
+        if (sessionRefreshTimer) {
+          clearInterval(sessionRefreshTimer);
+          setSessionRefreshTimer(null);
         }
       }
     });
@@ -84,9 +128,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(data.session);
         setUser(data.session?.user ?? null);
         
-        // If we have a valid session at initialization, mark as shown
+        // If we have a valid session at initialization, mark as shown and start refresh timer
         if (data.session) {
           setAuthToastShown(true);
+          startSessionRefreshTimer();
         }
         
         // If no session from API but we have one in localStorage, try to restore it
@@ -106,6 +151,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setSession(refreshData.session);
                 setUser(refreshData.session.user);
                 setAuthToastShown(true);
+                startSessionRefreshTimer();
               } else {
                 // Invalid local session, remove it
                 localStorage.removeItem('supabase.auth.token');
@@ -126,29 +172,69 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth();
     
-    // Setup periodic session refresh (every 10 minutes)
-    const refreshInterval = setInterval(async () => {
-      if (session) {
-        try {
-          console.log('Refreshing session...');
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) throw error;
-          if (data.session) {
-            setSession(data.session);
-            setUser(data.session.user);
-            console.log('Session refreshed successfully');
-          }
-        } catch (error) {
-          console.error('Error refreshing session:', error);
-        }
-      }
-    }, 10 * 60 * 1000); // 10 minutes
-    
     return () => {
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
+      if (sessionRefreshTimer) {
+        clearInterval(sessionRefreshTimer);
+      }
     };
   }, [authToastShown, authInitialized]);
+
+  const refreshSession = async (): Promise<boolean> => {
+    try {
+      console.log('Manually refreshing session...');
+      
+      // First try with the current session
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Failed to refresh session with current token, trying localStorage backup:', error);
+        
+        // Try with localStorage backup
+        const localSession = localStorage.getItem('supabase.auth.token');
+        if (localSession) {
+          try {
+            const parsedSession = JSON.parse(localSession);
+            if (parsedSession.refresh_token) {
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+                refresh_token: parsedSession.refresh_token,
+              });
+              
+              if (refreshError) {
+                console.error('Failed to refresh with localStorage token:', refreshError);
+                return false;
+              }
+              
+              if (refreshData.session) {
+                console.log('Session refreshed successfully from localStorage');
+                setSession(refreshData.session);
+                setUser(refreshData.session.user);
+                localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+                return true;
+              }
+            }
+          } catch (localError) {
+            console.error('Error using localStorage token:', localError);
+          }
+        }
+        return false;
+      }
+      
+      if (data.session) {
+        console.log('Session refreshed successfully');
+        setSession(data.session);
+        setUser(data.session.user);
+        localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+        return true;
+      }
+      
+      console.warn('No session returned from refresh');
+      return false;
+    } catch (error) {
+      console.error('Exception in refreshSession:', error);
+      return false;
+    }
+  };
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -255,6 +341,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signUpWithGoogle,
     logout,
     isLoading: isLoading || !authInitialized,
+    refreshSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

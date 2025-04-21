@@ -6,9 +6,10 @@ import EmptyProductState from './EmptyProductState';
 import { useEffect, useState } from 'react';
 import { fetchShopifyProducts } from '@/services/shopify/products';
 import { toast } from 'sonner';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { refreshSession } from '@/services/supabaseUtils';
 
 interface ProductListProps {
   products: ShopifyProduct[];
@@ -21,14 +22,19 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
   const [products, setProducts] = useState<ShopifyProduct[]>(initialProducts);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const refreshProducts = async () => {
     if (!storeId) return;
     
     setIsLoading(true);
+    setIsRefreshing(true);
     setError(null);
     
     try {
+      // First ensure we have a fresh session
+      await refreshSession();
+      
       const response = await fetchShopifyProducts(storeId);
       
       if (response.error) {
@@ -44,6 +50,7 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
       toast.error(`Failed to refresh products: ${errorMessage}`);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
   
@@ -51,6 +58,13 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
   useEffect(() => {
     setProducts(initialProducts);
   }, [initialProducts]);
+  
+  // Initial fetch if products array is empty and we have a storeId
+  useEffect(() => {
+    if (storeId && products.length === 0 && !isLoading && !error) {
+      refreshProducts();
+    }
+  }, [storeId, products.length]);
   
   if (isLoading && products.length === 0) {
     return (
@@ -104,10 +118,10 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
           variant="outline" 
           size="sm"
           className="gap-2"
-          disabled={isLoading}
+          disabled={isLoading || isRefreshing}
         >
-          <div className={`${isLoading ? 'animate-spin' : ''}`}>↻</div>
-          {isLoading ? 'Refreshing...' : 'Refresh'}
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh Products'}
         </Button>
       </div>
       

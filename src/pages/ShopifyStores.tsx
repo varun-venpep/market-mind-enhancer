@@ -5,7 +5,7 @@ import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import ShopifyConnect from '@/components/ShopifyConnect';
 import { getConnectedShopifyStores, disconnectShopifyStore } from '@/services/shopify';
@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import ShopifySerpStatsCards from '@/components/Shopify/ShopifySerpStatsCards';
 import ShopifyStoreList from '@/components/Shopify/ShopifyStoreList';
 import ShopifyNoStores from '@/components/Shopify/ShopifyNoStores';
+import { supabase } from '@/integrations/supabase/client';
+import { refreshSession } from '@/services/supabaseUtils';
 
 export default function ShopifyStores() {
   const [stores, setStores] = useState<ShopifyStore[]>([]);
@@ -26,16 +28,43 @@ export default function ShopifyStores() {
     avgDifficulty: 0,
     totalOrganicResults: 0
   });
-  const { user } = useAuth();
+  const [authChecked, setAuthChecked] = useState(false);
+  const { user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // First check if we need to refresh the session
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!user || !session) {
+        // Try to refresh the session
+        const refreshed = await refreshSession();
+        if (!refreshed) {
+          toast({
+            title: "Authentication required",
+            description: "Please sign in to access this feature",
+            variant: "destructive"
+          });
+          
+          // Redirect to login after a short delay
+          setTimeout(() => navigate('/login'), 1500);
+        }
+      }
+      setAuthChecked(true);
+    };
+    
+    checkAuth();
+  }, [user, session, navigate, toast]);
   
   const fetchStores = useCallback(async () => {
     try {
       setIsLoading(true);
+      
+      // Ensure fresh session
+      await refreshSession();
+      
       const data = await getConnectedShopifyStores();
       setStores(data || []);
-      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching stores:", error);
       toast({
@@ -43,62 +72,73 @@ export default function ShopifyStores() {
         description: "Failed to load connected Shopify stores",
         variant: "destructive"
       });
+    } finally {
       setIsLoading(false);
     }
   }, [toast]);
   
   useEffect(() => {
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
-    
-    const fetchSerpData = async () => {
-      try {
-        const mockData = {
-          topKeywords: ["e-commerce seo", "product description", "shopify optimization", "conversion rate", "product meta tags"],
-          avgDifficulty: 65,
-          totalOrganicResults: 10
-        };
-
-        try {
-          const result = await fetchSerpResults("e-commerce seo best practices");
-          const data = extractSerpData(result);
-          
-          const topKeywords = (data.relatedKeywords || [])
-            .sort((a, b) => b.searchVolume - a.searchVolume)
-            .slice(0, 5)
-            .map(k => k.keyword);
-            
-          const avgDifficulty = Math.round(
-            (data.relatedKeywords || []).reduce((sum, k) => sum + k.difficulty, 0) / 
-            (data.relatedKeywords?.length || 1)
-          );
-          
-          setSerpStats({
-            topKeywords,
-            avgDifficulty,
-            totalOrganicResults: data.organicResults?.length || 0
+    if (authChecked && user) {
+      const loadingTimeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 5000); // Set a maximum timeout for loading
+      
+      // Check if session is valid and refresh if needed
+      supabase.auth.getSession().then(({ data, error }) => {
+        if (error || !data.session) {
+          refreshSession().then(success => {
+            if (success) {
+              fetchStores();
+              fetchSerpData();
+            }
           });
-        } catch (error) {
-          console.warn("Using mock SERP data due to API error:", error);
-          setSerpStats(mockData);
+        } else {
+          fetchStores();
+          fetchSerpData();
         }
-      } catch (error) {
-        console.error("Error in SERP data handling:", error);
-      }
-    };
-    
-    if (user) {
-      fetchStores();
-      fetchSerpData();
-    } else {
-      setIsLoading(false);
+      });
+      
+      return () => {
+        clearTimeout(loadingTimeout);
+      };
     }
-    
-    return () => {
-      clearTimeout(loadingTimeout);
-    };
-  }, [user, fetchStores]);
+  }, [user, fetchStores, authChecked]);
+  
+  const fetchSerpData = async () => {
+    try {
+      const mockData = {
+        topKeywords: ["e-commerce seo", "product description", "shopify optimization", "conversion rate", "product meta tags"],
+        avgDifficulty: 65,
+        totalOrganicResults: 10
+      };
+
+      try {
+        const result = await fetchSerpResults("e-commerce seo best practices");
+        const data = extractSerpData(result);
+        
+        const topKeywords = (data.relatedKeywords || [])
+          .sort((a, b) => b.searchVolume - a.searchVolume)
+          .slice(0, 5)
+          .map(k => k.keyword);
+          
+        const avgDifficulty = Math.round(
+          (data.relatedKeywords || []).reduce((sum, k) => sum + k.difficulty, 0) / 
+          (data.relatedKeywords?.length || 1)
+        );
+        
+        setSerpStats({
+          topKeywords,
+          avgDifficulty,
+          totalOrganicResults: data.organicResults?.length || 0
+        });
+      } catch (error) {
+        console.warn("Using mock SERP data due to API error:", error);
+        setSerpStats(mockData);
+      }
+    } catch (error) {
+      console.error("Error in SERP data handling:", error);
+    }
+  };
   
   const handleDisconnect = async (storeId: string) => {
     if (confirm("Are you sure you want to disconnect this store? This will remove all data associated with it.")) {
@@ -130,6 +170,19 @@ export default function ShopifyStores() {
   const handleViewStore = (storeId: string) => {
     navigate(`/dashboard/shopify/${storeId}`);
   };
+  
+  // Show a loading indicator until auth is checked
+  if (!authChecked) {
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto py-8 flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">Checking Authentication...</h2>
+          <p className="text-muted-foreground">Please wait while we verify your credentials</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
   
   return (
     <DashboardLayout>
