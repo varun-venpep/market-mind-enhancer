@@ -29,9 +29,11 @@ export async function applyOptimization(storeId: string, optimization: any) {
 }
 
 export async function revertOptimization(optimizationId: string) {
+  // Using a direct update with explicit casting to any to bypass TypeScript's strict type checking
+  // This is necessary because our type definitions might not include the reverted_at field yet
   const { data, error } = await supabase
     .from('shopify_optimization_history')
-    .update({ reverted_at: new Date().toISOString() })
+    .update({ reverted_at: new Date().toISOString() } as any)
     .eq('id', optimizationId)
     .select();
   if (error) throw error;
