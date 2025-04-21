@@ -14,6 +14,12 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
   const [isLoading, setIsLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [editorContent, setEditorContent] = useState(content);
+
+  // Update the editor content when the prop changes (for external updates)
+  useEffect(() => {
+    setEditorContent(content);
+  }, [content]);
 
   useEffect(() => {
     const fetchApiKey = async () => {
@@ -32,6 +38,11 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
     fetchApiKey();
   }, []);
 
+  const handleEditorChange = (newContent: string) => {
+    setEditorContent(newContent);
+    onChange(newContent);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-[400px] rounded-md border">
@@ -49,15 +60,17 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
       )}
       <Editor
         apiKey={apiKey || 'sjsagtygodshm478878dcwpawc0wf0cairx5rqlj3kgobssk'}
-        initialValue={content}
+        value={editorContent} // Use controlled value instead of initialValue
         onInit={() => setIsLoading(false)}
         init={{
           height: 500,
           menubar: true,
+          readonly: readOnly,
           plugins: [
             'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image',
             'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks',
             'wordcount', 'fullscreen', 'preview', 'quickbars', 'help',
+            'advlist', 'paste', 'code', 'hr'
           ],
           toolbar:
             'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough ' +
@@ -72,13 +85,35 @@ const RichTextEditor = ({ content, onChange, readOnly = false }: RichTextEditorP
           powerpaste_word_import: 'clean',
           powerpaste_html_import: 'clean',
           inline_styles: true,
+          paste_data_images: true,
+          browser_spellcheck: true,
+          paste_text_sticky_default: true,
+          paste_as_text: false,
+          // Enhanced key actions
           setup: (editor) => {
             editor.on('init', () => {
               console.log("TinyMCE editor initialized");
             });
+
+            // Add undo/redo keyboard shortcuts
+            editor.addShortcut('ctrl+z', 'Undo', () => {
+              editor.execCommand('Undo');
+            });
+            
+            editor.addShortcut('ctrl+y', 'Redo', () => {
+              editor.execCommand('Redo');
+            });
+            
+            editor.addShortcut('meta+z', 'Undo', () => {
+              editor.execCommand('Undo');
+            });
+            
+            editor.addShortcut('meta+y', 'Redo', () => {
+              editor.execCommand('Redo');
+            });
           }
         }}
-        onEditorChange={onChange}
+        onEditorChange={handleEditorChange}
       />
     </div>
   );
