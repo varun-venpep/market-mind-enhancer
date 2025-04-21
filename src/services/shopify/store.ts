@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { invokeFunction } from "../supabaseUtils";
 import type { ShopifyStore } from '@/types/shopify';
 import { toast } from "sonner";
 
@@ -80,17 +81,10 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
       throw new Error('Authentication required. Please sign in to connect a store.');
     }
     
-    const { data, error } = await supabase.functions.invoke('shopify-connect', {
-      body: {
-        storeUrl: storeUrl,
-        accessToken: credentials.accessToken
-      }
+    const data = await invokeFunction('shopify-connect', {
+      storeUrl: storeUrl,
+      accessToken: credentials.accessToken
     });
-    
-    if (error) {
-      console.error('Error connecting Shopify store:', error);
-      throw new Error(error.message || 'Failed to connect to Shopify store');
-    }
     
     if (!data || !data.store) {
       const errorMessage = data?.error || 'Failed to connect to Shopify store';
