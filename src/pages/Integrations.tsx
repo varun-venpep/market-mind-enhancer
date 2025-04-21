@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchSerpResults, extractSerpData } from "@/services/serpApi";
 
 export default function Integrations() {
   const navigate = useNavigate();
