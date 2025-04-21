@@ -147,6 +147,7 @@ export async function getSiteAuditHistory(storeId: string): Promise<WebsiteSEOAu
 
 export async function applyOptimization(storeId: string, optimization: any) {
   try {
+    console.log('Applying optimization:', { optimization });
     const data = await invokeFunction('shopify-apply-optimization', { 
       storeId, 
       optimization 
@@ -184,6 +185,7 @@ export async function getOptimizationHistory(storeId: string): Promise<ShopifyOp
       .eq('store_id', storeId)
       .order('applied_at', { ascending: false });
     if (error) throw error;
+    
     return data.map((item: ShopifyOptimizationHistoryRecord) => ({
       id: item.id,
       store_id: item.store_id,

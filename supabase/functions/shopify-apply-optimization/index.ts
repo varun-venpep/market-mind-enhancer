@@ -24,6 +24,13 @@ serve(async (req) => {
       });
     }
 
+    console.log('Processing optimization request:', { 
+      storeId, 
+      optimizationType: optimization.type,
+      entity: optimization.entity,
+      field: optimization.field
+    });
+
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -68,44 +75,77 @@ serve(async (req) => {
       });
     }
     
+    // Validate store credentials
+    if (!store.store_url || !store.access_token) {
+      return new Response(JSON.stringify({ 
+        error: 'Store missing required credentials' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+    
+    console.log('Found store:', { url: store.store_url });
+    
     // Apply the optimization based on the entity type
     let result;
     
-    switch (optimization.entity) {
-      case 'product':
-        result = await optimizeProduct(store, optimization);
-        break;
-      case 'shop':
-        result = await optimizeShop(store, optimization);
-        break;
-      case 'blog':
-        result = await optimizeBlog(store, optimization);
-        break;
-      case 'page':
-        result = await optimizePage(store, optimization);
-        break;
-      case 'theme':
-        result = await optimizeTheme(store, optimization);
-        break;
-      default:
-        throw new Error(`Unsupported entity type: ${optimization.entity}`);
+    try {
+      switch (optimization.entity) {
+        case 'product':
+          result = await optimizeProduct(store, optimization);
+          break;
+        case 'shop':
+          result = await optimizeShop(store, optimization);
+          break;
+        case 'blog':
+          result = await optimizeBlog(store, optimization);
+          break;
+        case 'page':
+          result = await optimizePage(store, optimization);
+          break;
+        case 'theme':
+          result = await optimizeTheme(store, optimization);
+          break;
+        default:
+          throw new Error(`Unsupported entity type: ${optimization.entity}`);
+      }
+    } catch (error) {
+      console.error('Error in optimization process:', error);
+      return new Response(JSON.stringify({ 
+        error: error.message || 'Failed to apply optimization'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
     
     if (!result.success) {
-      throw new Error(result.error || 'Failed to apply optimization');
+      return new Response(JSON.stringify({
+        error: result.error || 'Failed to apply optimization'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
     
     // Record the optimization in the history
-    const optimizationHistoryId = await recordOptimizationHistory(
-      supabase,
-      storeId,
-      result.entityId,
-      result.entityType,
-      optimization.field,
-      optimization.original,
-      optimization.suggestion,
-      user.id
-    );
+    let optimizationHistoryId;
+    try {
+      optimizationHistoryId = await recordOptimizationHistory(
+        supabase,
+        storeId,
+        result.entityId,
+        result.entityType,
+        optimization.field,
+        optimization.original,
+        optimization.suggestion,
+        user.id
+      );
+    } catch (error) {
+      console.error('Error recording optimization history:', error);
+      // Continue even if history recording fails
+    }
     
     return new Response(JSON.stringify({
       success: true,
@@ -128,133 +168,162 @@ serve(async (req) => {
 
 // Function to optimize a product
 async function optimizeProduct(store, optimization) {
+  console.log('Optimizing product with optimization:', { 
+    field: optimization.field,
+    affectedUrls: optimization.affected_urls 
+  });
+  
   // Extract product ID if it's in the form "products.123"
   let productId = optimization.entity === 'product' && optimization.affected_urls && optimization.affected_urls[0]
     ? optimization.affected_urls[0].split('/').pop()
     : null;
   
   if (!productId) {
-    throw new Error('Product ID could not be determined');
+    throw new Error('Product ID could not be determined from affected URLs');
   }
   
-  // Fetch the product first
-  const getUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
-  const productResponse = await fetch(getUrl, {
-    headers: {
-      'X-Shopify-Access-Token': store.access_token,
-      'Content-Type': 'application/json',
-    },
-  });
+  console.log('Extracted product ID:', productId);
   
-  if (!productResponse.ok) {
-    throw new Error(`Failed to fetch product from Shopify: ${productResponse.statusText}`);
-  }
-  
-  const productData = await productResponse.json();
-  const product = productData.product;
-  
-  // Update the product based on the field
-  if (optimization.field.startsWith('metafields.')) {
-    // Handle metafield updates
-    const [_, namespace, key] = optimization.field.split('.');
-    const metafieldUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}/metafields.json`;
+  try {
+    // Fetch the product first
+    const getUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+    console.log('Fetching product from Shopify:', getUrl);
     
-    const metafieldResponse = await fetch(metafieldUrl, {
-      method: 'POST',
+    const productResponse = await fetch(getUrl, {
       headers: {
         'X-Shopify-Access-Token': store.access_token,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        metafield: {
-          namespace,
-          key,
-          value: optimization.suggestion,
-          value_type: 'string'
-        }
-      }),
     });
     
-    if (!metafieldResponse.ok) {
-      throw new Error(`Failed to update product metafield: ${metafieldResponse.statusText}`);
+    if (!productResponse.ok) {
+      const responseText = await productResponse.text();
+      console.error('Shopify API error response:', responseText);
+      throw new Error(`Failed to fetch product from Shopify: ${productResponse.statusText} (${productResponse.status})`);
     }
     
-    const metafieldData = await metafieldResponse.json();
-    return {
-      success: true,
-      entityId: product.id,
-      entityType: 'product',
-      field: optimization.field,
-      metafieldId: metafieldData.metafield.id
-    };
-  } else if (optimization.field.startsWith('images[')) {
-    // Handle image updates
-    const match = optimization.field.match(/images\[(\d+)\]\.(\w+)/);
-    if (match) {
-      const imageIndex = parseInt(match[1], 10);
-      const imageProperty = match[2];
-      const imageId = product.images[imageIndex]?.id;
+    const productData = await productResponse.json();
+    const product = productData.product;
+    
+    console.log('Successfully fetched product:', { id: product.id, title: product.title });
+    
+    // Update the product based on the field
+    if (optimization.field.startsWith('metafields.')) {
+      // Handle metafield updates
+      const [_, namespace, key] = optimization.field.split('.');
+      const metafieldUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}/metafields.json`;
       
-      if (!imageId) {
-        throw new Error(`Image not found at index ${imageIndex}`);
-      }
-      
-      const imageUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}/images/${imageId}.json`;
-      
-      const imageResponse = await fetch(imageUrl, {
-        method: 'PUT',
+      const metafieldResponse = await fetch(metafieldUrl, {
+        method: 'POST',
         headers: {
           'X-Shopify-Access-Token': store.access_token,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          image: {
-            id: imageId,
-            [imageProperty]: optimization.suggestion
+          metafield: {
+            namespace,
+            key,
+            value: optimization.suggestion,
+            value_type: 'string'
           }
         }),
       });
       
-      if (!imageResponse.ok) {
-        throw new Error(`Failed to update product image: ${imageResponse.statusText}`);
+      if (!metafieldResponse.ok) {
+        const responseText = await metafieldResponse.text();
+        console.error('Metafield update error:', responseText);
+        throw new Error(`Failed to update product metafield: ${metafieldResponse.statusText}`);
+      }
+      
+      const metafieldData = await metafieldResponse.json();
+      return {
+        success: true,
+        entityId: product.id,
+        entityType: 'product',
+        field: optimization.field,
+        metafieldId: metafieldData.metafield.id
+      };
+    } else if (optimization.field.startsWith('images[')) {
+      // Handle image updates
+      const match = optimization.field.match(/images\[(\d+)\]\.(\w+)/);
+      if (match) {
+        const imageIndex = parseInt(match[1], 10);
+        const imageProperty = match[2];
+        const imageId = product.images[imageIndex]?.id;
+        
+        if (!imageId) {
+          throw new Error(`Image not found at index ${imageIndex}`);
+        }
+        
+        const imageUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}/images/${imageId}.json`;
+        
+        const imageResponse = await fetch(imageUrl, {
+          method: 'PUT',
+          headers: {
+            'X-Shopify-Access-Token': store.access_token,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: {
+              id: imageId,
+              [imageProperty]: optimization.suggestion
+            }
+          }),
+        });
+        
+        if (!imageResponse.ok) {
+          const responseText = await imageResponse.text();
+          console.error('Image update error:', responseText);
+          throw new Error(`Failed to update product image: ${imageResponse.statusText}`);
+        }
+        
+        return {
+          success: true,
+          entityId: product.id,
+          entityType: 'product',
+          field: optimization.field,
+          imageId
+        };
+      } else {
+        throw new Error('Invalid image field format');
+      }
+    } else {
+      // Handle regular product field updates
+      const updateUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+      
+      const updatedProduct = { ...product };
+      updatedProduct[optimization.field] = optimization.suggestion;
+      
+      console.log('Updating product with data:', {
+        field: optimization.field,
+        newValue: optimization.suggestion
+      });
+      
+      const updateResponse = await fetch(updateUrl, {
+        method: 'PUT',
+        headers: {
+          'X-Shopify-Access-Token': store.access_token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ product: updatedProduct }),
+      });
+      
+      if (!updateResponse.ok) {
+        const responseText = await updateResponse.text();
+        console.error('Product update error:', responseText);
+        throw new Error(`Failed to update product: ${updateResponse.statusText}`);
       }
       
       return {
         success: true,
         entityId: product.id,
         entityType: 'product',
-        field: optimization.field,
-        imageId
+        field: optimization.field
       };
-    } else {
-      throw new Error('Invalid image field format');
     }
-  } else {
-    // Handle regular product field updates
-    const updateUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
-    
-    const updatedProduct = { ...product };
-    updatedProduct[optimization.field] = optimization.suggestion;
-    
-    const updateResponse = await fetch(updateUrl, {
-      method: 'PUT',
-      headers: {
-        'X-Shopify-Access-Token': store.access_token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ product: updatedProduct }),
-    });
-    
-    if (!updateResponse.ok) {
-      throw new Error(`Failed to update product: ${updateResponse.statusText}`);
-    }
-    
-    return {
-      success: true,
-      entityId: product.id,
-      entityType: 'product',
-      field: optimization.field
-    };
+  } catch (error) {
+    console.error('Error in optimizeProduct:', error);
+    throw error;
   }
 }
 
@@ -509,7 +578,8 @@ async function recordOptimizationHistory(
         original_value: originalValue,
         new_value: newValue,
         applied_at: new Date().toISOString(),
-        applied_by: userId
+        applied_by: userId,
+        optimization_type: field.includes('meta') ? 'metadata' : 'content'
       })
       .select('id')
       .single();
