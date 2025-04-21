@@ -21,8 +21,37 @@ serve(async (req) => {
     });
   }
 
+  // Debug request headers
+  console.log("Headers received:", JSON.stringify(Object.fromEntries([...req.headers])));
+
   try {
-    const { storeId, optimization } = await req.json();
+    // Check for authentication header first
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(JSON.stringify({
+        error: 'Missing authorization header'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    // Parse the request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      console.error("Error parsing request body:", error);
+      return new Response(JSON.stringify({
+        error: 'Invalid request format. Expected JSON body.'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    const { storeId, optimization } = body;
 
     if (!storeId || !optimization) {
       return new Response(JSON.stringify({
@@ -46,20 +75,11 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get the user ID from the authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-
-    // Get the user ID from the token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
+      console.error("Failed to authenticate user:", userError);
       return new Response(JSON.stringify({
         error: 'Failed to authenticate user'
       }), {
@@ -76,6 +96,7 @@ serve(async (req) => {
       .single();
 
     if (storeError) {
+      console.error("Store not found:", storeError);
       return new Response(JSON.stringify({
         error: 'Store not found'
       }), {
@@ -86,6 +107,7 @@ serve(async (req) => {
 
     // Validate store credentials
     if (!store.store_url || !store.access_token) {
+      console.error("Store missing required credentials");
       return new Response(JSON.stringify({
         error: 'Store missing required credentials'
       }), {

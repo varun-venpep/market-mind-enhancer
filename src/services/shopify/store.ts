@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { invokeFunction } from "../supabaseUtils";
+import { invokeFunction, handleApiError, refreshSession } from "../supabaseUtils";
 import type { ShopifyStore } from '@/types/shopify';
 import { toast } from "sonner";
 
@@ -11,6 +11,9 @@ export interface ShopifyCredentials {
 
 export async function getConnectedShopifyStores(): Promise<ShopifyStore[]> {
   try {
+    console.log('Fetching connected Shopify stores');
+    await refreshSession(); // Ensure the session is fresh
+    
     const { data, error } = await supabase.from('shopify_stores').select('*');
     
     if (error) {
@@ -24,7 +27,7 @@ export async function getConnectedShopifyStores(): Promise<ShopifyStore[]> {
       return [];
     }
     
-    console.log('Fetched Shopify stores:', data);
+    console.log('Fetched Shopify stores:', data.length);
     return data as ShopifyStore[];
   } catch (error) {
     console.error('Exception in getConnectedShopifyStores:', error);
@@ -81,6 +84,10 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
       throw new Error('Authentication required. Please sign in to connect a store.');
     }
     
+    // Ensure we have a fresh token
+    await refreshSession();
+    
+    // Use the invokeFunction utility to call the shopify-connect function
     const response = await invokeFunction('shopify-connect', {
       storeUrl: storeUrl,
       accessToken: credentials.accessToken
@@ -112,7 +119,7 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
     return insertedStore as ShopifyStore;
   } catch (error: any) {
     console.error('Exception in connectShopifyStore:', error);
-    const errorMessage = error.message || 'Failed to connect Shopify store. Please check your credentials and try again.';
+    const errorMessage = handleApiError(error, 'Failed to connect Shopify store. Please check your credentials and try again.');
     toast.error(errorMessage);
     throw error;
   }

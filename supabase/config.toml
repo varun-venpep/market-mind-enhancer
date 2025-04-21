@@ -68,3 +68,15 @@ enable_confirmations = false
 verify_jwt = true
 [functions.serpapi]
 verify_jwt = true
+[functions.shopify-apply-optimization]
+verify_jwt = true
+[functions.shopify-seo]
+verify_jwt = true
+[functions.shopify-products]
+verify_jwt = true
+[functions.shopify-site-audit]
+verify_jwt = true
+[functions.shopify-bulk-optimize]
+verify_jwt = true
+[functions.shopify-optimize]
+verify_jwt = true

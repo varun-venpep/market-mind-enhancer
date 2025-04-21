@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import ShopifyConnectHeader from "./ShopifyConnectHeader";
 import ShopifyConnectAlerts from "./ShopifyConnectAlerts";
 import ShopifyConnectForm from "./ShopifyConnectForm";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   storeUrl: z.string()
@@ -29,6 +31,7 @@ const ShopifyConnect: React.FC<ShopifyConnectProps> = ({ onStoreConnected }) => 
   const [isConnecting, setIsConnecting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const navigate = useNavigate();
   
   const {
     register,
@@ -43,18 +46,43 @@ const ShopifyConnect: React.FC<ShopifyConnectProps> = ({ onStoreConnected }) => 
     }
   });
 
+  const checkAuthentication = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        setAuthError("You must be signed in to connect a Shopify store");
+        toast.error("Authentication required. Please sign in.");
+        setTimeout(() => navigate('/login'), 2000);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      setAuthError("Error checking authentication status");
+      return false;
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     setIsConnecting(true);
     setAuthError(null);
     setConnectionError(null);
     
+    // First check authentication
+    const isAuthenticated = await checkAuthentication();
+    if (!isAuthenticated) {
+      setIsConnecting(false);
+      return;
+    }
+    
     try {
-      await connectShopifyStore({
+      const store = await connectShopifyStore({
         storeUrl: data.storeUrl,
         accessToken: data.accessToken
       });
       
-      toast("Shopify store connected successfully!");
+      toast.success("Shopify store connected successfully!");
+      console.log("Store connected:", store);
       
       // Reset the form
       reset();
@@ -63,6 +91,15 @@ const ShopifyConnect: React.FC<ShopifyConnectProps> = ({ onStoreConnected }) => 
       if (onStoreConnected) {
         onStoreConnected();
       }
+      
+      // Redirect to the store page
+      setTimeout(() => {
+        if (store && store.id) {
+          navigate(`/dashboard/shopify/${store.id}`);
+        } else {
+          navigate('/dashboard/shopify');
+        }
+      }, 1000);
       
     } catch (error: any) {
       console.error("Error connecting Shopify store:", error);
