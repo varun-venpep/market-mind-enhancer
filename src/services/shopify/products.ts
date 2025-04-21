@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { ShopifyProductsResponse, ShopifyStore, ShopifyProduct, SEOAnalysisResult, ShopifyOptimizationHistoryRecord } from '@/types/shopify';
 import { invokeFunction } from "../supabaseUtils";
@@ -9,7 +8,13 @@ export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20
     return data as ShopifyProductsResponse;
   } catch (error) {
     console.error("Error fetching Shopify products:", error);
-    throw error;
+    return {
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      products: [],
+      page,
+      limit,
+      total: 0
+    };
   }
 }
 

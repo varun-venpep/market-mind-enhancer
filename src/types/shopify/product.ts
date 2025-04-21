@@ -78,4 +78,6 @@ export interface ShopifyProductsResponse {
   page: number;
   limit: number;
   total: number;
+  error?: string;        // Added error property
+  details?: string;      // Added details property for additional error information
 }
