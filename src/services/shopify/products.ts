@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { ShopifyProductsResponse, ShopifyStore, ShopifyProduct, SEOAnalysisResult, ShopifyOptimizationHistoryRecord } from '@/types/shopify';
 import { invokeFunction } from "../supabaseUtils";

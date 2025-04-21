@@ -47,6 +47,17 @@ serve(async (req: Request) => {
   }
 
   // Fetch from Shopify
-  const shopifyResult = await fetchShopifyProductsFromShopify(store, page, limit);
-  return sendResponse(shopifyResult, 200);
+  try {
+    const shopifyResult = await fetchShopifyProductsFromShopify(store, page, limit);
+    return sendResponse(shopifyResult, 200);
+  } catch (error) {
+    console.error("Unexpected error in shopify-products function:", error);
+    return sendResponse({
+      error: error instanceof Error ? error.message : 'Unexpected error occurred',
+      products: [],
+      page,
+      limit,
+      total: 0
+    }, 500);
+  }
 });

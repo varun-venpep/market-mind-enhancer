@@ -23,6 +23,40 @@ export interface SEOOptimization {
   applied: boolean;
 }
 
+export interface WebsiteSEOAudit {
+  id: string;
+  store_id: string;
+  created_at: string;
+  score: number;
+  issues: WebsiteSEOIssue[];
+  optimizations: WebsiteSEOOptimization[];
+  meta: {
+    pages_analyzed: number;
+    product_pages: number;
+    collection_pages: number;
+    blog_pages: number;
+    other_pages: number;
+  };
+}
+
+export interface WebsiteSEOIssue {
+  type: string;
+  severity: 'high' | 'medium' | 'low';
+  message: string;
+  details?: string;
+  affected_urls?: string[];
+}
+
+export interface WebsiteSEOOptimization {
+  type: string;
+  entity: string;
+  field: string;
+  original: string;
+  suggestion: string;
+  affected_urls?: string[];
+  applied?: boolean;
+}
+
 // Additional interface for SEO API responses
 export interface SEOApiResponse {
   success: boolean;

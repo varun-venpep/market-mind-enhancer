@@ -1,26 +1,49 @@
 
-import { SEOIssue, SEOOptimization } from "./types.ts";
+// SEO analysis helper functions
+import type { ShopifyProduct } from "../_shared/types.ts";
 
-export function analyzeSEO(product: any) {
+interface SEOIssue {
+  type: 'title' | 'description' | 'image' | 'content' | 'url';
+  severity: 'high' | 'medium' | 'low';
+  message: string;
+  details?: string;
+}
+
+interface SEOOptimization {
+  type: 'title' | 'description' | 'image' | 'content' | 'url';
+  field: string;
+  original: string;
+  suggestion: string;
+  applied: boolean;
+}
+
+export function analyzeSEO(product: ShopifyProduct) {
   const issues: SEOIssue[] = [];
   const optimizations: SEOOptimization[] = [];
-  let score = 100;
+  let score = 100; // Start with perfect score
 
-  // Analyze title
-  if (!product.title || product.title.length < 5) {
+  // Title analysis
+  if (!product.title) {
+    issues.push({
+      type: 'title',
+      severity: 'high',
+      message: 'Product title is missing'
+    });
+    score -= 15;
+  } else if (product.title.length < 5) {
     issues.push({
       type: 'title',
       severity: 'high',
       message: 'Product title is too short',
-      details: 'Title should be descriptive and contain relevant keywords'
+      details: 'Title should be at least 5 characters'
     });
-    score -= 15;
+    score -= 10;
     
     optimizations.push({
       type: 'title',
       field: 'title',
-      original: product.title || '',
-      suggestion: product.title ? `${product.title} - Premium ${product.product_type || 'Product'}` : 'Premium Product',
+      original: product.title,
+      suggestion: `${product.title} - Premium ${product.product_type || 'Product'}`,
       applied: false
     });
   } else if (product.title.length > 70) {
@@ -28,9 +51,9 @@ export function analyzeSEO(product: any) {
       type: 'title',
       severity: 'medium',
       message: 'Product title is too long',
-      details: 'Title should be under 70 characters for optimal display in search results'
+      details: 'Title should be 70 characters or less for optimal display in search results'
     });
-    score -= 10;
+    score -= 5;
     
     optimizations.push({
       type: 'title',
@@ -41,115 +64,153 @@ export function analyzeSEO(product: any) {
     });
   }
 
-  // Analyze description
-  if (!product.body_html || product.body_html.length < 50) {
+  // Description analysis
+  if (!product.body_html) {
     issues.push({
       type: 'description',
       severity: 'high',
-      message: 'Product description is too short or missing',
-      details: 'Description should be detailed and contain relevant keywords'
+      message: 'Product description is missing'
     });
     score -= 15;
-    
-    const defaultDescription = `This premium ${product.product_type || 'product'} offers excellent quality and value. Perfect for those looking for ${product.title || 'quality products'}.`;
     
     optimizations.push({
       type: 'description',
       field: 'body_html',
-      original: product.body_html || '',
-      suggestion: product.body_html ? product.body_html + '<p>' + defaultDescription + '</p>' : '<p>' + defaultDescription + '</p>',
+      original: '',
+      suggestion: `<p>This ${product.product_type || 'product'} offers exceptional quality and value.</p><p>Features include:</p><ul><li>Premium materials</li><li>Expert craftsmanship</li><li>Long-lasting durability</li></ul>`,
       applied: false
     });
+  } else {
+    // Check for plain text (no HTML)
+    const plainText = product.body_html.replace(/<[^>]*>/g, '');
+    
+    if (plainText.length < 100) {
+      issues.push({
+        type: 'description',
+        severity: 'medium',
+        message: 'Product description is too short',
+        details: 'Description should be at least 100 characters for good SEO'
+      });
+      score -= 10;
+      
+      optimizations.push({
+        type: 'description',
+        field: 'body_html',
+        original: product.body_html,
+        suggestion: `${product.body_html}<p>This premium ${product.product_type || 'product'} is designed to exceed your expectations with exceptional quality, craftsmanship, and attention to detail.</p>`,
+        applied: false
+      });
+    }
+    
+    // Check for HTML structure
+    if (!/<h[1-6]|<p|<ul|<ol/.test(product.body_html)) {
+      issues.push({
+        type: 'description',
+        severity: 'low',
+        message: 'Description lacks proper HTML structure',
+        details: 'Using headings, paragraphs, and lists improves readability and SEO'
+      });
+      score -= 5;
+    }
   }
 
-  // Analyze handle / URL
-  if (!product.handle || product.handle.includes('copy-of') || /^\d+$/.test(product.handle)) {
+  // URL/handle analysis
+  if (!product.handle) {
     issues.push({
       type: 'url',
-      severity: 'medium',
-      message: 'Product URL is not optimized',
-      details: 'URL should be descriptive and contain relevant keywords'
+      severity: 'high',
+      message: 'Product URL handle is missing'
     });
     score -= 10;
-    
-    let suggested_handle = '';
-    if (!product.handle) {
-      suggested_handle = product.title ? product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '') : 'product';
-    } else if (product.handle.includes('copy-of')) {
-      suggested_handle = product.handle.replace('copy-of-', '');
-    } else if (/^\d+$/.test(product.handle)) {
-      suggested_handle = product.title ? product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '') : 'product';
-    }
+  } else if (product.handle.length > 50) {
+    issues.push({
+      type: 'url',
+      severity: 'low',
+      message: 'Product URL handle is too long',
+      details: 'URL handles should be concise for better user experience'
+    });
+    score -= 3;
     
     optimizations.push({
       type: 'url',
       field: 'handle',
-      original: product.handle || '',
-      suggestion: suggested_handle,
+      original: product.handle,
+      suggestion: product.handle.split('-').slice(0, 5).join('-'),
       applied: false
     });
   }
 
-  // Analyze images
+  // Image analysis
   if (!product.images || product.images.length === 0) {
     issues.push({
       type: 'image',
       severity: 'high',
-      message: 'Product has no images',
-      details: 'Images are essential for SEO and user experience'
+      message: 'No product images found'
     });
-    score -= 20;
+    score -= 15;
   } else {
-    const imagesWithoutAlt = product.images.filter((img: any) => !img.alt || img.alt.trim() === '');
+    // Check for alt text
+    const imagesWithoutAlt = product.images.filter(img => !img.alt || img.alt.trim() === '');
     if (imagesWithoutAlt.length > 0) {
       issues.push({
         type: 'image',
         severity: 'medium',
-        message: `${imagesWithoutAlt.length} images missing alt text`,
-        details: 'All images should have descriptive alt text for SEO and accessibility'
+        message: `${imagesWithoutAlt.length} image(s) missing alt text`,
+        details: 'Alt text helps with accessibility and SEO'
       });
-      score -= Math.min(15, imagesWithoutAlt.length * 5);
+      score -= 5 * Math.min(3, imagesWithoutAlt.length); // Cap penalty at 15 points
       
       optimizations.push({
         type: 'image',
         field: 'image_alt',
         original: '',
-        suggestion: `${product.title || 'Product'} - ${product.product_type || 'Item'} image`,
+        suggestion: `${product.title} - ${product.product_type || 'Product'} image`,
         applied: false
       });
     }
   }
 
-  // Analyze tags
-  if (!product.tags || product.tags.length === 0) {
+  // Tags analysis
+  if (!product.tags || product.tags === '') {
     issues.push({
       type: 'content',
       severity: 'medium',
-      message: 'Product has no tags',
-      details: 'Tags help with internal search and categorization'
+      message: 'No product tags found',
+      details: 'Tags help with categorization and search'
     });
     score -= 10;
     
-    let suggestedTags = '';
+    // Suggest tags based on product type and title
+    const words = product.title.split(' ')
+      .filter(word => word.length > 3)
+      .map(word => word.toLowerCase())
+      .slice(0, 5);
+    
     if (product.product_type) {
-      suggestedTags = product.product_type;
+      words.push(product.product_type.toLowerCase());
     }
     if (product.vendor) {
-      suggestedTags += suggestedTags ? `, ${product.vendor}` : product.vendor;
+      words.push(product.vendor.toLowerCase());
     }
-    suggestedTags += suggestedTags ? ', premium, quality' : 'premium, quality';
+    
+    // Remove duplicates
+    const uniqueWords = [...new Set(words)];
     
     optimizations.push({
       type: 'content',
       field: 'tags',
       original: product.tags || '',
-      suggestion: suggestedTags,
+      suggestion: uniqueWords.join(', '),
       applied: false
     });
   }
 
-  // Ensure score is within 0-100 range
+  // Ensure score is within range
   score = Math.max(0, Math.min(100, score));
 
-  return { issues, score, optimizations };
+  return {
+    issues,
+    score,
+    optimizations
+  };
 }
