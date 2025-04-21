@@ -22,3 +22,15 @@ export interface SEOOptimization {
   suggestion: string;
   applied: boolean;
 }
+
+// Additional interface for SEO API responses
+export interface SEOApiResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  appliedChanges?: Array<{
+    field: string;
+    from: string;
+    to: string;
+  }>;
+}

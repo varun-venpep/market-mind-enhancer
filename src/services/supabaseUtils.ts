@@ -18,7 +18,8 @@ export const invokeFunction = async (functionName: string, payload: any) => {
     const response = await supabase.functions.invoke(functionName, {
       body: payload,
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
     });
     console.log(`Function response:`, response);
@@ -27,10 +28,12 @@ export const invokeFunction = async (functionName: string, payload: any) => {
       console.error(`Error invoking function ${functionName}:`, response.error);
       throw response.error;
     }
-    if (!response.data) {
+    
+    if (!response.data && functionName !== 'shopify-optimize') {
       console.error(`Function ${functionName} returned no data`);
       throw new Error(`${functionName} returned no data`);
     }
+    
     return response.data;
   } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);

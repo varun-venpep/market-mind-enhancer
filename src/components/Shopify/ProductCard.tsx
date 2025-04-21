@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Search, ShoppingBag, Zap } from "lucide-react";
-import { analyzeSEO, optimizeSEO } from '@/services/shopify'; // Updated import path
+import { analyzeSEO, optimizeSEO } from '@/services/shopify';
 import type { SEOAnalysisResult, ShopifyProduct } from '@/types/shopify';
 
 interface ProductCardProps {
@@ -37,9 +36,10 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
         description: "SEO analysis has been completed for this product"
       });
     } catch (error) {
+      console.error("Error analyzing SEO:", error);
       toast({
         title: "Analysis Failed",
-        description: "Failed to analyze product SEO",
+        description: error instanceof Error ? error.message : "Failed to analyze product SEO",
         variant: "destructive"
       });
     } finally {
@@ -61,15 +61,17 @@ export function ProductCard({ product, storeId, initialAnalysis = null, onAnalys
         description: "SEO optimizations have been applied to this product"
       });
       
-      // Refresh analysis
-      await handleAnalyzeSEO();
+      // Refresh analysis after a brief delay
+      setTimeout(async () => {
+        await handleAnalyzeSEO();
+      }, 1500);
     } catch (error) {
+      console.error("Error optimizing SEO:", error);
       toast({
         title: "Optimization Failed",
-        description: "Failed to apply SEO optimizations",
+        description: error instanceof Error ? error.message : "Failed to apply SEO optimizations",
         variant: "destructive"
       });
-    } finally {
       setIsAnalyzing(false);
     }
   };
