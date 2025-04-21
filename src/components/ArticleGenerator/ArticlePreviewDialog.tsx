@@ -29,8 +29,23 @@ const ArticlePreviewDialog = ({
   onContentChange
 }: ArticlePreviewDialogProps) => {
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
-  
-  const handleClose = () => {
+
+  // Ensure discard dialog is only shown when clicking dialog close/cancel, not on content change/saving
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      // Only prompt discard if closing and there were edits
+      if (content.trim()) {
+        setShowDiscardDialog(true);
+      } else {
+        onOpenChange(false);
+      }
+    } else {
+      onOpenChange(true);
+    }
+  };
+
+  const handleDialogCloseX = () => {
+    // Called only from X or Cancel button in the dialog footer
     if (content.trim()) {
       setShowDiscardDialog(true);
     } else {
@@ -45,7 +60,7 @@ const ArticlePreviewDialog = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex flex-row items-center justify-between">
             <div>
@@ -54,6 +69,9 @@ const ArticlePreviewDialog = ({
                 Review and edit your AI-generated article before saving
               </DialogDescription>
             </div>
+            <Button variant="ghost" size="icon" className="ml-auto" onClick={handleDialogCloseX}>
+              <X className="h-5 w-5" />
+            </Button>
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto mt-4 mb-6 px-1">
@@ -116,6 +134,10 @@ const ArticlePreviewDialog = ({
                 </>
               )}
             </Button>
+            {/* Cancel button for closing the dialog */}
+            <Button variant="outline" onClick={handleDialogCloseX} type="button">
+              Cancel
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -143,3 +165,4 @@ const ArticlePreviewDialog = ({
 };
 
 export default ArticlePreviewDialog;
+

@@ -68,22 +68,27 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
   };
 
   return (
-    <>
-      <div className="space-y-2">
-        <Label htmlFor="topic">Topic or Title</Label>
+    <form
+      className="w-full max-w-2xl mx-auto px-2 py-1 flex flex-col gap-5"
+      autoComplete="off"
+      onSubmit={(e) => { e.preventDefault(); onGenerate(); }}
+    >
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="topic" className="font-semibold">Topic or Title</Label>
         <Input 
           id="topic" 
-          placeholder="e.g., 10 SEO Tips for E-commerce" 
+          placeholder="e.g., 10 SEO Tips for E-commerce"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          className="mt-1"
         />
       </div>
 
-      <div className="space-y-2 mt-4">
-        <Label htmlFor="campaign">Campaign</Label>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="campaign" className="font-semibold">Campaign</Label>
         <Select 
-          value={selectedCampaignId || ""} 
-          onValueChange={(value) => setSelectedCampaignId(value)}
+          value={selectedCampaignId || ""}
+          onValueChange={setSelectedCampaignId}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a campaign" />
@@ -103,26 +108,30 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         </Select>
       </div>
 
-      <KeywordManager 
-        keywords={keywords}
-        setKeywords={setKeywords}
-        handleKeywordInput={handleKeywordInput}
-        keywordSuggestions={keywordSuggestions}
-        addKeyword={addKeyword}
-        isLoadingSuggestions={isLoadingSuggestions}
-        getSuggestions={getSuggestions}
-      />
+      <div>
+        <KeywordManager 
+          keywords={keywords}
+          setKeywords={setKeywords}
+          handleKeywordInput={handleKeywordInput}
+          keywordSuggestions={keywordSuggestions}
+          addKeyword={addKeyword}
+          isLoadingSuggestions={isLoadingSuggestions}
+          getSuggestions={getSuggestions}
+        />
+      </div>
 
-      <ContentTypeSelector 
-        contentType={contentType}
-        setContentType={setContentType}
-        contentLength={contentLength}
-        setContentLength={setContentLength}
-        tone={tone}
-        setTone={setTone}
-      />
+      <div>
+        <ContentTypeSelector 
+          contentType={contentType}
+          setContentType={setContentType}
+          contentLength={contentLength}
+          setContentLength={setContentLength}
+          tone={tone}
+          setTone={setTone}
+        />
+      </div>
 
-      <div className="flex items-center space-x-2 mt-4">
+      <div className="flex items-center space-x-2">
         <Checkbox 
           id="generate-image" 
           checked={generateAIImage}
@@ -133,19 +142,22 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         </Label>
       </div>
 
-      <GenerateButton 
-        onGenerate={onGenerate}
-        isGenerating={isGenerating}
-        title={title}
-        keywords={keywords}
-        contentType={contentType}
-        contentLength={contentLength}
-        tone={tone}
-        setIsGenerating={setIsGenerating}
-        setGeneratedContent={setGeneratedContent}
-      />
-    </>
+      <div>
+        <GenerateButton 
+          onGenerate={onGenerate}
+          isGenerating={isGenerating}
+          title={title}
+          keywords={keywords}
+          contentType={contentType}
+          contentLength={contentLength}
+          tone={tone}
+          setIsGenerating={setIsGenerating}
+          setGeneratedContent={setGeneratedContent}
+        />
+      </div>
+    </form>
   );
 };
 
 export default ArticleForm;
+
