@@ -63,77 +63,100 @@ serve(async (req) => {
       );
     }
     
-    // First let's verify the store credentials by fetching the shop information
-    const shopResponse = await fetch(`https://${storeUrl}/admin/api/2023-07/shop.json`, {
-      headers: {
-        'X-Shopify-Access-Token': accessToken,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!shopResponse.ok) {
-      console.error(`Failed to verify Shopify store credentials. Status: ${shopResponse.status}, URL: ${storeUrl}`);
-      const errorText = await shopResponse.text();
-      console.error(`Shopify error response:`, errorText);
+    try {
+      // First let's verify the store credentials by fetching the shop information
+      const shopResponse = await fetch(`https://${storeUrl}/admin/api/2023-07/shop.json`, {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!shopResponse.ok) {
+        console.error(`Failed to verify Shopify store credentials. Status: ${shopResponse.status}, URL: ${storeUrl}`);
+        let errorText;
+        try {
+          errorText = await shopResponse.text();
+        } catch (e) {
+          errorText = "Could not read error response";
+        }
+        console.error(`Shopify error response:`, errorText);
+        
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid Shopify credentials. Please check your store URL and access token.",
+            details: errorText 
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          }
+        );
+      }
+      
+      const shopInfo = await shopResponse.json();
+      
+      // Store the shop credentials in the database
+      const { data: store, error: insertError } = await supabase
+        .from('shopify_stores')
+        .upsert({
+          user_id: user.id,
+          store_url: storeUrl,
+          access_token: accessToken,
+          store_name: shopInfo.shop.name,
+          store_owner: shopInfo.shop.shop_owner,
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error("Failed to store Shopify credentials:", insertError);
+        return new Response(
+          JSON.stringify({ error: "Failed to save store information", details: insertError }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          }
+        );
+      }
       
       return new Response(
         JSON.stringify({ 
-          error: "Invalid Shopify credentials. Please check your store URL and access token." 
+          success: true, 
+          store: {
+            id: store.id,
+            store_url: store.store_url,
+            store_name: store.store_name,
+            store_owner: store.store_owner,
+            created_at: store.created_at
+          }
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
+          status: 200,
         }
       );
-    }
-    
-    const shopInfo = await shopResponse.json();
-    
-    // Store the shop credentials in the database
-    const { data: store, error: insertError } = await supabase
-      .from('shopify_stores')
-      .upsert({
-        user_id: user.id,
-        store_url: storeUrl,
-        access_token: accessToken,
-        store_name: shopInfo.shop.name,
-        store_owner: shopInfo.shop.shop_owner,
-        created_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    
-    if (insertError) {
-      console.error("Failed to store Shopify credentials:", insertError);
+    } catch (fetchError) {
+      console.error("Error fetching shop information:", fetchError);
       return new Response(
-        JSON.stringify({ error: "Failed to save store information" }),
+        JSON.stringify({ 
+          error: "Failed to communicate with Shopify API",
+          details: fetchError.message
+        }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
         }
       );
     }
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        store: {
-          id: store.id,
-          store_url: store.store_url,
-          store_name: store.store_name,
-          store_owner: store.store_owner,
-          created_at: store.created_at
-        }
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
   } catch (error) {
     console.error("Error connecting Shopify store:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to connect Shopify store" }),
+      JSON.stringify({ 
+        error: error.message || "Failed to connect Shopify store",
+        details: error.stack 
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, ShoppingBag } from "lucide-react";
+import { Loader2, ShoppingBag, AlertCircle } from "lucide-react";
 import { connectShopifyStore } from "@/services/shopify";
+import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Form schema validation
 const formSchema = z.object({
@@ -26,6 +29,7 @@ type FormValues = z.infer<typeof formSchema>;
 const ShopifyConnect = () => {
   const { user } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -35,9 +39,26 @@ const ShopifyConnect = () => {
     }
   });
 
+  useEffect(() => {
+    // Check for authentication status
+    const checkAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error || !data.session) {
+        setAuthError("You must be logged in to connect a Shopify store");
+      } else {
+        setAuthError(null);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
   const onSubmit = async (data: FormValues) => {
-    if (!user) {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
       toast.error("You must be logged in to connect a Shopify store");
+      setAuthError("You must be logged in to connect a Shopify store");
       return;
     }
     
@@ -67,6 +88,7 @@ const ShopifyConnect = () => {
     } catch (error) {
       console.error("Error connecting Shopify store:", error);
       toast.error("Failed to connect Shopify store. Please check your credentials.");
+      // Do not reset the form to allow the user to correct their input
     } finally {
       setIsConnecting(false);
     }
@@ -84,6 +106,14 @@ const ShopifyConnect = () => {
         </p>
       </div>
       
+      {authError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Authentication Required</AlertTitle>
+          <AlertDescription>{authError}</AlertDescription>
+        </Alert>
+      )}
+      
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-3">
           <Label htmlFor="storeUrl" className="text-base">Store URL</Label>
@@ -93,6 +123,7 @@ const ShopifyConnect = () => {
               placeholder="your-store"
               {...register("storeUrl")}
               className="rounded-r-none text-base py-6"
+              disabled={isConnecting || !!authError}
             />
             <div className="bg-muted px-4 flex items-center border border-l-0 border-input rounded-r-md text-base">
               <span className="text-muted-foreground">.myshopify.com</span>
@@ -111,6 +142,7 @@ const ShopifyConnect = () => {
             placeholder="Shopify Admin API access token"
             {...register("accessToken")}
             className="text-base py-6"
+            disabled={isConnecting || !!authError}
           />
           {errors.accessToken && (
             <p className="text-destructive text-sm mt-1">{errors.accessToken.message}</p>
@@ -123,7 +155,7 @@ const ShopifyConnect = () => {
         <Button 
           type="submit" 
           className="w-full py-6 text-base font-medium mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 transition-all duration-300"
-          disabled={isConnecting}
+          disabled={isConnecting || !!authError}
         >
           {isConnecting ? (
             <div className="flex items-center justify-center">

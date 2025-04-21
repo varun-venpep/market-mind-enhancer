@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { useParams, useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import SERPInsights from '@/components/Shopify/SERPInsights';
 import StoreTabs from '@/components/Shopify/StoreTabs';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 
 import { useShopifyStoreData } from "@/hooks/shopify/useShopifyStoreData";
 import ShopifyStoreLoading from '@/components/Shopify/ShopifyStoreLoading';
@@ -21,24 +21,64 @@ const ShopifyStore = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('products');
   const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
+  const [authError, setAuthError] = React.useState<string | null>(null);
   
   // Check authentication first
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setAuthError("Authentication error: " + error.message);
+          toast({
+            title: "Authentication Error",
+            description: error.message,
+            variant: "destructive"
+          });
+          setTimeout(() => navigate('/login'), 2000);
+          return;
+        }
+        
+        if (!data.session) {
+          setAuthError("Please sign in to access your Shopify store");
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to access your Shopify store",
+            variant: "destructive"
+          });
+          setTimeout(() => navigate('/login'), 2000);
+          return;
+        }
+        
+        // Also validate storeId format here
+        if (!storeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId)) {
+          setAuthError("Invalid store ID format");
+          toast({
+            title: "Error",
+            description: "Invalid store ID format",
+            variant: "destructive"
+          });
+          setTimeout(() => navigate('/dashboard/shopify'), 2000);
+          return;
+        }
+        
+        setIsCheckingAuth(false);
+      } catch (err) {
+        console.error("Error checking authentication:", err);
+        setAuthError("Error checking authentication");
         toast({
-          title: "Authentication Required",
-          description: "Please sign in to access your Shopify store",
+          title: "Authentication Error",
+          description: "Failed to check authentication status",
           variant: "destructive"
         });
-        navigate('/login');
+        setTimeout(() => navigate('/login'), 2000);
       }
-      setIsCheckingAuth(false);
     };
     
     checkAuth();
-  }, [navigate, toast]);
+  }, [navigate, toast, storeId]);
   
   const {
     store, products, analysisResults, isLoading, isOptimizing, serpData, serpLoading, siteAudit,
@@ -48,17 +88,6 @@ const ShopifyStore = () => {
   } = useShopifyStoreData({ storeId });
 
   useEffect(() => {
-    // Check if we have a valid storeId
-    if (!storeId) {
-      toast({
-        title: "Invalid store",
-        description: "No store ID provided",
-        variant: "destructive"
-      });
-      navigate('/dashboard/shopify');
-      return;
-    }
-
     // Handle error by redirecting after a delay
     if (error) {
       toast({
@@ -74,7 +103,32 @@ const ShopifyStore = () => {
   if (isCheckingAuth) {
     return (
       <DashboardLayout>
-        <ShopifyStoreLoading />
+        <div className="container mx-auto py-8 flex flex-col items-center justify-center">
+          <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">Checking Authentication...</h2>
+          <p className="text-muted-foreground">Please wait while we verify your credentials</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+  
+  if (authError) {
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto py-8">
+          <div className="text-center py-12 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-4">Authentication Error</h1>
+            <p className="text-muted-foreground mb-6">{authError}</p>
+            <Button onClick={() => navigate('/login')} className="gap-2 mr-2">
+              Go to Login
+            </Button>
+            <Button onClick={() => navigate('/dashboard/shopify')} variant="outline" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Stores
+            </Button>
+          </div>
+        </div>
       </DashboardLayout>
     );
   }

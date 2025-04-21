@@ -4,12 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchShopifyProducts } from '@/services/shopify';
 import type { ShopifyStore, ShopifyProduct, ShopifyProductsResponse } from '@/types/shopify';
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 export function useShopifyStoreMeta(storeId: string | undefined) {
   const [store, setStore] = useState<ShopifyStore | null>(null);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { toast } = useToast();
 
@@ -31,6 +33,7 @@ export function useShopifyStoreMeta(storeId: string | undefined) {
             description: "Please sign in to access your Shopify store",
             variant: "destructive"
           });
+          navigate('/login');
           return;
         }
 
@@ -92,7 +95,7 @@ export function useShopifyStoreMeta(storeId: string | undefined) {
     };
 
     fetchMeta();
-  }, [storeId, toast]);
+  }, [storeId, toast, navigate]);
 
   return { store, products, isLoading, error, setProducts };
 }
