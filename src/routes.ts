@@ -3,7 +3,7 @@ import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import Research from "@/pages/Research";
 import ShopifyStores from "@/pages/ShopifyStores";
-import ShopifyStore from "@/pages/ShopifyStore";
+import ShopifyStore from "@/pages/ShopifyStore"; // Changed from import type to regular import
 import ShopifyCallback from "@/pages/ShopifyCallback";
 import Integrations from "@/pages/Integrations";
 import ContentBriefs from "@/pages/ContentBriefs";

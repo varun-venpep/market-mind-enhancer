@@ -1,3 +1,3 @@
 
-// Barrel for Shopify types, re-export everything from new submodules.
-export * from './shopify';
+// Re-export everything from the shopify directory
+export * from './shopify/index';
