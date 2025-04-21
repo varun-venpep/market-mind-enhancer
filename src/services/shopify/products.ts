@@ -31,12 +31,11 @@ export async function applyOptimization(storeId: string, optimization: any) {
 export async function revertOptimization(optimizationId: string) {
   const currentDate = new Date().toISOString();
   
-  // Use the explicit update object with the correct type
   const { data, error } = await supabase
     .from('shopify_optimization_history')
     .update({ 
       reverted_at: currentDate 
-    })
+    } as Partial<ShopifyOptimizationHistoryRecord>)
     .eq('id', optimizationId)
     .select();
     
