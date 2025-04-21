@@ -248,7 +248,8 @@ export async function getOptimizationHistory(storeId: string): Promise<ShopifyOp
       applied_at: item.applied_at,
       applied_by: item.applied_by || 'system',
       reverted: item.reverted || false,
-      reverted_at: item.reverted_at
+      reverted_at: item.reverted_at,
+      optimization_type: item.optimization_type
     })) as ShopifyOptimizationHistory[];
   } catch (error) {
     console.error('Error fetching optimization history:', error);

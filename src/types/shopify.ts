@@ -220,6 +220,7 @@ export interface ShopifyOptimizationHistory {
   applied_by: string;
   reverted: boolean;
   reverted_at?: string;
+  optimization_type?: string; // Added to match database schema
 }
 
 export interface ShopifyOptimizationHistory {
