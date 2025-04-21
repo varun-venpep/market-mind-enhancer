@@ -14,6 +14,7 @@ import { useShopifyStoreData } from "@/hooks/shopify/useShopifyStoreData";
 import ShopifyStoreLoading from '@/components/Shopify/ShopifyStoreLoading';
 import ShopifyStoreError from '@/components/Shopify/ShopifyStoreError';
 import { supabase } from '@/integrations/supabase/client';
+import { refreshSession } from '@/services/supabaseUtils';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -22,11 +23,17 @@ const ShopifyStore = () => {
   const [activeTab, setActiveTab] = React.useState('products');
   const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
   const [authError, setAuthError] = React.useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   
   // Check authentication first
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsRefreshing(true);
+        
+        // Try to refresh the session first to prevent flickering due to auth issues
+        await refreshSession();
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -42,14 +49,18 @@ const ShopifyStore = () => {
         }
         
         if (!data.session) {
-          setAuthError("Please sign in to access your Shopify store");
-          toast({
-            title: "Authentication Required",
-            description: "Please sign in to access your Shopify store",
-            variant: "destructive"
-          });
-          setTimeout(() => navigate('/login'), 2000);
-          return;
+          // One more refresh attempt before giving up
+          const refreshed = await refreshSession();
+          if (!refreshed) {
+            setAuthError("Please sign in to access your Shopify store");
+            toast({
+              title: "Authentication Required",
+              description: "Please sign in to access your Shopify store",
+              variant: "destructive"
+            });
+            setTimeout(() => navigate('/login'), 2000);
+            return;
+          }
         }
         
         // Also validate storeId format here
@@ -64,6 +75,7 @@ const ShopifyStore = () => {
           return;
         }
         
+        localStorage.setItem('lastVisitedStoreId', storeId);
         setIsCheckingAuth(false);
       } catch (err) {
         console.error("Error checking authentication:", err);
@@ -74,10 +86,26 @@ const ShopifyStore = () => {
           variant: "destructive"
         });
         setTimeout(() => navigate('/login'), 2000);
+      } finally {
+        setIsRefreshing(false);
       }
     };
     
     checkAuth();
+    
+    // Set up auth state change listeners
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
+      
+      if (event === 'SIGNED_OUT') {
+        // Handle sign out
+        navigate('/login');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, toast, storeId]);
   
   const {
@@ -100,12 +128,23 @@ const ShopifyStore = () => {
     }
   }, [error, navigate, toast, storeId]);
 
-  if (isCheckingAuth) {
+  // Add periodic session refresh to prevent auth issues
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      await refreshSession();
+    }, 60000); // Every minute
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  if (isCheckingAuth || isRefreshing) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto py-8 flex flex-col items-center justify-center">
+        <div className="container mx-auto py-8 flex flex-col items-center justify-center min-h-[60vh]">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Checking Authentication...</h2>
+          <h2 className="text-2xl font-semibold mb-2">
+            {isRefreshing ? "Refreshing Session..." : "Checking Authentication..."}
+          </h2>
           <p className="text-muted-foreground">Please wait while we verify your credentials</p>
         </div>
       </DashboardLayout>
@@ -120,13 +159,31 @@ const ShopifyStore = () => {
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h1 className="text-3xl font-bold mb-4">Authentication Error</h1>
             <p className="text-muted-foreground mb-6">{authError}</p>
-            <Button onClick={() => navigate('/login')} className="gap-2 mr-2">
-              Go to Login
-            </Button>
-            <Button onClick={() => navigate('/dashboard/shopify')} variant="outline" className="gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Stores
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button onClick={() => navigate('/login')} className="gap-2">
+                Go to Login
+              </Button>
+              <Button 
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  const success = await refreshSession();
+                  setIsRefreshing(false);
+                  if (success) {
+                    window.location.reload();
+                  }
+                }} 
+                variant="outline" 
+                className="gap-2"
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Refresh Session
+              </Button>
+              <Button onClick={() => navigate('/dashboard/shopify')} variant="outline" className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Stores
+              </Button>
+            </div>
           </div>
         </div>
       </DashboardLayout>

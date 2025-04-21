@@ -5,7 +5,7 @@ import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, ArrowLeft, Loader2 } from "lucide-react";
+import { Plus, ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import ShopifyConnect from '@/components/ShopifyConnect';
 import { getConnectedShopifyStores, disconnectShopifyStore } from '@/services/shopify';
@@ -22,6 +22,7 @@ import { refreshSession } from '@/services/supabaseUtils';
 export default function ShopifyStores() {
   const [stores, setStores] = useState<ShopifyStore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [serpStats, setSerpStats] = useState({
     topKeywords: [] as string[],
@@ -36,6 +37,7 @@ export default function ShopifyStores() {
   // First check if we need to refresh the session
   useEffect(() => {
     const checkAuth = async () => {
+      setIsRefreshing(true);
       if (!user || !session) {
         // Try to refresh the session
         const refreshed = await refreshSession();
@@ -51,6 +53,7 @@ export default function ShopifyStores() {
         }
       }
       setAuthChecked(true);
+      setIsRefreshing(false);
     };
     
     checkAuth();
@@ -103,6 +106,31 @@ export default function ShopifyStores() {
       };
     }
   }, [user, fetchStores, authChecked]);
+  
+  // Add periodic session refresh to prevent auth issues
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      await refreshSession();
+    }, 60000); // Every minute
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+  
+  useEffect(() => {
+    // Set up auth state change listeners
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
+      
+      if (event === 'SIGNED_OUT') {
+        // Handle sign out
+        navigate('/login');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
   
   const fetchSerpData = async () => {
     try {
@@ -171,13 +199,36 @@ export default function ShopifyStores() {
     navigate(`/dashboard/shopify/${storeId}`);
   };
   
+  const handleRefreshSession = async () => {
+    setIsRefreshing(true);
+    const success = await refreshSession();
+    if (success) {
+      toast({
+        title: "Session Refreshed",
+        description: "Authentication session has been refreshed",
+        variant: "default"
+      });
+      fetchStores();
+    } else {
+      toast({
+        title: "Session Refresh Failed",
+        description: "Please try signing in again",
+        variant: "destructive"
+      });
+      setTimeout(() => navigate('/login'), 1500);
+    }
+    setIsRefreshing(false);
+  };
+  
   // Show a loading indicator until auth is checked
-  if (!authChecked) {
+  if (!authChecked || isRefreshing) {
     return (
       <DashboardLayout>
         <div className="container mx-auto py-8 flex flex-col items-center justify-center min-h-[60vh]">
           <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Checking Authentication...</h2>
+          <h2 className="text-2xl font-semibold mb-2">
+            {isRefreshing ? "Refreshing Session..." : "Checking Authentication..."}
+          </h2>
           <p className="text-muted-foreground">Please wait while we verify your credentials</p>
         </div>
       </DashboardLayout>
@@ -206,23 +257,34 @@ export default function ShopifyStores() {
                 Connect and manage your Shopify stores for automated SEO optimization
               </p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 shadow-sm hover:shadow-md transition-all">
-                  <Plus className="h-4 w-4" />
-                  Connect New Store
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Connect Shopify Store</DialogTitle>
-                  <DialogDescription>
-                    Enter your Shopify store credentials to connect it to the SEO platform
-                  </DialogDescription>
-                </DialogHeader>
-                <ShopifyConnect onStoreConnected={handleStoreConnected} />
-              </DialogContent>
-            </Dialog>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleRefreshSession} 
+                className="gap-2" 
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Session'}
+              </Button>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2 shadow-sm hover:shadow-md transition-all">
+                    <Plus className="h-4 w-4" />
+                    Connect New Store
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Connect Shopify Store</DialogTitle>
+                    <DialogDescription>
+                      Enter your Shopify store credentials to connect it to the SEO platform
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ShopifyConnect onStoreConnected={handleStoreConnected} />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
           <ShopifySerpStatsCards isLoading={isLoading} serpStats={serpStats} />
           {isLoading ? (

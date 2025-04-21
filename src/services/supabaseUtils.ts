@@ -19,22 +19,28 @@ export async function getAuthToken(): Promise<string | null> {
       try {
         const localSession = localStorage.getItem('supabase.auth.token');
         if (localSession) {
-          const parsedSession = JSON.parse(localSession);
-          if (parsedSession.refresh_token) {
-            console.log('Attempting to refresh session with stored token');
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
-              refresh_token: parsedSession.refresh_token,
-            });
-            
-            if (refreshError) {
-              console.error('Error refreshing session:', refreshError);
-              return null;
+          try {
+            const parsedSession = JSON.parse(localSession);
+            if (parsedSession.refresh_token) {
+              console.log('Attempting to refresh session with stored token');
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+                refresh_token: parsedSession.refresh_token,
+              });
+              
+              if (refreshError) {
+                console.error('Error refreshing session:', refreshError);
+                return null;
+              }
+              
+              if (refreshData.session) {
+                console.log('Session refreshed successfully');
+                // Store session data for backup
+                localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+                return refreshData.session.access_token;
+              }
             }
-            
-            if (refreshData.session) {
-              console.log('Session refreshed successfully');
-              return refreshData.session.access_token;
-            }
+          } catch (parseError) {
+            console.error('Error parsing local session:', parseError);
           }
         }
       } catch (refreshError) {
@@ -43,6 +49,8 @@ export async function getAuthToken(): Promise<string | null> {
       return null;
     }
     
+    // Store session data for backup
+    localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
     return data.session.access_token || null;
   } catch (error) {
     console.error('Exception in getAuthToken:', error);
@@ -54,21 +62,43 @@ export async function invokeFunction(functionName: string, payload: any): Promis
   try {
     const token = await getAuthToken();
     if (!token) {
+      console.error('Authentication required. Please sign in.');
       toast.error('Authentication required. Please sign in.');
-      throw new Error('Authentication required');
+      
+      // Attempt to refresh the session one more time
+      if (await refreshSession()) {
+        const newToken = await getAuthToken();
+        if (!newToken) {
+          throw new Error('Authentication required');
+        }
+      } else {
+        throw new Error('Authentication required');
+      }
     }
 
     console.log(`Invoking function ${functionName}`);
     
     // Add a retry mechanism for token refresh issues
     let retries = 0;
-    const maxRetries = 2;
+    const maxRetries = 3;
     
     while (retries <= maxRetries) {
       try {
+        const currentToken = await getAuthToken();
+        if (!currentToken) {
+          if (retries < maxRetries) {
+            console.log(`No token available, refreshing session and trying again (${retries + 1}/${maxRetries})`);
+            await refreshSession();
+            retries++;
+            continue;
+          } else {
+            throw new Error('Authentication required after multiple refresh attempts');
+          }
+        }
+        
         const { data, error } = await supabase.functions.invoke(functionName, {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${currentToken}`
           },
           body: payload
         });
@@ -110,6 +140,8 @@ export async function invokeFunction(functionName: string, payload: any): Promis
         throw invokeError;
       }
     }
+    
+    throw new Error(`Failed to invoke function ${functionName} after ${maxRetries} attempts`);
   } catch (error) {
     console.error(`Exception in invokeFunction ${functionName}:`, error);
     throw error;
@@ -137,9 +169,39 @@ export function handleApiError(error: any, defaultMessage: string = 'An error oc
 export async function refreshSession(): Promise<boolean> {
   try {
     console.log('Attempting to refresh session...');
+    
+    // First, try to refresh with the current session
     const { data, error } = await supabase.auth.refreshSession();
+    
     if (error) {
-      console.error('Failed to refresh session:', error);
+      console.error('Failed to refresh session with current token:', error);
+      
+      // Try with localStorage backup if current session fails
+      const localSession = localStorage.getItem('supabase.auth.token');
+      if (localSession) {
+        try {
+          const parsedSession = JSON.parse(localSession);
+          if (parsedSession.refresh_token) {
+            console.log('Attempting to refresh with saved refresh token');
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+              refresh_token: parsedSession.refresh_token,
+            });
+            
+            if (refreshError) {
+              console.error('Failed to refresh with localStorage token:', refreshError);
+              return false;
+            }
+            
+            if (refreshData.session) {
+              console.log('Session refreshed successfully from localStorage token');
+              localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+              return true;
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing local session data:', parseError);
+        }
+      }
       return false;
     }
     

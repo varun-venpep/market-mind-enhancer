@@ -48,6 +48,30 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       setError(errorMessage);
       toast.error(`Failed to refresh products: ${errorMessage}`);
+      
+      // Try to refresh the session if it seems like an auth error
+      if (errorMessage.includes('401') || 
+          errorMessage.includes('auth') || 
+          errorMessage.includes('authorization')) {
+        try {
+          const refreshed = await refreshSession();
+          if (refreshed) {
+            toast.info("Session refreshed, trying again...");
+            try {
+              const retryResponse = await fetchShopifyProducts(storeId);
+              if (!retryResponse.error && retryResponse.products) {
+                setProducts(retryResponse.products);
+                setError(null);
+                toast.success(`Successfully refreshed ${retryResponse.products.length || 0} products after session refresh`);
+              }
+            } catch (retryError) {
+              console.error("Retry error after session refresh:", retryError);
+            }
+          }
+        } catch (refreshError) {
+          console.error("Error refreshing session:", refreshError);
+        }
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -84,14 +108,30 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
         <AlertCircle className="h-4 w-4 mr-2" />
         <AlertTitle>Error Loading Products</AlertTitle>
         <AlertDescription className="mt-2">{error}</AlertDescription>
-        <Button 
-          variant="outline" 
-          className="mt-4" 
-          onClick={refreshProducts}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Trying Again...' : 'Try Again'}
-        </Button>
+        <div className="flex gap-2 mt-4">
+          <Button 
+            variant="outline" 
+            onClick={refreshProducts}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Trying Again...' : 'Try Again'}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              const refreshed = await refreshSession();
+              if (refreshed) {
+                toast.success("Session refreshed successfully");
+                refreshProducts();
+              } else {
+                toast.error("Failed to refresh session");
+              }
+            }}
+            disabled={isLoading}
+          >
+            Refresh Session
+          </Button>
+        </div>
       </Alert>
     );
   }
@@ -105,7 +145,7 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
   return (
     <div className="space-y-6">
       {error && (
-        <Alert variant="default" className="mb-6"> {/* Changed from warning to default */}
+        <Alert variant="default" className="mb-6"> 
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertTitle>Warning</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
