@@ -78,15 +78,9 @@ const ShopifyConnect = () => {
     console.log("Connecting store with data:", { storeUrl: data.storeUrl });
     
     try {
-      // Normalize the store URL to ensure it has the right format
-      let storeUrl = data.storeUrl.trim().toLowerCase();
-      if (!storeUrl.endsWith('.myshopify.com')) {
-        storeUrl = `${storeUrl}.myshopify.com`;
-      }
-      
       // Call the Shopify connect function
       await connectShopifyStore({
-        storeUrl,
+        storeUrl: data.storeUrl,
         accessToken: data.accessToken
       });
       

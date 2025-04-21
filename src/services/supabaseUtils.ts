@@ -60,7 +60,24 @@ export const invokeFunction = async (functionName: string, payload: any) => {
       console.error(`Error invoking function ${functionName} (Status: ${statusCode}):`, response.error);
       
       let errorMessage = response.error.message || 'Operation failed';
-      if (response.error.context?.statusText) {
+      
+      // Try to extract more detailed error from the response if possible
+      let detailedError = null;
+      try {
+        if (response.error.context && response.error.context.body) {
+          const bodyText = await response.error.context.body.text();
+          const bodyJson = JSON.parse(bodyText);
+          if (bodyJson && bodyJson.error) {
+            detailedError = bodyJson.error;
+          }
+        }
+      } catch (e) {
+        console.warn("Could not parse error details from response", e);
+      }
+      
+      if (detailedError) {
+        errorMessage = detailedError;
+      } else if (response.error.context?.statusText) {
         errorMessage += ` (${response.error.context.statusText})`;
       }
       

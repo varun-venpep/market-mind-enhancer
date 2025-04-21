@@ -1,4 +1,44 @@
 
+// Define shared types for use across edge functions
+
+export interface WebsiteSEOAudit {
+  id: string;
+  store_id: string;
+  created_at: string;
+  score: number;
+  issues: WebsiteSEOIssue[];
+  optimizations: WebsiteSEOOptimization[];
+  meta: {
+    pages_analyzed: number;
+    product_pages: number;
+    collection_pages: number;
+    blog_pages: number;
+    other_pages: number;
+  };
+}
+
+export interface WebsiteSEOIssue {
+  id: string;
+  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  details: string;
+  impact_score: number;
+  affected_urls?: string[];
+}
+
+export interface WebsiteSEOOptimization {
+  id: string;
+  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
+  entity: string;
+  field: string;
+  original: string;
+  suggestion: string;
+  impact_score: number;
+  applied: boolean;
+  affected_urls?: string[];
+}
+
 export interface ShopifyProduct {
   id: number;
   title: string;
@@ -13,7 +53,7 @@ export interface ShopifyProduct {
   variants: ShopifyVariant[];
   images: ShopifyImage[];
   options: ShopifyOption[];
-  metafields: ShopifyMetafield[];
+  metafields?: ShopifyMetafield[];
 }
 
 export interface ShopifyVariant {
@@ -73,52 +113,9 @@ export interface ShopifyMetafield {
   description: string | null;
 }
 
-export interface ShopifyStore {
-  id: string;
-  store_url: string;
-  access_token: string;
-  user_id: string;
-  created_at: string;
-  store_name?: string;
-  store_owner?: string;
-  email?: string;
-}
-
-// Add WebsiteSEO interfaces to match the type definitions in src/types/shopify/seo.ts
-export interface WebsiteSEOAudit {
-  id: string;
-  store_id: string;
-  created_at: string;
-  score: number;
-  issues: WebsiteSEOIssue[];
-  optimizations: WebsiteSEOOptimization[];
-  meta: {
-    pages_analyzed: number;
-    product_pages: number;
-    collection_pages: number;
-    blog_pages: number;
-    other_pages: number;
-  };
-}
-
-export interface WebsiteSEOIssue {
-  id: string;
-  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  message: string;
-  details: string;
-  affected_urls?: string[];
-  impact_score: number;
-}
-
-export interface WebsiteSEOOptimization {
-  id: string;
-  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
-  entity: string;
-  field: string;
-  original: string;
-  suggestion: string;
-  applied: boolean;
-  impact_score: number;
-  affected_urls?: string[];
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }

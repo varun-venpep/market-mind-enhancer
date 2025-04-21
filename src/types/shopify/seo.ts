@@ -56,9 +56,9 @@ export interface WebsiteSEOOptimization {
   field: string;
   original: string;
   suggestion: string;
-  affected_urls?: string[];
-  applied: boolean;
   impact_score: number;
+  applied: boolean;
+  affected_urls?: string[];
 }
 
 // Additional interface for SEO API responses

@@ -61,7 +61,19 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
       throw new Error('Store URL and access token are required');
     }
     
-    const data = await invokeFunction('shopify-connect', credentials);
+    // Normalize the store URL to ensure it has the right format
+    let storeUrl = credentials.storeUrl.trim().toLowerCase();
+    if (storeUrl.endsWith('.myshopify.com')) {
+      // If it already has the domain, extract just the store name part
+      storeUrl = storeUrl.replace('.myshopify.com', '');
+    }
+    
+    console.log(`Connecting to Shopify store: ${storeUrl}`);
+    
+    const data = await invokeFunction('shopify-connect', {
+      storeUrl: storeUrl,
+      accessToken: credentials.accessToken
+    });
     
     if (!data || !data.store) {
       const errorMessage = data?.error || 'Failed to connect to Shopify store';
@@ -74,7 +86,7 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
     return data.store as ShopifyStore;
   } catch (error) {
     console.error('Exception in connectShopifyStore:', error);
-    toast.error('Failed to connect Shopify store');
+    toast.error('Failed to connect Shopify store. Please check your credentials and try again.');
     throw error;
   }
 }

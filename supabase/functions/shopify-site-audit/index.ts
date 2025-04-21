@@ -1,10 +1,23 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { corsHeaders } from "../_shared/cors.ts";
-
-// Import shared types
 import { WebsiteSEOAudit, WebsiteSEOIssue, WebsiteSEOOptimization } from "../_shared/types.ts";
+
+// Define CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Content-Type": "application/json"
+};
+
+// Helper function to send consistent responses
+function sendResponse(body: Record<string, any>, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: corsHeaders
+  });
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,37 +26,58 @@ serve(async (req) => {
   }
 
   try {
-    const { storeId } = await req.json();
+    // Parse request body
+    let payload;
+    try {
+      const text = await req.text();
+      payload = text ? JSON.parse(text) : {};
+      console.log("Received payload:", JSON.stringify(payload));
+    } catch (parseError) {
+      console.error(`Error parsing request body: ${parseError.message}`);
+      return sendResponse({
+        error: "Invalid request body format. JSON expected.",
+        details: parseError.message,
+      }, 400);
+    }
+    
+    const { storeId } = payload;
     
     if (!storeId) {
-      return new Response(
-        JSON.stringify({ error: "Store ID is required" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
+      return sendResponse({ 
+        error: "Store ID is required" 
+      }, 400);
     }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Missing Supabase credentials");
+      return sendResponse({ 
+        error: "Server configuration error",
+        details: "Missing Supabase credentials"
+      }, 500);
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Authentication required" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+      return sendResponse({ 
+        error: "Authentication required" 
+      }, 401);
     }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired authentication" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+      console.error("Authentication error:", userError);
+      return sendResponse({ 
+        error: "Invalid or expired authentication" 
+      }, 401);
     }
 
     // Get store information from database
@@ -55,26 +89,15 @@ serve(async (req) => {
       .single();
 
     if (storeError || !store) {
-      return new Response(
-        JSON.stringify({ error: "Store not found or access denied" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
-      );
+      console.error("Store fetch error:", storeError);
+      return sendResponse({ 
+        error: "Store not found or access denied" 
+      }, 404);
     }
 
-    // Generate a sample audit report (In a real app, you would crawl the store and analyze it)
-    // For demo purposes, we're creating mock data
+    // Generate a sample audit report
+    console.log(`Generating audit report for store: ${store.store_url}`);
     const auditReport: WebsiteSEOAudit = generateSampleAudit(store.store_url);
-    
-    // Ensure all issues and optimizations have an ID
-    auditReport.issues = auditReport.issues.map(issue => ({
-      ...issue,
-      id: crypto.randomUUID()
-    }));
-    
-    auditReport.optimizations = auditReport.optimizations.map(opt => ({
-      ...opt,
-      id: crypto.randomUUID()
-    }));
     
     // Store the audit report in the database
     const { data: insertedAudit, error: insertError } = await supabase
@@ -89,25 +112,22 @@ serve(async (req) => {
 
     if (insertError) {
       console.error("Error storing audit report:", insertError);
-      return new Response(
-        JSON.stringify({ error: "Failed to store audit report" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-      );
+      return sendResponse({ 
+        error: "Failed to store audit report",
+        details: insertError.message
+      }, 500);
     }
 
     // Add the database ID to the response
     auditReport.id = insertedAudit.id;
     
-    return new Response(
-      JSON.stringify(auditReport),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
-    );
+    return sendResponse(auditReport, 200);
   } catch (error) {
     console.error("Error in site audit function:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
-    );
+    return sendResponse({ 
+      error: "Internal server error", 
+      details: error.message 
+    }, 500);
   }
 });
 
@@ -210,10 +230,11 @@ function generateSampleAudit(storeUrl: string): WebsiteSEOAudit {
     }
   ];
   
+  const currentDate = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
-    store_id: '',  // This will be filled in later
-    created_at: new Date().toISOString(),
+    store_id: '',  // This will be filled in by the calling function
+    created_at: currentDate,
     score: score,
     issues: issues,
     optimizations: optimizations,
