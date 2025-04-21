@@ -10,7 +10,7 @@ function parseSEOAnalysis(analysis: any): SEOAnalysisResult {
     title: analysis.title,
     handle: analysis.handle,
     issues: Array.isArray(analysis.issues)
-      ? (analysis.issues as Json[]).map(issue => ({
+      ? (analysis.issues as unknown as Json[]).map(issue => ({
           type: (issue as any).type,
           severity: (issue as any).severity,
           message: (issue as any).message,
@@ -19,7 +19,7 @@ function parseSEOAnalysis(analysis: any): SEOAnalysisResult {
       : [],
     score: analysis.score,
     optimizations: Array.isArray(analysis.optimizations)
-      ? (analysis.optimizations as Json[]).map(opt => ({
+      ? (analysis.optimizations as unknown as Json[]).map(opt => ({
           type: (opt as any).type,
           field: (opt as any).field,
           original: (opt as any).original,
