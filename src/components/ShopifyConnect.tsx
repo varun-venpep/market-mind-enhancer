@@ -29,6 +29,7 @@ type FormValues = z.infer<typeof formSchema>;
 const ShopifyConnect = () => {
   const { user } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
@@ -42,12 +43,20 @@ const ShopifyConnect = () => {
   useEffect(() => {
     // Check for authentication status
     const checkAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error || !data.session) {
-        setAuthError("You must be logged in to connect a Shopify store");
-      } else {
-        setAuthError(null);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Authentication check error:", error);
+          setAuthError("Error checking authentication: " + error.message);
+        } else if (!data.session) {
+          setAuthError("You must be logged in to connect a Shopify store");
+        } else {
+          setAuthError(null);
+        }
+      } catch (err) {
+        console.error("Exception in auth check:", err);
+        setAuthError("Error checking authentication status");
       }
     };
     
@@ -55,6 +64,9 @@ const ShopifyConnect = () => {
   }, []);
 
   const onSubmit = async (data: FormValues) => {
+    // Clear any previous errors
+    setConnectionError(null);
+    
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) {
       toast.error("You must be logged in to connect a Shopify store");
@@ -87,6 +99,12 @@ const ShopifyConnect = () => {
       }, 1500);
     } catch (error) {
       console.error("Error connecting Shopify store:", error);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to connect Shopify store';
+      
+      setConnectionError(errorMessage);
       toast.error("Failed to connect Shopify store. Please check your credentials.");
       // Do not reset the form to allow the user to correct their input
     } finally {
@@ -111,6 +129,14 @@ const ShopifyConnect = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Authentication Required</AlertTitle>
           <AlertDescription>{authError}</AlertDescription>
+        </Alert>
+      )}
+      
+      {connectionError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Connection Failed</AlertTitle>
+          <AlertDescription>{connectionError}</AlertDescription>
         </Alert>
       )}
       

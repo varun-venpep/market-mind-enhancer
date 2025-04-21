@@ -35,6 +35,14 @@ export const invokeFunction = async (functionName: string, payload: any) => {
     
     console.log(`Invoking function ${functionName} with payload:`, payload);
     
+    // Check if payload is valid
+    if (typeof payload !== 'object') {
+      console.error(`Invalid payload for function ${functionName}:`, payload);
+      toast.error('Invalid request data format');
+      throw new Error('Invalid payload: must be an object');
+    }
+    
+    // Ensure the function is called with content-type application/json
     const response = await supabase.functions.invoke(functionName, {
       body: payload,
       headers: {
@@ -43,19 +51,29 @@ export const invokeFunction = async (functionName: string, payload: any) => {
       }
     });
     
+    // Log complete response for debugging
+    console.log(`Complete response from ${functionName}:`, response);
+    
     if (response.error) {
-      console.error(`Error invoking function ${functionName}:`, response.error);
+      // Extract status code for better diagnostics
+      const statusCode = response.error.context?.status || 'unknown';
+      console.error(`Error invoking function ${functionName} (Status: ${statusCode}):`, response.error);
       
-      // Show a user-friendly error message
+      let errorMessage = response.error.message || 'Operation failed';
+      if (response.error.context?.statusText) {
+        errorMessage += ` (${response.error.context.statusText})`;
+      }
+      
+      // Show a user-friendly error message based on function
       if (functionName === 'shopify-connect') {
         toast.error('Failed to connect Shopify store. Please check your credentials.');
       } else if (functionName === 'shopify-products') {
         toast.error('Could not load products. Please check your store connection or try again later.');
       } else {
-        toast.error(`Error: ${response.error.message || 'Failed to process request'}`);
+        toast.error(`Error: ${errorMessage}`);
       }
       
-      throw new Error(`Function error: ${response.error.message || response.error}`);
+      throw new Error(`Function error (${statusCode}): ${errorMessage}`);
     }
     
     // Handle empty responses gracefully
@@ -64,14 +82,14 @@ export const invokeFunction = async (functionName: string, payload: any) => {
       return { success: true, message: "Operation completed successfully" };
     }
     
-    console.log(`Function response:`, response.data);
+    console.log(`Function ${functionName} response:`, response.data);
     return response.data || { success: true };
   } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);
     
     // Show a user-friendly error message
     if (functionName === 'shopify-connect') {
-      toast.error('Failed to connect Shopify store. Please check your credentials.');
+      toast.error('Failed to connect Shopify store. Please check your credentials and try again.');
     } else if (functionName === 'shopify-products') {
       toast.error('Could not load products. Please check your store connection or try again later.');
     } else {
