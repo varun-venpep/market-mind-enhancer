@@ -91,7 +91,7 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
   return (
     <div className="space-y-6">
       {error && (
-        <Alert variant="warning" className="mb-6">
+        <Alert variant="default" className="mb-6"> {/* Changed from warning to default */}
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertTitle>Warning</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
