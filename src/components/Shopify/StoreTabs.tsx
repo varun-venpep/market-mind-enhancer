@@ -1,10 +1,9 @@
-
 import SiteAuditReport from '@/components/Shopify/SiteAuditReport';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Globe, ShoppingBag, FileText, AlertCircle, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ProductList } from '@/components/Shopify/ProductList'; // Changed to named import
+import { ProductList } from '@/components/Shopify/ProductList';
 import BlogGenerator from '@/components/Shopify/BlogGenerator';
 
 interface StoreTabsProps {

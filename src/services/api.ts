@@ -1,5 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { SEOAnalysisResult, ShopifyProduct, ShopifyStore, WebsiteSEOAudit, ShopifyOptimizationHistory } from '@/types/shopify';
+import type { 
+  SEOAnalysisResult, 
+  ShopifyProduct, 
+  ShopifyStore, 
+  WebsiteSEOAudit, 
+  ShopifyOptimizationHistory,
+  ShopifyOptimizationHistoryRecord
+} from '@/types/shopify';
 
 export interface ShopifyProductsResponse {
   products: ShopifyProduct[];
@@ -238,7 +245,7 @@ export async function getOptimizationHistory(storeId: string): Promise<ShopifyOp
     
     if (error) throw error;
     
-    return data.map(item => ({
+    return data.map((item: ShopifyOptimizationHistoryRecord) => ({
       id: item.id,
       store_id: item.store_id,
       entity_id: item.entity_id,

@@ -211,7 +211,7 @@ export interface ShopifyOptimizationHistoryRecord {
   id: string;
   store_id: string;
   entity_id: string;
-  entity_type: 'product' | 'page' | 'blog' | 'article' | 'theme' | 'global';
+  entity_type: string;
   field: string;
   original_value: string | null;
   new_value: string;
