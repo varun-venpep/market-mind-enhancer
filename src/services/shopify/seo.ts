@@ -17,6 +17,23 @@ export async function getSiteAuditHistory(storeId: string): Promise<WebsiteSEOAu
   if (error) throw error;
   return data.map(item => {
     const auditData = typeof item.audit_data === 'string' ? JSON.parse(item.audit_data) : item.audit_data;
+    
+    // Ensure all issues have an id
+    if (auditData.issues) {
+      auditData.issues = auditData.issues.map((issue: any) => ({
+        ...issue,
+        id: issue.id || crypto.randomUUID()
+      }));
+    }
+    
+    // Ensure all optimizations have an id
+    if (auditData.optimizations) {
+      auditData.optimizations = auditData.optimizations.map((opt: any) => ({
+        ...opt,
+        id: opt.id || crypto.randomUUID()
+      }));
+    }
+    
     return {
       id: item.id,
       store_id: item.store_id,

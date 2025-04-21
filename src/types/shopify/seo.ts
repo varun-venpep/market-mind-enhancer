@@ -40,21 +40,25 @@ export interface WebsiteSEOAudit {
 }
 
 export interface WebsiteSEOIssue {
-  type: string;
-  severity: 'high' | 'medium' | 'low';
+  id: string;
+  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
+  severity: 'critical' | 'high' | 'medium' | 'low';
   message: string;
-  details?: string;
+  details: string;
+  impact_score: number;
   affected_urls?: string[];
 }
 
 export interface WebsiteSEOOptimization {
-  type: string;
+  id: string;
+  type: 'meta' | 'structure' | 'content' | 'performance' | 'mobile' | 'security';
   entity: string;
   field: string;
   original: string;
   suggestion: string;
   affected_urls?: string[];
-  applied?: boolean;
+  applied: boolean;
+  impact_score: number;
 }
 
 // Additional interface for SEO API responses
