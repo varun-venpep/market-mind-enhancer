@@ -31,8 +31,7 @@ export const invokeFunction = async (functionName: string, payload: any) => {
         'Content-Type': 'application/json'
       }
     });
-    console.log(`Function response:`, response);
-
+    
     if (response.error) {
       console.error(`Error invoking function ${functionName}:`, response.error);
       toast.error(`Error: ${response.error.message || 'Failed to process request'}`);
@@ -45,6 +44,7 @@ export const invokeFunction = async (functionName: string, payload: any) => {
       return { success: true, message: "Operation completed successfully" };
     }
     
+    console.log(`Function response:`, response);
     return response.data || { success: true };
   } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);

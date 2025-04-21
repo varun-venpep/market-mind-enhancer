@@ -38,6 +38,20 @@ serve(async (req) => {
       });
     }
     
+    // Verify the token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ 
+        error: 'Failed to authenticate user' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
     // Get the store details
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')

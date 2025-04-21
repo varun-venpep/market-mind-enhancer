@@ -26,6 +26,18 @@ const ShopifyStore = () => {
   } = useShopifyStoreData({ storeId });
 
   useEffect(() => {
+    // Check if we have a valid storeId
+    if (!storeId) {
+      toast({
+        title: "Invalid store",
+        description: "No store ID provided",
+        variant: "destructive"
+      });
+      navigate('/dashboard/shopify');
+      return;
+    }
+
+    // Handle error by redirecting after a delay
     if (error) {
       toast({
         title: "Error loading store",
@@ -35,7 +47,7 @@ const ShopifyStore = () => {
       const timer = setTimeout(() => navigate('/dashboard/shopify'), 3000);
       return () => clearTimeout(timer);
     }
-  }, [error, navigate, toast]);
+  }, [error, navigate, toast, storeId]);
 
   if (isLoading) {
     return (
@@ -58,7 +70,7 @@ const ShopifyStore = () => {
       <DashboardLayout>
         <div className="container mx-auto py-8">
           <h1 className="text-3xl font-bold mb-8">Store not found</h1>
-          <button onClick={() => navigate('/dashboard/shopify')} className="gap-2 btn btn-primary">
+          <button onClick={() => navigate('/dashboard/shopify')} className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
             Back to Stores
           </button>
         </div>
