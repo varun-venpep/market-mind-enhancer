@@ -16,6 +16,11 @@ export async function recordOptimizationHistory(
     field
   });
   
+  if (!storeId || !entityId || !entityType || !field) {
+    console.error('Missing required parameters for optimization history');
+    return null;
+  }
+  
   try {
     const { data, error } = await supabase
       .from('shopify_optimization_history')
@@ -24,10 +29,10 @@ export async function recordOptimizationHistory(
         entity_id: entityId.toString(),
         entity_type: entityType,
         field: field,
-        original_value: originalValue,
-        new_value: newValue,
+        original_value: originalValue || '',
+        new_value: newValue || '',
         applied_at: new Date().toISOString(),
-        applied_by: userId,
+        applied_by: userId || 'system',
         optimization_type: field.includes('meta') ? 'metadata' : 'content'
       })
       .select('id')
@@ -38,10 +43,11 @@ export async function recordOptimizationHistory(
       throw error;
     }
 
-    console.log('Successfully recorded optimization history with ID:', data.id);
-    return data.id;
+    console.log('Successfully recorded optimization history with ID:', data?.id);
+    return data?.id;
   } catch (error) {
     console.error('Error in recordOptimizationHistory:', error);
-    throw error;
+    // Don't throw here, just log the error to prevent blocking the optimization process
+    return null;
   }
 }

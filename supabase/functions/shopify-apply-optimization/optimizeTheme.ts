@@ -5,7 +5,8 @@ import { validateStoreCredentials } from './shopifyApiUtils.ts';
 export async function optimizeTheme(store: Store, optimization: Optimization): Promise<OptimizeResult> {
   console.log('Starting theme optimization for:', optimization);
   
-  if (!validateStoreCredentials(store)) {
+  if (!store || !store.access_token || !store.store_url) {
+    console.error('Invalid store data received:', store);
     return {
       success: false,
       error: 'Invalid store credentials',
@@ -14,6 +15,16 @@ export async function optimizeTheme(store: Store, optimization: Optimization): P
   }
   
   try {
+    const isValid = await validateStoreCredentials(store);
+    if (!isValid) {
+      console.error('Store credentials validation failed');
+      return {
+        success: false,
+        error: 'Invalid store credentials',
+        entityType: 'theme'
+      };
+    }
+    
     // Theme optimizations should generally happen in Shopify admin directly
     console.log('Theme optimization completed with advisory message');
     return {

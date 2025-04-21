@@ -44,6 +44,7 @@ const ShopifyStore = () => {
   const [siteAudit, setSiteAudit] = useState<WebsiteSEOAudit | null>(null);
   const [isRunningAudit, setIsRunningAudit] = useState(false);
   const [optimizationHistory, setOptimizationHistory] = useState<ShopifyOptimizationHistory[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -53,48 +54,100 @@ const ShopifyStore = () => {
     const fetchStoreData = async () => {
       try {
         setIsLoading(true);
+        setError(null);
+        
+        // Fetch store details
         const { data: storeData, error: storeError } = await supabase
           .from('shopify_stores')
           .select('*')
           .eq('id', storeId)
           .single();
-        if (storeError) throw storeError;
-        setStore(storeData as ShopifyStore);
-        const productsData: ShopifyProductsResponse = await fetchShopifyProducts(storeId);
-        setProducts(productsData.products);
-        const { data: analyses, error: analysesError } = await supabase
-          .from('shopify_seo_analyses')
-          .select('*')
-          .eq('store_id', storeId);
-        if (!analysesError && analyses) {
-          const analysisMap = analyses.reduce((acc, analysis) => {
-            const typedAnalysis: SEOAnalysisResult = {
-              product_id: analysis.product_id,
-              title: analysis.title,
-              handle: analysis.handle,
-              issues: analysis.issues as unknown as SEOIssue[],
-              score: analysis.score,
-              optimizations: analysis.optimizations as unknown as SEOOptimization[]
-            };
-            acc[analysis.product_id] = typedAnalysis;
-            return acc;
-          }, {} as Record<string, SEOAnalysisResult>);
-          setAnalysisResults(analysisMap);
+          
+        if (storeError) {
+          console.error('Error fetching store data:', storeError);
+          throw storeError;
         }
+        
+        if (!storeData) {
+          console.error('No store found with ID:', storeId);
+          throw new Error('Store not found');
+        }
+        
+        console.log('Fetched store data:', storeData);
+        setStore(storeData as ShopifyStore);
+        
+        // Fetch products
+        try {
+          console.log('Fetching products for store:', storeId);
+          const productsData: ShopifyProductsResponse = await fetchShopifyProducts(storeId);
+          console.log('Fetched products:', productsData);
+          
+          if (productsData && productsData.products) {
+            setProducts(productsData.products);
+          } else {
+            console.warn('No products returned for store:', storeId);
+            setProducts([]);
+          }
+        } catch (productsError) {
+          console.error('Error fetching products:', productsError);
+          toast({
+            title: "Warning",
+            description: "Could not load products. Please check your store connection.",
+            variant: "destructive"
+          });
+          setProducts([]);
+        }
+        
+        // Fetch SEO analyses
+        try {
+          const { data: analyses, error: analysesError } = await supabase
+            .from('shopify_seo_analyses')
+            .select('*')
+            .eq('store_id', storeId);
+            
+          if (analysesError) {
+            console.error('Error fetching SEO analyses:', analysesError);
+          } else if (analyses && analyses.length > 0) {
+            console.log('Fetched SEO analyses:', analyses);
+            const analysisMap = analyses.reduce((acc, analysis) => {
+              const typedAnalysis: SEOAnalysisResult = {
+                product_id: analysis.product_id,
+                title: analysis.title,
+                handle: analysis.handle,
+                issues: analysis.issues as unknown as SEOIssue[],
+                score: analysis.score,
+                optimizations: analysis.optimizations as unknown as SEOOptimization[]
+              };
+              acc[analysis.product_id] = typedAnalysis;
+              return acc;
+            }, {} as Record<string, SEOAnalysisResult>);
+            setAnalysisResults(analysisMap);
+          }
+        } catch (analysesError) {
+          console.error('Error processing SEO analyses:', analysesError);
+        }
+        
+        // Fetch site audit
         try {
           const audits = await getSiteAuditHistory(storeId);
           if (audits && audits.length > 0) {
+            console.log('Fetched site audit:', audits[0]);
             setSiteAudit(audits[0]);
           }
-        } catch (error) {
-          console.error("Error fetching site audit:", error);
+        } catch (auditError) {
+          console.error("Error fetching site audit:", auditError);
         }
+        
+        // Fetch optimization history
         try {
           const history = await getOptimizationHistory(storeId);
+          console.log('Fetched optimization history:', history);
           setOptimizationHistory(history || []);
-        } catch (error) {
-          console.error("Error fetching optimization history:", error);
+        } catch (historyError) {
+          console.error("Error fetching optimization history:", historyError);
         }
+        
+        // Fetch SERP data if store name is available
         if (storeData && storeData.store_name) {
           const keyword = `${storeData.store_name.toLowerCase()} products`;
           setSerpLoading(true);
@@ -102,24 +155,26 @@ const ShopifyStore = () => {
             const serpResult = await fetchSerpResults(keyword);
             const extractedData = extractSerpData(serpResult);
             setSerpData(extractedData);
-          } catch (error) {
-            console.error("Error fetching SERP data:", error);
+          } catch (serpError) {
+            console.error("Error fetching SERP data:", serpError);
           } finally {
             setSerpLoading(false);
           }
         }
       } catch (error) {
-        console.error('Error fetching store data:', error);
+        console.error('Error in fetchStoreData:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load store data');
         toast({
           title: "Error",
-          description: "Failed to load store data",
+          description: "Failed to load store data. Please try again later.",
           variant: "destructive"
         });
-        navigate('/dashboard/shopify');
+        setTimeout(() => navigate('/dashboard/shopify'), 3000);
       } finally {
         setIsLoading(false);
       }
     };
+    
     fetchStoreData();
   }, [storeId, toast, navigate]);
 
@@ -247,6 +302,23 @@ const ShopifyStore = () => {
       </DashboardLayout>
     );
   }
+  
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto py-8">
+          <div className="rounded-lg bg-red-50 p-6 shadow-sm border border-red-200 max-w-xl mx-auto">
+            <h1 className="text-2xl font-bold text-red-700 mb-4">Error Loading Store</h1>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button onClick={() => navigate('/dashboard/shopify')} className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+              Back to Stores
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+  
   if (!store) {
     return (
       <DashboardLayout>
