@@ -3,7 +3,11 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import ShopifyConnect from "@/components/ShopifyConnect";
 
-export default function ShopifyNoStores() {
+interface ShopifyNoStoresProps {
+  onStoreConnected?: () => void;
+}
+
+export default function ShopifyNoStores({ onStoreConnected }: ShopifyNoStoresProps = {}) {
   return (
     <Card className="hover-card shadow-md">
       <CardHeader>
@@ -13,7 +17,7 @@ export default function ShopifyNoStores() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ShopifyConnect />
+        <ShopifyConnect onStoreConnected={onStoreConnected} />
       </CardContent>
     </Card>
   );

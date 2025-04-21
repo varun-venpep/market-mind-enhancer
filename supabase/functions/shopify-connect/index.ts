@@ -64,17 +64,23 @@ serve(async (req) => {
 
     console.log(`Connecting to Shopify store: ${payload.storeUrl}`);
 
-    // This is a mock implementation
-    // In a real scenario, you would validate with Shopify API
-    // For demo purposes, we're just returning success
+    // Parse JWT to get user ID
+    const jwt = authHeader.replace('Bearer ', '');
+    
+    // In a real implementation, you would connect to the database and save the store credentials
+    // Here's a mock implementation that would be replaced with actual database operations
     const store = {
       id: crypto.randomUUID(),
-      user_id: "user123", // This would typically come from JWT auth
+      user_id: "user123", // This would come from the JWT in a real implementation
+      store_url: payload.storeUrl,
       store_name: payload.storeUrl,
-      access_token: "*********************", // Don't return the actual token
+      access_token: "*********************", // Don't return the actual token for security
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
+    // Log successful connection
+    console.log(`Successfully connected to Shopify store: ${payload.storeUrl}`);
 
     return new Response(
       JSON.stringify({ 

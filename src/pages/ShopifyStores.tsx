@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import ShopifyNoStores from '@/components/Shopify/ShopifyNoStores';
 export default function ShopifyStores() {
   const [stores, setStores] = useState<ShopifyStore[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [serpStats, setSerpStats] = useState({
     topKeywords: [] as string[],
     avgDifficulty: 0,
@@ -29,28 +30,27 @@ export default function ShopifyStores() {
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  const fetchStores = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await getConnectedShopifyStores();
+      setStores(data || []);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching stores:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load connected Shopify stores",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  }, [toast]);
+  
   useEffect(() => {
     const loadingTimeout = setTimeout(() => {
       setIsLoading(false);
     }, 3000);
-    
-    const fetchStores = async () => {
-      try {
-        const data = await getConnectedShopifyStores();
-        setStores(data || []);
-        setIsLoading(false);
-        clearTimeout(loadingTimeout);
-      } catch (error) {
-        console.error("Error fetching stores:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load connected Shopify stores",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        clearTimeout(loadingTimeout);
-      }
-    };
     
     const fetchSerpData = async () => {
       try {
@@ -98,7 +98,7 @@ export default function ShopifyStores() {
     return () => {
       clearTimeout(loadingTimeout);
     };
-  }, [user, toast]);
+  }, [user, fetchStores]);
   
   const handleDisconnect = async (storeId: string) => {
     if (confirm("Are you sure you want to disconnect this store? This will remove all data associated with it.")) {
@@ -118,6 +118,13 @@ export default function ShopifyStores() {
         });
       }
     }
+  };
+  
+  const handleStoreConnected = () => {
+    // Close the dialog
+    setIsDialogOpen(false);
+    // Refetch the stores list
+    fetchStores();
   };
   
   const handleViewStore = (storeId: string) => {
@@ -146,7 +153,7 @@ export default function ShopifyStores() {
                 Connect and manage your Shopify stores for automated SEO optimization
               </p>
             </div>
-            <Dialog>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2 shadow-sm hover:shadow-md transition-all">
                   <Plus className="h-4 w-4" />
@@ -160,7 +167,7 @@ export default function ShopifyStores() {
                     Enter your Shopify store credentials to connect it to the SEO platform
                   </DialogDescription>
                 </DialogHeader>
-                <ShopifyConnect />
+                <ShopifyConnect onStoreConnected={handleStoreConnected} />
               </DialogContent>
             </Dialog>
           </div>

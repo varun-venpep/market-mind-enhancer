@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { connectShopifyStore } from "@/services/shopify";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import ShopifyConnectHeader from "./ShopifyConnectHeader";
 import ShopifyConnectAlerts from "./ShopifyConnectAlerts";
 import ShopifyConnectForm from "./ShopifyConnectForm";
@@ -21,11 +21,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const ShopifyConnect: React.FC = () => {
+interface ShopifyConnectProps {
+  onStoreConnected?: () => void;
+}
+
+const ShopifyConnect: React.FC<ShopifyConnectProps> = ({ onStoreConnected }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const { toast } = useToast();
   
   const {
     register,
@@ -51,13 +54,16 @@ const ShopifyConnect: React.FC = () => {
         accessToken: data.accessToken
       });
       
-      toast({
-        title: "Success",
-        description: "Shopify store connected successfully!",
-        variant: "default"
-      });
+      toast("Shopify store connected successfully!");
       
+      // Reset the form
       reset();
+      
+      // Call the callback if provided
+      if (onStoreConnected) {
+        onStoreConnected();
+      }
+      
     } catch (error: any) {
       console.error("Error connecting Shopify store:", error);
       
@@ -67,11 +73,7 @@ const ShopifyConnect: React.FC = () => {
         setConnectionError(error.message || "Failed to connect to Shopify store");
       }
       
-      toast({
-        title: "Error",
-        description: error.message || "Failed to connect to Shopify store",
-        variant: "destructive"
-      });
+      toast.error(error.message || "Failed to connect to Shopify store");
     } finally {
       setIsConnecting(false);
     }

@@ -81,19 +81,35 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
       throw new Error('Authentication required. Please sign in to connect a store.');
     }
     
-    const data = await invokeFunction('shopify-connect', {
+    const response = await invokeFunction('shopify-connect', {
       storeUrl: storeUrl,
       accessToken: credentials.accessToken
     });
     
-    if (!data || !data.store) {
-      const errorMessage = data?.error || 'Failed to connect to Shopify store';
+    if (!response || !response.store) {
+      const errorMessage = response?.error || 'Failed to connect to Shopify store';
       console.error('Error connecting Shopify store:', errorMessage);
       throw new Error(errorMessage);
     }
     
+    // Insert the new store into the database
+    const { data: insertedStore, error: insertError } = await supabase.from('shopify_stores').insert({
+      id: response.store.id,
+      user_id: session.session.user.id,
+      store_url: storeUrl,
+      store_name: storeUrl,
+      access_token: credentials.accessToken,
+    }).select().single();
+    
+    if (insertError) {
+      console.error('Error saving Shopify store to database:', insertError);
+      throw new Error('Store connected but failed to save to database');
+    }
+    
+    console.log('Shopify store connected successfully:', insertedStore);
     toast.success('Shopify store connected successfully');
-    return data.store as ShopifyStore;
+    
+    return insertedStore as ShopifyStore;
   } catch (error: any) {
     console.error('Exception in connectShopifyStore:', error);
     const errorMessage = error.message || 'Failed to connect Shopify store. Please check your credentials and try again.';
