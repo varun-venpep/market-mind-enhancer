@@ -68,120 +68,147 @@ serve(async (req) => {
       });
     }
     
-    // Fetch product details from Shopify
-    const getUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
-    const productResponse = await fetch(getUrl, {
-      headers: {
-        'X-Shopify-Access-Token': store.access_token,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!productResponse.ok) {
-      console.error(`Shopify API error: ${productResponse.status} ${productResponse.statusText}`);
-      throw new Error(`Failed to fetch product from Shopify: ${productResponse.statusText}`);
-    }
-    
-    const productData = await productResponse.json();
-    const product = productData.product;
-    
-    // Apply optimizations
-    const updatedProduct = { ...product };
-    const appliedChanges = [];
-    
-    for (const opt of optimizations) {
-      if (!opt.applied) {
-        switch (opt.type) {
-          case 'title':
-            if (opt.field === 'title') {
-              updatedProduct.title = opt.suggestion;
-              appliedChanges.push({ field: 'title', from: opt.original, to: opt.suggestion });
-            }
-            break;
-          case 'description':
-            if (opt.field === 'body_html') {
-              updatedProduct.body_html = opt.suggestion;
-              appliedChanges.push({ field: 'body_html', from: opt.original, to: opt.suggestion });
-            }
-            break;
-          case 'url':
-            if (opt.field === 'handle') {
-              updatedProduct.handle = opt.suggestion;
-              appliedChanges.push({ field: 'handle', from: opt.original, to: opt.suggestion });
-            }
-            break;
-          case 'content':
-            if (opt.field === 'tags') {
-              updatedProduct.tags = opt.suggestion;
-              appliedChanges.push({ field: 'tags', from: opt.original, to: opt.suggestion });
-            }
-            break;
-          case 'image':
-            if (opt.field === 'image_alt' && updatedProduct.images && updatedProduct.images.length > 0) {
-              // Update all images without alt text
-              updatedProduct.images = updatedProduct.images.map(img => {
-                if (!img.alt || img.alt.trim() === '') {
-                  return { ...img, alt: opt.suggestion };
-                }
-                return img;
-              });
-              appliedChanges.push({ field: 'image_alt', from: opt.original, to: opt.suggestion });
-            }
-            break;
-        }
-        
-        // Mark this optimization as applied in the database
-        opt.applied = true;
-      }
-    }
-    
-    // Update the product in Shopify
-    if (appliedChanges.length > 0) {
-      const updateUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
-      const updateResponse = await fetch(updateUrl, {
-        method: 'PUT',
+    try {
+      // Fetch product details from Shopify
+      const getUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+      const productResponse = await fetch(getUrl, {
         headers: {
           'X-Shopify-Access-Token': store.access_token,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ product: updatedProduct }),
       });
       
-      if (!updateResponse.ok) {
-        console.error(`Shopify API error: ${updateResponse.status} ${updateResponse.statusText}`);
-        throw new Error(`Failed to update product in Shopify: ${updateResponse.statusText}`);
+      if (!productResponse.ok) {
+        console.error(`Shopify API error: ${productResponse.status} ${productResponse.statusText}`);
+        throw new Error(`Failed to fetch product from Shopify: ${productResponse.statusText}`);
       }
-    }
-    
-    // Update the optimizations in the database
-    const { data: analysis } = await supabase
-      .from('shopify_seo_analyses')
-      .select('*')
-      .eq('store_id', storeId)
-      .eq('product_id', productId)
-      .single();
-    
-    if (analysis) {
-      await supabase
+      
+      const productData = await productResponse.json();
+      const product = productData.product;
+      
+      // Apply optimizations
+      const updatedProduct = { ...product };
+      const appliedChanges = [];
+      
+      for (const opt of optimizations) {
+        if (!opt.applied) {
+          switch (opt.type) {
+            case 'title':
+              if (opt.field === 'title') {
+                updatedProduct.title = opt.suggestion;
+                appliedChanges.push({ field: 'title', from: opt.original, to: opt.suggestion });
+              }
+              break;
+            case 'description':
+              if (opt.field === 'body_html') {
+                updatedProduct.body_html = opt.suggestion;
+                appliedChanges.push({ field: 'body_html', from: opt.original, to: opt.suggestion });
+              }
+              break;
+            case 'url':
+              if (opt.field === 'handle') {
+                updatedProduct.handle = opt.suggestion;
+                appliedChanges.push({ field: 'handle', from: opt.original, to: opt.suggestion });
+              }
+              break;
+            case 'content':
+              if (opt.field === 'tags') {
+                updatedProduct.tags = opt.suggestion;
+                appliedChanges.push({ field: 'tags', from: opt.original, to: opt.suggestion });
+              }
+              break;
+            case 'image':
+              if (opt.field === 'image_alt' && updatedProduct.images && updatedProduct.images.length > 0) {
+                // Update all images without alt text
+                updatedProduct.images = updatedProduct.images.map((img: any) => {
+                  if (!img.alt || img.alt.trim() === '') {
+                    return { ...img, alt: opt.suggestion };
+                  }
+                  return img;
+                });
+                appliedChanges.push({ field: 'image_alt', from: opt.original, to: opt.suggestion });
+              }
+              break;
+          }
+          
+          // Mark this optimization as applied in the database
+          opt.applied = true;
+        }
+      }
+      
+      // Update the product in Shopify
+      if (appliedChanges.length > 0) {
+        const updateUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+        const updateResponse = await fetch(updateUrl, {
+          method: 'PUT',
+          headers: {
+            'X-Shopify-Access-Token': store.access_token,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ product: updatedProduct }),
+        });
+        
+        if (!updateResponse.ok) {
+          console.error(`Shopify API error: ${updateResponse.status} ${updateResponse.statusText}`);
+          throw new Error(`Failed to update product in Shopify: ${updateResponse.statusText}`);
+        }
+      }
+      
+      // Update the optimizations in the database
+      const { data: analysis } = await supabase
         .from('shopify_seo_analyses')
-        .update({
-          optimizations: optimizations,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', analysis.id);
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('product_id', productId)
+        .single();
+      
+      if (analysis) {
+        await supabase
+          .from('shopify_seo_analyses')
+          .update({
+            optimizations,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', analysis.id);
+      }
+      
+      // Record optimization history
+      if (appliedChanges.length > 0) {
+        for (const change of appliedChanges) {
+          await supabase
+            .from('shopify_optimization_history')
+            .insert({
+              store_id: storeId,
+              entity_id: productId,
+              entity_type: 'product',
+              field: change.field,
+              original_value: change.from,
+              new_value: change.to,
+              optimization_type: optimizations.find((opt: any) => opt.field === change.field)?.type || 'content'
+            });
+        }
+      }
+      
+      return new Response(JSON.stringify({
+        success: true,
+        appliedChanges,
+        message: `Applied ${appliedChanges.length} optimizations to the product`
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error: any) {
+      console.error('Error optimizing product SEO:', error);
+      return new Response(JSON.stringify({ 
+        error: error.message || 'Failed to optimize product SEO' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
-    
-    return new Response(JSON.stringify({
-      success: true,
-      appliedChanges,
-      message: `Applied ${appliedChanges.length} optimizations to the product`
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('Error optimizing product SEO:', error);
+  } catch (error: any) {
+    console.error('Error handling optimize request:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to optimize product SEO' 
+      error: error.message || 'Failed to handle optimize request' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

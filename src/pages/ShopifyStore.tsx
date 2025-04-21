@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { StoreHeader } from '@/components/Shopify/StoreHeader';
 import SERPInsights from '@/components/Shopify/SERPInsights';
 import StoreTabs from '@/components/Shopify/StoreTabs';
+import { useToast } from '@/hooks/use-toast';
 
 import { useShopifyStoreData } from "@/hooks/shopify/useShopifyStoreData";
 import ShopifyStoreLoading from '@/components/Shopify/ShopifyStoreLoading';
@@ -13,12 +14,28 @@ import ShopifyStoreError from '@/components/Shopify/ShopifyStoreError';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = React.useState('products');
+  
   const {
     store, products, analysisResults, isLoading, isOptimizing, serpData, serpLoading, siteAudit,
     isRunningAudit, optimizationHistory, error,
     blogTitle, setBlogTitle, blogKeywords, setBlogKeywords, blogContent, setBlogContent, isGeneratingBlog,
     handleAnalysisComplete, handleBulkOptimize, handleBlogGenerate, handleRunSiteAudit,
   } = useShopifyStoreData({ storeId });
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error loading store",
+        description: error,
+        variant: "destructive"
+      });
+      const timer = setTimeout(() => navigate('/dashboard/shopify'), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, navigate, toast]);
 
   if (isLoading) {
     return (
@@ -27,6 +44,7 @@ const ShopifyStore = () => {
       </DashboardLayout>
     );
   }
+  
   if (error) {
     return (
       <DashboardLayout>
@@ -34,12 +52,13 @@ const ShopifyStore = () => {
       </DashboardLayout>
     );
   }
+  
   if (!store) {
     return (
       <DashboardLayout>
         <div className="container mx-auto py-8">
           <h1 className="text-3xl font-bold mb-8">Store not found</h1>
-          <button onClick={() => window.location.assign('/dashboard/shopify')} className="gap-2 btn btn-primary">
+          <button onClick={() => navigate('/dashboard/shopify')} className="gap-2 btn btn-primary">
             Back to Stores
           </button>
         </div>
@@ -69,8 +88,8 @@ const ShopifyStore = () => {
             allScores={allScores}
           />
           <StoreTabs
-            activeTab="products"
-            setActiveTab={() => {}}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
             isRunningAudit={isRunningAudit}
             siteAudit={siteAudit}
             handleRunSiteAudit={handleRunSiteAudit}
@@ -88,7 +107,7 @@ const ShopifyStore = () => {
             setBlogContent={setBlogContent}
             isGeneratingBlog={isGeneratingBlog}
             handleBlogGenerate={handleBlogGenerate}
-            toast={() => {}}
+            toast={toast}
           />
         </div>
       </ShopifyProtected>

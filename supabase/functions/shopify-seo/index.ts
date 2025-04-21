@@ -2,8 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { corsHeaders } from "../_shared/cors.ts";
-import { authenticateUser } from "./auth.ts";
-import { fetchProduct } from "./shopify.ts";
 import { analyzeSEO } from "./helpers.ts";
 
 serve(async (req) => {
@@ -38,7 +36,20 @@ serve(async (req) => {
         status: 401,
       });
     }
-    await authenticateUser(authHeader, supabaseUrl, supabaseKey);
+    
+    // Verify the token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ 
+        error: 'Failed to authenticate user' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
 
     // Get store
     const { data: store, error: storeError } = await supabase
@@ -57,55 +68,79 @@ serve(async (req) => {
     }
 
     // Fetch Shopify product and analyze
-    const product = await fetchProduct(store, productId);
-    const { issues, score, optimizations } = analyzeSEO(product);
+    try {
+      const apiUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+      const productResponse = await fetch(apiUrl, {
+        headers: {
+          'X-Shopify-Access-Token': store.access_token,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const analysisResult = {
-      product_id: productId,
-      title: product.title,
-      handle: product.handle,
-      issues,
-      score,
-      optimizations,
-    };
+      if (!productResponse.ok) {
+        throw new Error(`Failed to fetch product from Shopify: ${productResponse.statusText}`);
+      }
 
-    // Save/update in DB
-    const { data: existingAnalysis } = await supabase
-      .from('shopify_seo_analyses')
-      .select('id')
-      .eq('store_id', storeId)
-      .eq('product_id', productId)
-      .maybeSingle();
+      const productData = await productResponse.json();
+      const product = productData.product;
+      
+      const { issues, score, optimizations } = analyzeSEO(product);
 
-    if (existingAnalysis) {
-      await supabase
+      const analysisResult = {
+        product_id: productId,
+        title: product.title,
+        handle: product.handle,
+        issues,
+        score,
+        optimizations,
+      };
+
+      // Save/update in DB
+      const { data: existingAnalysis } = await supabase
         .from('shopify_seo_analyses')
-        .update({
-          title: product.title,
-          handle: product.handle,
-          issues,
-          score,
-          optimizations,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingAnalysis.id);
-    } else {
-      await supabase
-        .from('shopify_seo_analyses')
-        .insert({
-          store_id: storeId,
-          product_id: productId,
-          title: product.title,
-          handle: product.handle,
-          issues,
-          score,
-          optimizations,
-        });
+        .select('id')
+        .eq('store_id', storeId)
+        .eq('product_id', productId)
+        .maybeSingle();
+
+      if (existingAnalysis) {
+        await supabase
+          .from('shopify_seo_analyses')
+          .update({
+            title: product.title,
+            handle: product.handle,
+            issues,
+            score,
+            optimizations,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingAnalysis.id);
+      } else {
+        await supabase
+          .from('shopify_seo_analyses')
+          .insert({
+            store_id: storeId,
+            product_id: productId,
+            title: product.title,
+            handle: product.handle,
+            issues,
+            score,
+            optimizations,
+          });
+      }
+
+      return new Response(JSON.stringify(analysisResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error fetching or analyzing product:', error);
+      return new Response(JSON.stringify({ 
+        error: error.message || 'Failed to fetch or analyze product' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
-
-    return new Response(JSON.stringify(analysisResult), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error analyzing product SEO:', error);
     return new Response(JSON.stringify({ 

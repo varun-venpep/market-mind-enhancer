@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
@@ -9,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Store, Trash2, ArrowLeft, BarChart2, Activity } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import ShopifyConnect from '@/components/ShopifyConnect';
-import { getConnectedShopifyStores, disconnectShopifyStore } from '@/services/shopify'; // Updated import path
+import { getConnectedShopifyStores, disconnectShopifyStore } from '@/services/shopify';
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
 import type { ShopifyStore } from '@/types/shopify';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
