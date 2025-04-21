@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, ShoppingBag } from "lucide-react";
-import { connectShopifyStore } from "@/services/api";
+import { connectShopifyStore } from "@/services/shopifyApi";
 
 // Form schema validation
 const formSchema = z.object({

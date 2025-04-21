@@ -1,11 +1,9 @@
-
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, ShoppingBag, ArrowRight, ArrowLeft, Brain, Activity, FileText, Globe, Code, Rss } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
-import { useState, useEffect } from "react";
-import { fetchSerpResults, extractSerpData } from "@/services/serpApi";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
