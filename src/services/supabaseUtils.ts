@@ -34,7 +34,14 @@ export const invokeFunction = async (functionName: string, payload: any) => {
     
     if (response.error) {
       console.error(`Error invoking function ${functionName}:`, response.error);
-      toast.error(`Error: ${response.error.message || 'Failed to process request'}`);
+      
+      // Show a user-friendly error message
+      if (functionName === 'shopify-products') {
+        toast.error('Could not load products. Please check your store connection or try again later.');
+      } else {
+        toast.error(`Error: ${response.error.message || 'Failed to process request'}`);
+      }
+      
       throw new Error(`Function error: ${response.error.message || response.error}`);
     }
     
@@ -48,7 +55,14 @@ export const invokeFunction = async (functionName: string, payload: any) => {
     return response.data || { success: true };
   } catch (error) {
     console.error(`Error invoking function ${functionName}:`, error);
-    toast.error(`Error: ${error instanceof Error ? error.message : 'Failed to process request'}`);
+    
+    // Show a user-friendly error message
+    if (functionName === 'shopify-products') {
+      toast.error('Could not load products. Please check your store connection or try again later.');
+    } else {
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Failed to process request'}`);
+    }
+    
     throw error;
   }
 };

@@ -7,16 +7,38 @@ import { StoreHeader } from '@/components/Shopify/StoreHeader';
 import SERPInsights from '@/components/Shopify/SERPInsights';
 import StoreTabs from '@/components/Shopify/StoreTabs';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 
 import { useShopifyStoreData } from "@/hooks/shopify/useShopifyStoreData";
 import ShopifyStoreLoading from '@/components/Shopify/ShopifyStoreLoading';
 import ShopifyStoreError from '@/components/Shopify/ShopifyStoreError';
+import { supabase } from '@/integrations/supabase/client';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('products');
+  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
+  
+  // Check authentication first
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to access your Shopify store",
+          variant: "destructive"
+        });
+        navigate('/login');
+      }
+      setIsCheckingAuth(false);
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
   
   const {
     store, products, analysisResults, isLoading, isOptimizing, serpData, serpLoading, siteAudit,
@@ -49,6 +71,14 @@ const ShopifyStore = () => {
     }
   }, [error, navigate, toast, storeId]);
 
+  if (isCheckingAuth) {
+    return (
+      <DashboardLayout>
+        <ShopifyStoreLoading />
+      </DashboardLayout>
+    );
+  }
+  
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -69,10 +99,17 @@ const ShopifyStore = () => {
     return (
       <DashboardLayout>
         <div className="container mx-auto py-8">
-          <h1 className="text-3xl font-bold mb-8">Store not found</h1>
-          <button onClick={() => navigate('/dashboard/shopify')} className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
-            Back to Stores
-          </button>
+          <div className="text-center py-12 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-4">Store not found</h1>
+            <p className="text-muted-foreground mb-6">
+              This store may have been deleted or you may not have access to it.
+            </p>
+            <Button onClick={() => navigate('/dashboard/shopify')} className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Stores
+            </Button>
+          </div>
         </div>
       </DashboardLayout>
     );

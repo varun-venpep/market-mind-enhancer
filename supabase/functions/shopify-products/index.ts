@@ -44,8 +44,10 @@ serve(async (req) => {
     );
     
     if (userError || !user) {
+      console.error('Authentication error:', userError);
       return new Response(JSON.stringify({ 
-        error: 'Failed to authenticate user' 
+        error: 'Failed to authenticate user',
+        details: userError
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -60,8 +62,10 @@ serve(async (req) => {
       .single();
     
     if (storeError) {
+      console.error('Store fetch error:', storeError);
       return new Response(JSON.stringify({ 
-        error: 'Store not found' 
+        error: 'Store not found',
+        details: storeError
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
@@ -100,12 +104,63 @@ serve(async (req) => {
       });
     }
     
-    const productsData = await productsResponse.json();
+    // Parse response with error handling
+    let productsData;
+    try {
+      const responseText = await productsResponse.text();
+      console.log("Response length:", responseText.length);
+      // Debug the first 100 chars of the response
+      console.log("Response preview:", responseText.substring(0, Math.min(100, responseText.length)));
+      
+      if (!responseText || responseText.trim() === '') {
+        return new Response(JSON.stringify({
+          error: 'Empty response from Shopify API',
+          products: [],
+          page,
+          limit,
+          total: 0
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200, // Return 200 with empty products array
+        });
+      }
+      
+      productsData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return new Response(JSON.stringify({
+        error: 'Failed to parse Shopify API response',
+        details: parseError.message,
+        products: [],
+        page,
+        limit,
+        total: 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200, // Return 200 with empty products array
+      });
+    }
+    
+    if (!productsData || !productsData.products) {
+      console.warn("Unexpected response format:", productsData);
+      return new Response(JSON.stringify({
+        error: 'Unexpected response format from Shopify API',
+        products: [],
+        page,
+        limit,
+        total: 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200, // Return 200 with empty products array
+      });
+    }
     
     // Simple pagination
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
     const paginatedProducts = productsData.products.slice(startIndex, endIndex);
+    
+    console.log(`Returning ${paginatedProducts.length} products (total: ${productsData.products.length})`);
     
     return new Response(JSON.stringify({
       products: paginatedProducts,
@@ -116,9 +171,10 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error fetching Shopify products:', error);
+    console.error('Error in shopify-products function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to fetch products' 
+      error: error.message || 'Failed to fetch products',
+      stack: error.stack
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
