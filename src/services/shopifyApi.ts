@@ -1,77 +1,25 @@
-import { supabase } from '@/integrations/supabase/client';
+
+import { supabase } from "@/integrations/supabase/client";
 import type { 
   SEOAnalysisResult, 
   ShopifyProduct, 
   ShopifyStore, 
   WebsiteSEOAudit, 
   ShopifyOptimizationHistory,
-  ShopifyOptimizationHistoryRecord
+  ShopifyOptimizationHistoryRecord,
+  ShopifyProductsResponse
 } from '@/types/shopify';
-
-export interface ShopifyProductsResponse {
-  products: ShopifyProduct[];
-  page: number;
-  limit: number;
-  total: number;
-}
-
-export interface ShopifyCredentials {
-  storeUrl: string;
-  accessToken: string;
-}
-
-const getAuthToken = async () => {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token;
-};
-
-const invokeFunction = async (functionName: string, payload: any) => {
-  const token = await getAuthToken();
-  
-  if (!token) {
-    throw new Error('Authentication required');
-  }
-  
-  try {
-    console.log(`Invoking function ${functionName} with payload:`, payload);
-    
-    const response = await supabase.functions.invoke(functionName, {
-      body: payload,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    
-    console.log(`Function response:`, response);
-    
-    if (response.error) {
-      console.error(`Error invoking function ${functionName}:`, response.error);
-      throw response.error;
-    }
-    
-    if (!response.data) {
-      console.error(`Function ${functionName} returned no data`);
-      throw new Error(`${functionName} returned no data`);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error(`Error invoking function ${functionName}:`, error);
-    throw error;
-  }
-};
+import { invokeFunction, getAuthToken } from "./supabaseUtils";
 
 export async function getConnectedShopifyStores(): Promise<ShopifyStore[]> {
   try {
     const { data, error } = await supabase
       .from('shopify_stores')
       .select('*');
-    
     if (error) {
       console.error('Error fetching Shopify stores:', error);
       throw error;
     }
-    
     console.log('Fetched stores:', data);
     return data as ShopifyStore[];
   } catch (error) {
@@ -86,12 +34,16 @@ export async function disconnectShopifyStore(storeId: string): Promise<void> {
       .from('shopify_stores')
       .delete()
       .eq('id', storeId);
-      
     if (error) throw error;
   } catch (error) {
     console.error('Error disconnecting Shopify store:', error);
     throw error;
   }
+}
+
+export interface ShopifyCredentials {
+  storeUrl: string;
+  accessToken: string;
 }
 
 export async function connectShopifyStore(credentials: ShopifyCredentials): Promise<ShopifyStore> {
@@ -100,13 +52,10 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
       storeUrl: credentials.storeUrl,
       accessToken: credentials.accessToken ? '***' : undefined
     });
-    
     const data = await invokeFunction('shopify-connect', credentials);
-    
     if (!data.store) {
       throw new Error(data.error || 'Failed to connect to Shopify store');
     }
-    
     return data.store as ShopifyStore;
   } catch (error) {
     console.error('Error connecting Shopify store:', error);
@@ -171,14 +120,9 @@ export async function getSiteAuditHistory(storeId: string): Promise<WebsiteSEOAu
       .select('*')
       .eq('store_id', storeId)
       .order('created_at', { ascending: false });
-    
     if (error) throw error;
-    
     return data.map(item => {
-      const auditData = typeof item.audit_data === 'string' 
-        ? JSON.parse(item.audit_data) 
-        : item.audit_data;
-        
+      const auditData = typeof item.audit_data === 'string' ? JSON.parse(item.audit_data) : item.audit_data;
       return {
         id: item.id,
         store_id: item.store_id,
@@ -219,15 +163,12 @@ export async function revertOptimization(optimizationId: string) {
     const updateData: Partial<ShopifyOptimizationHistoryRecord> = { 
       reverted_at: new Date().toISOString() 
     };
-    
     const { data, error } = await supabase
       .from('shopify_optimization_history')
       .update(updateData)
       .eq('id', optimizationId)
       .select();
-    
     if (error) throw error;
-    
     return data;
   } catch (error) {
     console.error('Error reverting optimization:', error);
@@ -242,14 +183,12 @@ export async function getOptimizationHistory(storeId: string): Promise<ShopifyOp
       .select('*')
       .eq('store_id', storeId)
       .order('applied_at', { ascending: false });
-    
     if (error) throw error;
-    
     return data.map((item: ShopifyOptimizationHistoryRecord) => ({
       id: item.id,
       store_id: item.store_id,
       entity_id: item.entity_id,
-      entity_type: item.entity_type as 'product' | 'page' | 'blog' | 'article' | 'theme' | 'global',
+      entity_type: item.entity_type,
       field: item.field,
       original_value: item.original_value || '',
       new_value: item.new_value,
@@ -265,29 +204,6 @@ export async function getOptimizationHistory(storeId: string): Promise<ShopifyOp
   }
 }
 
-export async function searchKeywords(keyword: string, options = {}) {
-  try {
-    const token = await getAuthToken();
-    
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-    
-    const { data, error } = await supabase.functions.invoke('serpapi', {
-      body: { keyword, ...options },
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error searching keywords:', error);
-    throw error;
-  }
-}
-
 export default {
   getConnectedShopifyStores,
   disconnectShopifyStore,
@@ -296,7 +212,6 @@ export default {
   analyzeSEO,
   optimizeSEO,
   bulkOptimizeSEO,
-  searchKeywords,
   runSiteAudit,
   getSiteAuditHistory,
   applyOptimization,

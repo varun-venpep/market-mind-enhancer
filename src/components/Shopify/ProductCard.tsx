@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Search, ShoppingBag, Zap } from "lucide-react";
-import { analyzeSEO, optimizeSEO } from '@/services/api';
+import { analyzeSEO, optimizeSEO } from '@/services/shopifyApi';
 import type { SEOAnalysisResult, ShopifyProduct } from '@/types/shopify';
 
 interface ProductCardProps {

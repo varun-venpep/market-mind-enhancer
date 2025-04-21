@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +7,7 @@ import { RotateCcw, ChevronUp, ChevronDown, Clock, FileText, ShoppingBag, Globe,
 import { ShopifyOptimizationHistory } from '@/types/shopify';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
-import { revertOptimization } from '@/services/api';
+import { revertOptimization } from '@/services/shopifyApi';
 
 interface OptimizationHistoryProps {
   history: ShopifyOptimizationHistory[];
@@ -87,7 +86,6 @@ export default function OptimizationHistory({ history, onRefresh }: Optimization
     }
   };
   
-  // Group history by day
   const groupedHistory: Record<string, ShopifyOptimizationHistory[]> = {};
   
   history.forEach(item => {

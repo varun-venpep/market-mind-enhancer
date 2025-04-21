@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
@@ -10,7 +9,7 @@ import {
   runSiteAudit, 
   getSiteAuditHistory, 
   getOptimizationHistory 
-} from '@/services/api';
+} from '@/services/shopifyApi';
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
 import type { 
   SEOAnalysisResult, 
