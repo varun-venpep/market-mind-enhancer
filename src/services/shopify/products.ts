@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { ShopifyProductsResponse, ShopifyStore, ShopifyProduct, SEOAnalysisResult, ShopifyOptimizationHistoryRecord } from '@/types/shopify';
 import { invokeFunction } from "../supabaseUtils";
@@ -30,9 +31,9 @@ export async function applyOptimization(storeId: string, optimization: any) {
 export async function revertOptimization(optimizationId: string) {
   const currentDate = new Date().toISOString();
 
-  type UpdateType = Partial<Omit<ShopifyOptimizationHistoryRecord, 'reverted_at'>> & { reverted_at: string };
-
-  const updateData: UpdateType = { reverted_at: currentDate };
+  const updateData: Partial<ShopifyOptimizationHistoryRecord> = { 
+    reverted_at: currentDate 
+  };
 
   const { data, error } = await supabase
     .from('shopify_optimization_history')

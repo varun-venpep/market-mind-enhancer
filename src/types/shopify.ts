@@ -1,3 +1,4 @@
+
 export interface ShopifyStore {
   id: string;
   store_url: string;
