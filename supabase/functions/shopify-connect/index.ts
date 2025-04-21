@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { corsHeaders } from "../_shared/cors.ts";
+import { sendResponse } from "../_shared/cors.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -20,30 +21,18 @@ serve(async (req) => {
       payload = text ? JSON.parse(text) : {};
     } catch (parseError) {
       console.error(`Error parsing request body: ${parseError.message}`);
-      return new Response(
-        JSON.stringify({
-          error: "Invalid request body format. JSON expected.",
-          details: parseError.message,
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
-      );
+      return sendResponse({
+        error: "Invalid request body format. JSON expected.",
+        details: parseError.message,
+      }, 400);
     }
     
     const { storeUrl, accessToken } = payload;
     
     if (!storeUrl || !accessToken) {
-      return new Response(
-        JSON.stringify({ 
-          error: "Missing required parameters: storeUrl or accessToken"
-        }), 
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
-      );
+      return sendResponse({ 
+        error: "Missing required parameters: storeUrl or accessToken"
+      }, 400);
     }
 
     console.log(`Attempting to connect Shopify store: ${storeUrl}`);
@@ -56,13 +45,7 @@ serve(async (req) => {
     // Get authorization token
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Not authenticated' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401,
-        }
-      );
+      return sendResponse({ error: 'Not authenticated' }, 401);
     }
     
     // Extract token from header
@@ -73,13 +56,7 @@ serve(async (req) => {
     
     if (userError || !user) {
       console.error("Failed to get user:", userError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to authenticate user' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401,
-        }
-      );
+      return sendResponse({ error: 'Failed to authenticate user' }, 401);
     }
     
     try {
@@ -103,17 +80,11 @@ serve(async (req) => {
         console.error(`Failed to verify Shopify store credentials. Status: ${errorStatus}, URL: ${storeUrl}`);
         console.error(`Shopify error response:`, errorText);
         
-        return new Response(
-          JSON.stringify({ 
-            error: "Invalid Shopify credentials. Please check your store URL and access token.",
-            details: errorText,
-            status: errorStatus
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400,
-          }
-        );
+        return sendResponse({ 
+          error: "Invalid Shopify credentials. Please check your store URL and access token.",
+          details: errorText,
+          status: errorStatus
+        }, 400);
       }
       
       const shopInfo = await shopResponse.json();
@@ -135,55 +106,31 @@ serve(async (req) => {
       
       if (insertError) {
         console.error("Failed to store Shopify credentials:", insertError);
-        return new Response(
-          JSON.stringify({ error: "Failed to save store information", details: insertError }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500,
-          }
-        );
+        return sendResponse({ error: "Failed to save store information", details: insertError }, 500);
       }
       
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          store: {
-            id: store.id,
-            store_url: store.store_url,
-            store_name: store.store_name,
-            store_owner: store.store_owner,
-            created_at: store.created_at
-          }
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
+      return sendResponse({ 
+        success: true, 
+        store: {
+          id: store.id,
+          store_url: store.store_url,
+          store_name: store.store_name,
+          store_owner: store.store_owner,
+          created_at: store.created_at
         }
-      );
+      }, 200);
     } catch (fetchError) {
       console.error("Error fetching shop information:", fetchError);
-      return new Response(
-        JSON.stringify({ 
-          error: "Failed to communicate with Shopify API",
-          details: fetchError.message
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        }
-      );
+      return sendResponse({ 
+        error: "Failed to communicate with Shopify API",
+        details: fetchError.message
+      }, 500);
     }
   } catch (error) {
     console.error("Error connecting Shopify store:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || "Failed to connect Shopify store",
-        details: error.stack 
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    );
+    return sendResponse({ 
+      error: error.message || "Failed to connect Shopify store",
+      details: error.stack 
+    }, 500);
   }
 });

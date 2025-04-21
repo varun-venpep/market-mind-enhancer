@@ -13,7 +13,7 @@ export interface ShopifyProduct {
   variants: ShopifyVariant[];
   images: ShopifyImage[];
   options: ShopifyOption[];
-  metafields: ShopifyMetafield[];
+  metafields?: ShopifyMetafield[];
 }
 
 export interface ShopifyVariant {
@@ -75,9 +75,9 @@ export interface ShopifyMetafield {
 
 export interface ShopifyProductsResponse {
   products: ShopifyProduct[];
+  total: number;
   page: number;
   limit: number;
-  total: number;
-  error?: string;        // Added error property
-  details?: string;      // Added details property for additional error information
+  error?: string;
+  details?: string;
 }

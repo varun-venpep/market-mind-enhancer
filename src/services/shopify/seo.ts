@@ -5,6 +5,22 @@ import { invokeFunction } from "../supabaseUtils";
 
 export async function runSiteAudit(storeId: string): Promise<WebsiteSEOAudit> {
   const data = await invokeFunction('shopify-site-audit', { storeId });
+  
+  // Ensure all issues and optimizations have IDs
+  if (data.issues) {
+    data.issues = data.issues.map((issue: any) => ({
+      ...issue,
+      id: issue.id || crypto.randomUUID()
+    }));
+  }
+  
+  if (data.optimizations) {
+    data.optimizations = data.optimizations.map((opt: any) => ({
+      ...opt,
+      id: opt.id || crypto.randomUUID()
+    }));
+  }
+  
   return data as WebsiteSEOAudit;
 }
 
