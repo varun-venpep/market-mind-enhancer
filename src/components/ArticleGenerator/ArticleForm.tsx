@@ -69,22 +69,22 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
 
   return (
     <form
-      className="w-full max-w-2xl mx-auto px-2 py-1 flex flex-col gap-5"
+      className="w-full max-w-xl mx-auto px-2 py-3 flex flex-col space-y-4 md:space-y-5 bg-background rounded-xl border shadow"
       autoComplete="off"
       onSubmit={(e) => { e.preventDefault(); onGenerate(); }}
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <Label htmlFor="topic" className="font-semibold">Topic or Title</Label>
         <Input 
           id="topic" 
           placeholder="e.g., 10 SEO Tips for E-commerce"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1"
+          className="mt-0.5"
         />
       </div>
-
-      <div className="flex flex-col gap-1">
+      
+      <div className="flex flex-col gap-2">
         <Label htmlFor="campaign" className="font-semibold">Campaign</Label>
         <Select 
           value={selectedCampaignId || ""}
@@ -108,7 +108,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         </Select>
       </div>
 
-      <div>
+      <div className="flex flex-col gap-2">
         <KeywordManager 
           keywords={keywords}
           setKeywords={setKeywords}
@@ -120,7 +120,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         />
       </div>
 
-      <div>
+      <div className="flex flex-col gap-2">
         <ContentTypeSelector 
           contentType={contentType}
           setContentType={setContentType}
@@ -131,7 +131,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         />
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2 mt-1">
         <Checkbox 
           id="generate-image" 
           checked={generateAIImage}
@@ -142,7 +142,7 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
         </Label>
       </div>
 
-      <div>
+      <div className="mt-2">
         <GenerateButton 
           onGenerate={onGenerate}
           isGenerating={isGenerating}
@@ -160,4 +160,3 @@ const ArticleForm: React.FC<ArticleFormProps> = ({
 };
 
 export default ArticleForm;
-
