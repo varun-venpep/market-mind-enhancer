@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { ShopifyStore } from '@/types/shopify';
-import { invokeFunction } from "../supabaseUtils";
 import { toast } from "sonner";
 
 export interface ShopifyCredentials {
@@ -68,7 +67,18 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
       storeUrl = storeUrl.replace('.myshopify.com', '');
     }
     
+    // Validate store URL format
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$/.test(storeUrl)) {
+      throw new Error('Invalid store URL format. It should only contain letters, numbers, and hyphens');
+    }
+    
     console.log(`Connecting to Shopify store: ${storeUrl}`);
+    
+    // First check if user is authenticated
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      throw new Error('Authentication required. Please sign in to connect a store.');
+    }
     
     const { data, error } = await supabase.functions.invoke('shopify-connect', {
       body: {
@@ -90,9 +100,10 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
     
     toast.success('Shopify store connected successfully');
     return data.store as ShopifyStore;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Exception in connectShopifyStore:', error);
-    toast.error('Failed to connect Shopify store. Please check your credentials and try again.');
+    const errorMessage = error.message || 'Failed to connect Shopify store. Please check your credentials and try again.';
+    toast.error(errorMessage);
     throw error;
   }
 }

@@ -40,7 +40,7 @@ const ShopifyConnect: React.FC = () => {
     }
   });
 
-  const processSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setIsConnecting(true);
     setAuthError(null);
     setConnectionError(null);
@@ -58,10 +58,10 @@ const ShopifyConnect: React.FC = () => {
       });
       
       reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error connecting Shopify store:", error);
       
-      if (error.message && error.message.includes("authentication") || error.message.includes("auth")) {
+      if (error.message && (error.message.includes("authentication") || error.message.includes("auth"))) {
         setAuthError(error.message);
       } else {
         setConnectionError(error.message || "Failed to connect to Shopify store");
@@ -87,7 +87,7 @@ const ShopifyConnect: React.FC = () => {
       <ShopifyConnectForm
         isConnecting={isConnecting}
         disabled={false}
-        onSubmit={handleSubmit(processSubmit)}
+        onSubmit={handleSubmit(onSubmit)}
         errors={errors}
         register={register}
         reset={reset}
