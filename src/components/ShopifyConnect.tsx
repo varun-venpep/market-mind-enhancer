@@ -61,7 +61,7 @@ const ShopifyConnect: React.FC = () => {
     } catch (error) {
       console.error("Error connecting Shopify store:", error);
       
-      if (error.message.includes("authentication") || error.message.includes("auth")) {
+      if (error.message && error.message.includes("authentication") || error.message.includes("auth")) {
         setAuthError(error.message);
       } else {
         setConnectionError(error.message || "Failed to connect to Shopify store");

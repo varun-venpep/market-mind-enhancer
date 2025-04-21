@@ -70,15 +70,21 @@ export async function connectShopifyStore(credentials: ShopifyCredentials): Prom
     
     console.log(`Connecting to Shopify store: ${storeUrl}`);
     
-    const data = await invokeFunction('shopify-connect', {
-      storeUrl: storeUrl,
-      accessToken: credentials.accessToken
+    const { data, error } = await supabase.functions.invoke('shopify-connect', {
+      body: {
+        storeUrl: storeUrl,
+        accessToken: credentials.accessToken
+      }
     });
+    
+    if (error) {
+      console.error('Error connecting Shopify store:', error);
+      throw new Error(error.message || 'Failed to connect to Shopify store');
+    }
     
     if (!data || !data.store) {
       const errorMessage = data?.error || 'Failed to connect to Shopify store';
       console.error('Error connecting Shopify store:', errorMessage);
-      toast.error(errorMessage);
       throw new Error(errorMessage);
     }
     

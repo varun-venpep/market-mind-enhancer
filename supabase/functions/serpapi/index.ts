@@ -47,7 +47,7 @@ serve(async (req) => {
       // Return mock data for testing
       const mockData = getMockSerpData(keyword, type);
       return new Response(
-        JSON.stringify({ success: true, data: mockData }),
+        JSON.stringify(mockData),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
@@ -83,7 +83,6 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify({
-          success: false,
           error: errorMessage,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: response.status === 400 ? 400 : 500 }
@@ -94,13 +93,13 @@ serve(async (req) => {
     console.log("SERP API response received successfully");
     
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify(data),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
     console.error("Error in SERP API edge function:", error.message);
     return new Response(
-      JSON.stringify({ success: false, error: error.message || "Unknown error occurred" }),
+      JSON.stringify({ error: error.message || "Unknown error occurred" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
