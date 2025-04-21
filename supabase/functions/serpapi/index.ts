@@ -11,14 +11,23 @@ serve(async (req) => {
   }
 
   try {
-    console.log("SERP API function received request");
-
-    // For testing/development - use mock data if no SERP API key
-    let mockMode = false;
-    if (!SERP_API_KEY) {
-      console.log("SERP API key is not configured, using mock data");
-      mockMode = true;
+    // Check for authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ 
+          code: 401,
+          message: "Missing authorization header" 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+          status: 401 
+        }
+      );
     }
+
+    console.log("SERP API function received request with valid auth");
 
     let requestData;
     try {
@@ -43,8 +52,9 @@ serve(async (req) => {
 
     console.log(`SERP API request: keyword=${keyword}, location=${location}, engine=${engine}, type=${type}`);
 
-    if (mockMode) {
-      // Return mock data for testing
+    // For testing/development - use mock data if no SERP API key
+    if (!SERP_API_KEY) {
+      console.log("SERP API key is not configured, using mock data");
       const mockData = getMockSerpData(keyword, type);
       return new Response(
         JSON.stringify(mockData),
