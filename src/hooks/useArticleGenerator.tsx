@@ -50,6 +50,7 @@ export function useArticleGenerator() {
     editedContent,
     setEditedContent,
     generatedImageUrl,
+    setGeneratedImageUrl, // Make sure to destructure this from useArticleGeneration
     isGeneratingImage,
     activeTab,
     setActiveTab,
