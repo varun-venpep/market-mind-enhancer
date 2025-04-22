@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { invokeFunction, handleApiError, refreshSession } from "../supabaseUtils";
+import { invokeFunction, handleApiError, refreshSession } from "../supabase";
 import type { ShopifyStore } from '@/types/shopify';
 import { toast } from "sonner";
 

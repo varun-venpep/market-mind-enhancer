@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
@@ -14,7 +13,7 @@ import { useShopifyStoreData } from "@/hooks/shopify/useShopifyStoreData";
 import ShopifyStoreLoading from '@/components/Shopify/ShopifyStoreLoading';
 import ShopifyStoreError from '@/components/Shopify/ShopifyStoreError';
 import { supabase } from '@/integrations/supabase/client';
-import { refreshSession } from '@/services/supabaseUtils';
+import { refreshSession } from '@/services/supabase';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -25,13 +24,11 @@ const ShopifyStore = () => {
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   
-  // Check authentication first
   useEffect(() => {
     const checkAuth = async () => {
       try {
         setIsRefreshing(true);
         
-        // Try to refresh the session first to prevent flickering due to auth issues
         await refreshSession();
         
         const { data, error } = await supabase.auth.getSession();
@@ -49,7 +46,6 @@ const ShopifyStore = () => {
         }
         
         if (!data.session) {
-          // One more refresh attempt before giving up
           const refreshed = await refreshSession();
           if (!refreshed) {
             setAuthError("Please sign in to access your Shopify store");
@@ -63,7 +59,6 @@ const ShopifyStore = () => {
           }
         }
         
-        // Also validate storeId format here
         if (!storeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId)) {
           setAuthError("Invalid store ID format");
           toast({
@@ -93,12 +88,10 @@ const ShopifyStore = () => {
     
     checkAuth();
     
-    // Set up auth state change listeners
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
       
       if (event === 'SIGNED_OUT') {
-        // Handle sign out
         navigate('/login');
       }
     });
@@ -116,7 +109,6 @@ const ShopifyStore = () => {
   } = useShopifyStoreData({ storeId });
 
   useEffect(() => {
-    // Handle error by redirecting after a delay
     if (error) {
       toast({
         title: "Error loading store",
@@ -128,11 +120,10 @@ const ShopifyStore = () => {
     }
   }, [error, navigate, toast, storeId]);
 
-  // Add periodic session refresh to prevent auth issues
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
       await refreshSession();
-    }, 60000); // Every minute
+    }, 60000);
     
     return () => clearInterval(refreshInterval);
   }, []);

@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from '@/integrations/supabase/client';
-import { fetchShopifyProducts } from '@/services/shopify';
+import { fetchShopifyProducts } from '@/services/shopify/products';
 import type { ShopifyStore, ShopifyProduct, ShopifyProductsResponse } from '@/types/shopify';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';

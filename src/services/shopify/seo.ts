@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { WebsiteSEOAudit, SEOAnalysisResult } from '@/types/shopify';
-import { invokeFunction } from "../supabaseUtils";
+import { invokeFunction } from "../supabase";
 
 export async function runSiteAudit(storeId: string): Promise<WebsiteSEOAudit> {
   try {

@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { ShopifyProductsResponse, ShopifyStore, ShopifyProduct, SEOAnalysisResult, ShopifyOptimizationHistoryRecord } from '@/types/shopify';
-import { invokeFunction } from "../supabaseUtils";
+import { invokeFunction } from "../supabase";
 
 export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20): Promise<ShopifyProductsResponse> {
   try {

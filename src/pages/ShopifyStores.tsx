@@ -17,7 +17,7 @@ import ShopifySerpStatsCards from '@/components/Shopify/ShopifySerpStatsCards';
 import ShopifyStoreList from '@/components/Shopify/ShopifyStoreList';
 import ShopifyNoStores from '@/components/Shopify/ShopifyNoStores';
 import { supabase } from '@/integrations/supabase/client';
-import { refreshSession } from '@/services/supabaseUtils';
+import { refreshSession } from '@/services/supabase';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ShopifyStores() {

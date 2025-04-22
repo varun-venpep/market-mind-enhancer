@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SEOAnalysisResult, ShopifyProduct } from '@/types/shopify';
 import { ProductCard } from './ProductCard';
@@ -9,7 +8,7 @@ import { toast } from 'sonner';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { refreshSession } from '@/services/supabaseUtils';
+import { refreshSession } from '@/services/supabase';
 
 interface ProductListProps {
   products: ShopifyProduct[];
@@ -32,7 +31,6 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
     setError(null);
     
     try {
-      // First ensure we have a fresh session
       await refreshSession();
       
       const response = await fetchShopifyProducts(storeId);
@@ -49,7 +47,6 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
       setError(errorMessage);
       toast.error(`Failed to refresh products: ${errorMessage}`);
       
-      // Try to refresh the session if it seems like an auth error
       if (errorMessage.includes('401') || 
           errorMessage.includes('auth') || 
           errorMessage.includes('authorization')) {
@@ -78,12 +75,10 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
     }
   };
   
-  // Update products when initialProducts change
   useEffect(() => {
     setProducts(initialProducts);
   }, [initialProducts]);
   
-  // Initial fetch if products array is empty and we have a storeId
   useEffect(() => {
     if (storeId && products.length === 0 && !isLoading && !error) {
       refreshProducts();
@@ -167,7 +162,7 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
       
       <div className="grid grid-cols-1 gap-6">
         {products.map(product => {
-          const productId = String(product.id); // Always convert to string for consistency
+          const productId = String(product.id);
           const analysis = analysisResults[productId] || null;
           
           return (
