@@ -34,31 +34,37 @@ const Dashboard = () => {
       try {
         setIsLoading(true);
         
-        // Fetch articles instead of content_briefs since that table doesn't exist
+        // If no current workspace, we can't fetch content
+        if (!currentWorkspace?.id) {
+          setIsLoading(false);
+          setHasContent(false);
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('articles')
           .select('*')
-          .eq('user_id', currentWorkspace?.id || '')
+          .eq('user_id', currentWorkspace.id)
           .limit(10);
           
-        if (error) throw error;
+        // Only throw an error if it's a real error, not just no content
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
         
+        // Set articles and determine if there's content
         setArticles(data || []);
-        // Determine if user has any content
         setHasContent(data && data.length > 0);
       } catch (error: any) {
+        // Only log actual errors, not empty result scenarios
         console.error('Error fetching content:', error);
-        toast.error('Failed to load your content');
+        // Remove the toast for no content
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (currentWorkspace?.id) {
-      fetchUserContent();
-    } else {
-      setIsLoading(false);
-    }
+    fetchUserContent();
   }, [currentWorkspace]);
 
   // Transform Article to ContentBrief for display purposes if needed
