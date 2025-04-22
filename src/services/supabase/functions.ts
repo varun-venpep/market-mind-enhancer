@@ -5,11 +5,13 @@ import { getAuthToken, refreshSession } from "./auth";
 
 export async function invokeFunction(functionName: string, payload: any): Promise<any> {
   try {
+    console.log(`Preparing to invoke function ${functionName}`);
+    
     // Get a fresh token first
     let token = await getAuthToken();
     
     if (!token) {
-      console.error('Authentication required for invoking function:', functionName);
+      console.error('No authentication token available for function:', functionName);
       
       // Try to refresh the session
       const refreshed = await refreshSession();
@@ -30,11 +32,15 @@ export async function invokeFunction(functionName: string, payload: any): Promis
     
     console.log(`Invoking function ${functionName} with auth token: ${token ? 'present' : 'missing'}`);
     
+    // Log full headers and token for debugging
+    const headers = {
+      Authorization: `Bearer ${token}`
+    };
+    console.log('Request headers:', headers);
+    
     // Make the request with the token
     const { data, error } = await supabase.functions.invoke(functionName, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
+      headers,
       body: payload
     });
 
@@ -47,27 +53,29 @@ export async function invokeFunction(functionName: string, payload: any): Promis
                             error.message.includes('authorization'))) {
         console.log('Auth issue detected, attempting refresh and retry...');
         
-        const refreshed = await refreshSession();
-        if (refreshed) {
-          const retryToken = await getAuthToken();
+        // Force session refresh
+        await refreshSession();
+        const retryToken = await getAuthToken();
+        
+        if (retryToken) {
+          console.log('Session refreshed, retrying function call with fresh token...');
+          console.log(`Retry token: ${retryToken.substring(0, 10)}...`);
           
-          if (retryToken) {
-            console.log('Session refreshed, retrying function call...');
-            
-            const { data: retryData, error: retryError } = await supabase.functions.invoke(functionName, {
-              headers: {
-                Authorization: `Bearer ${retryToken}`
-              },
-              body: payload
-            });
-            
-            if (retryError) {
-              console.error(`Error in retry of function ${functionName}:`, retryError);
-              throw retryError;
-            }
-            
-            return retryData;
+          const retryHeaders = {
+            Authorization: `Bearer ${retryToken}`
+          };
+          
+          const { data: retryData, error: retryError } = await supabase.functions.invoke(functionName, {
+            headers: retryHeaders,
+            body: payload
+          });
+          
+          if (retryError) {
+            console.error(`Error in retry of function ${functionName}:`, retryError);
+            throw retryError;
           }
+          
+          return retryData;
         }
       }
       

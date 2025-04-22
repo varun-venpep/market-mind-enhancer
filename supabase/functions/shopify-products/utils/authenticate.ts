@@ -18,9 +18,9 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
   }
   
   const token = authHeader.replace('Bearer ', '');
+  console.log("Attempting to authenticate with token:", token.substring(0, 10) + "...");
   
   try {
-    console.log("Attempting to authenticate user with token");
     // First try with the access token directly
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
@@ -29,14 +29,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
       
       // Try to refresh the session
       try {
-        // Create a temporary client with the token
-        const tempClient = createClient(supabaseUrl, supabaseKey, {
-          auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            storage: globalThis.localStorage || null,
-          },
-        });
+        console.log("Attempting session refresh...");
         
         // Try both as access token and refresh token
         let refreshData;
@@ -45,7 +38,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
         try {
           console.log("Trying token as refresh token");
           // First try as a refresh token
-          ({ data: refreshData, error: refreshError } = await tempClient.auth.refreshSession({
+          ({ data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
             refresh_token: token,
           }));
           
@@ -59,7 +52,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
         // If that fails, try accessing the session directly
         if (refreshError || !refreshData?.session) {
           console.log("Trying alternative authentication method");
-          ({ data: refreshData, error: refreshError } = await tempClient.auth.getSession());
+          ({ data: refreshData, error: refreshError } = await supabase.auth.getSession());
           
           if (refreshData?.session) {
             console.log("Successfully got session using getSession");
@@ -79,7 +72,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
         return { 
           user: refreshData.session.user, 
           error: null, 
-          supabase: tempClient 
+          supabase: supabase 
         };
       } catch (refreshException: any) {
         console.error("Exception during session refresh:", refreshException?.message);

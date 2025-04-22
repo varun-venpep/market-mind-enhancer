@@ -4,7 +4,17 @@ import { invokeFunction } from "./supabase/functions";
 export async function searchKeywords(keyword: string, options = {}) {
   try {
     console.log('Searching keywords with SERP API:', keyword);
-    return await invokeFunction('serpapi', { keyword, ...options });
+    const result = await invokeFunction('serpapi', { 
+      keyword, 
+      ...options 
+    });
+    
+    if (!result || result.error) {
+      throw new Error(result?.error || 'Failed to get SERP results');
+    }
+    
+    console.log('SERP API result received:', result ? 'success' : 'failed');
+    return result;
   } catch (error) {
     console.error('Error searching keywords:', error);
     

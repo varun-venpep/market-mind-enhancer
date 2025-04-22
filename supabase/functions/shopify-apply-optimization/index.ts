@@ -22,15 +22,19 @@ serve(async (req) => {
   }
 
   // Debug request headers
-  console.log("Headers received:", JSON.stringify(Object.fromEntries([...req.headers])));
+  console.log("Headers received in shopify-apply-optimization:", JSON.stringify(Object.fromEntries([...req.headers])));
 
   try {
     // Check for authentication header first
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error("Missing authorization header");
+      console.error("Missing authorization header in shopify-apply-optimization");
       return new Response(JSON.stringify({
-        error: 'Missing authorization header'
+        error: 'Missing authorization header',
+        debug: {
+          headers: Object.fromEntries([...req.headers]),
+          method: req.method
+        }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -84,21 +88,44 @@ serve(async (req) => {
     try {
       // Extract token from Authorization header
       const token = authHeader.replace('Bearer ', '');
+      console.log("Auth token received:", token.substring(0, 10) + "...");
       
       // Verify the user's session
       const { data: { user }, error: authError } = await supabase.auth.getUser(token);
       
       if (authError || !user) {
         console.error("Authentication failed:", authError);
-        return new Response(JSON.stringify({
-          error: 'Authentication failed: ' + (authError?.message || 'Invalid token')
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401,
-        });
+        
+        // Try to refresh the session
+        try {
+          console.log("Attempting session refresh...");
+          const refreshResult = await supabase.auth.refreshSession({ refresh_token: token });
+          
+          if (refreshResult.error || !refreshResult.data.session) {
+            console.error("Refresh attempt failed:", refreshResult.error);
+            return new Response(JSON.stringify({
+              error: 'Authentication failed: ' + (authError?.message || 'Invalid token'),
+              refresh_error: refreshResult.error?.message || 'Refresh failed'
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 401,
+            });
+          }
+          
+          console.log("Session refreshed, using refreshed user:", refreshResult.data.session.user.id);
+        } catch (refreshError) {
+          console.error("Exception during refresh:", refreshError);
+          return new Response(JSON.stringify({
+            error: 'Authentication failed: ' + (authError?.message || 'Invalid token'),
+            refresh_error: refreshError.message || 'Refresh exception'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401,
+          });
+        }
+      } else {
+        console.log("User authenticated successfully:", user.id);
       }
-      
-      console.log("User authenticated successfully:", user.id);
     } catch (authError) {
       console.error("Exception during authentication:", authError);
       return new Response(JSON.stringify({
@@ -137,6 +164,13 @@ serve(async (req) => {
         status: 400,
       });
     }
+
+    // Format the store URL properly
+    if (!store.store_url.includes('myshopify.com')) {
+      store.store_url = `${store.store_url}.myshopify.com`;
+    }
+    store.store_url = store.store_url.replace(/^https?:\/\//i, '');
+    console.log("Using store URL:", store.store_url);
 
     // Process the optimization based on entity type
     console.log(`Processing optimization for entity type: ${optimization.entity}`);

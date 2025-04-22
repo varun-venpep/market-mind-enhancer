@@ -1,10 +1,13 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { ShopifyProductsResponse, ShopifyStore, ShopifyProduct, SEOAnalysisResult, ShopifyOptimizationHistoryRecord } from '@/types/shopify';
-import { invokeFunction } from "../supabase";
+import { invokeFunction } from "../supabase/functions";
 
 export async function fetchShopifyProducts(storeId: string, page = 1, limit = 20): Promise<ShopifyProductsResponse> {
   try {
+    console.log("Fetching Shopify products with storeId:", storeId);
     const data = await invokeFunction('shopify-products', { storeId, page, limit });
+    console.log("Products fetched successfully:", data?.products?.length || 0);
     return data as ShopifyProductsResponse;
   } catch (error) {
     console.error("Error fetching Shopify products:", error);
@@ -32,8 +35,18 @@ export async function analyzeSEO(storeId: string, productId: string): Promise<SE
 
 export async function optimizeSEO(storeId: string, productId: string, optimizations: any[]) {
   try {
-    console.log("Optimizing SEO for product:", { storeId, productId, optimizationsCount: optimizations.length });
-    const data = await invokeFunction('shopify-optimize', { storeId, productId, optimizations });
+    console.log("Optimizing SEO for product:", { 
+      storeId, 
+      productId, 
+      optimizationsCount: optimizations.length 
+    });
+    
+    const data = await invokeFunction('shopify-optimize', { 
+      storeId, 
+      productId, 
+      optimizations 
+    });
+    
     console.log("SEO optimization complete:", data);
     return data || { success: true, message: "Optimization complete" };
   } catch (error) {

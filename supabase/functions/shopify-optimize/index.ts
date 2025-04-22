@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -13,7 +14,23 @@ serve(async (req) => {
 
   try {
     // Log all headers for debugging
-    console.log("Headers received:", JSON.stringify(Object.fromEntries([...req.headers])));
+    console.log("Headers received in shopify-optimize:", JSON.stringify(Object.fromEntries([...req.headers])));
+    
+    // Check for authentication header first
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing authorization header in shopify-optimize function");
+      return new Response(JSON.stringify({ 
+        error: 'Not authenticated',
+        debug: {
+          headers: Object.fromEntries([...req.headers]),
+          method: req.method
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
     
     const { storeId, productId, optimizations } = await req.json();
     
@@ -25,17 +42,7 @@ serve(async (req) => {
         status: 400,
       });
     }
-
-    // Get authorization header to validate user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error("Missing authorization header in shopify-optimize function");
-      return new Response(JSON.stringify({ error: 'Not authenticated' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-
+    
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -46,12 +53,48 @@ serve(async (req) => {
     
     // Verify the token
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    let user = null;
     
-    if (userError || !user) {
-      console.error("Authentication failed:", userError);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      
+      if (userError || !userData.user) {
+        console.error("Authentication failed with getUser:", userError);
+        console.log("Attempting session refresh...");
+        
+        // Try to refresh session if available
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+          refresh_token: token,
+        });
+        
+        if (!refreshError && refreshData.session) {
+          console.log("Session refreshed successfully");
+          user = refreshData.session.user;
+        } else {
+          console.error("Session refresh failed:", refreshError);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to authenticate user: Invalid or expired token'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401,
+          });
+        }
+      } else {
+        user = userData.user;
+      }
+    } catch (authError) {
+      console.error("Exception during authentication:", authError);
       return new Response(JSON.stringify({ 
-        error: 'Failed to authenticate user: ' + (userError?.message || 'Invalid token')
+        error: 'Authentication error: ' + (authError.message || 'Unknown error') 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    if (!user) {
+      return new Response(JSON.stringify({ 
+        error: 'Authentication failed: User not found' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,

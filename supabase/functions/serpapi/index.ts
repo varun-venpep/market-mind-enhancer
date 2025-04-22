@@ -13,8 +13,14 @@ serve(async (req) => {
     // Check auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("Missing authorization header");
-      return new Response(JSON.stringify({ error: "Authentication required" }), {
+      console.error("Missing authorization header in SERP API function");
+      return new Response(JSON.stringify({ 
+        error: "Authentication required",
+        debug: {
+          headers: Object.fromEntries([...req.headers]),
+          method: req.method
+        }
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
@@ -27,15 +33,22 @@ serve(async (req) => {
 
     // Verify the token
     const token = authHeader.replace("Bearer ", "");
+    console.log("Verifying token:", token.substring(0, 10) + "...");
+    
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
       console.error("Error verifying token:", userError);
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
+      return new Response(JSON.stringify({ 
+        error: "Invalid token", 
+        details: userError?.message || "User not found" 
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
+
+    console.log("User authenticated successfully:", user.id);
 
     // Parse request body
     let requestData;
@@ -61,7 +74,7 @@ serve(async (req) => {
 
     console.log(`Processing SERP request for query: "${searchQuery}"`);
 
-    // Hard-coded SERPAPI key as requested by user
+    // Use the corrected SERPAPI key
     const serpApiKey = "0e5b83cf0574604a9bc8016d699aba8d243a313f8978f8ec6f7ae188c7a9d962";
     
     // Call SERPAPI
@@ -71,6 +84,7 @@ serve(async (req) => {
       engine: "google",
     });
 
+    console.log(`Calling SERPAPI with query: ${searchQuery}`);
     const response = await fetch(`https://serpapi.com/search?${params.toString()}`);
     
     if (!response.ok) {

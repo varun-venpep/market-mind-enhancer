@@ -73,6 +73,7 @@ export async function getAuthToken(): Promise<string | null> {
       lastSuccessfulRefresh = Date.now();
     }
     
+    console.log('Returning session access token:', data.session?.access_token ? 'present' : 'missing');
     return data.session?.access_token || null;
   } catch (error) {
     console.error('Exception in getAuthToken:', error);
@@ -98,7 +99,7 @@ async function refreshSessionFromLocalStorage(): Promise<string | null> {
           }
           
           if (refreshData.session) {
-            console.log('Session refreshed successfully');
+            console.log('Session refreshed successfully from localStorage');
             localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
             lastSuccessfulRefresh = Date.now();
             return refreshData.session.access_token;
@@ -161,9 +162,12 @@ export async function refreshSession(): Promise<boolean> {
         return true;
       }
       
+      console.log('Direct refresh attempt failed, trying localStorage backup');
+      
       // Try with localStorage backup if current session fails
       const result = await refreshSessionFromLocalStorage();
       if (result) {
+        console.log('Session refreshed successfully from localStorage');
         isRefreshingSession = false;
         return true;
       }
