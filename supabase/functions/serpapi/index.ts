@@ -49,44 +49,24 @@ serve(async (req) => {
       });
     }
 
-    const { query } = requestData;
-    if (!query) {
+    const { keyword, query } = requestData;
+    const searchQuery = query || keyword;
+    
+    if (!searchQuery) {
       return new Response(JSON.stringify({ error: "Query parameter is required" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
 
-    console.log(`Processing SERP request for query: "${query}"`);
+    console.log(`Processing SERP request for query: "${searchQuery}"`);
 
-    // Get SERPAPI key from environment
-    const serpApiKey = Deno.env.get("SERPAPI_KEY");
-    if (!serpApiKey) {
-      console.warn("SERPAPI_KEY not configured. Using mock data.");
-      
-      // Return mock data
-      return new Response(JSON.stringify({
-        organic_results: [
-          { position: 1, title: "Example Result 1", snippet: "This is a mock result." },
-          { position: 2, title: "Example Result 2", snippet: "This is another mock result." },
-        ],
-        related_searches: [
-          { query: "Related search 1" },
-          { query: "Related search 2" },
-        ],
-        search_information: {
-          total_results: 2,
-          time_taken_displayed: 0.5
-        }
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
+    // Hard-coded SERPAPI key as requested by user
+    const serpApiKey = "0e5b83cf0574604a9bc8016d699aba8d243a313f8978f8ec6f7ae188c7a9d962";
+    
     // Call SERPAPI
     const params = new URLSearchParams({
-      q: query,
+      q: searchQuery,
       api_key: serpApiKey,
       engine: "google",
     });

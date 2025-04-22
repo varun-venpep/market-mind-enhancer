@@ -81,7 +81,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
           error: null, 
           supabase: tempClient 
         };
-      } catch (refreshException) {
+      } catch (refreshException: any) {
         console.error("Exception during session refresh:", refreshException?.message);
         return { 
           user: null, 
@@ -93,7 +93,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
     
     console.log("User authenticated successfully:", user.id);
     return { user, error: null, supabase };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Exception in authenticate function:", error?.message);
     return { 
       user: null, 

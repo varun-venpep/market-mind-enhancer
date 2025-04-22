@@ -6,7 +6,7 @@ import { getAuthToken, refreshSession } from "./auth";
 export async function invokeFunction(functionName: string, payload: any): Promise<any> {
   try {
     // Get a fresh token first
-    const token = await getAuthToken();
+    let token = await getAuthToken();
     
     if (!token) {
       console.error('Authentication required for invoking function:', functionName);
@@ -19,8 +19,8 @@ export async function invokeFunction(functionName: string, payload: any): Promis
       }
       
       // Get a new token after refresh
-      const newToken = await getAuthToken();
-      if (!newToken) {
+      token = await getAuthToken();
+      if (!token) {
         toast.error('Authentication failed. Please sign in again.');
         throw new Error('Authentication required after refresh attempt');
       }
@@ -28,18 +28,12 @@ export async function invokeFunction(functionName: string, payload: any): Promis
       console.log(`Successfully refreshed token for function: ${functionName}`);
     }
     
-    // Always get the latest token right before the request
-    const currentToken = await getAuthToken();
-    console.log(`Invoking function ${functionName} with auth token: ${currentToken ? 'present' : 'missing'}`);
+    console.log(`Invoking function ${functionName} with auth token: ${token ? 'present' : 'missing'}`);
     
-    if (!currentToken) {
-      toast.error('Session expired. Please sign in again.');
-      throw new Error('Missing authentication token');
-    }
-    
+    // Make the request with the token
     const { data, error } = await supabase.functions.invoke(functionName, {
       headers: {
-        Authorization: `Bearer ${currentToken}`
+        Authorization: `Bearer ${token}`
       },
       body: payload
     });

@@ -1,4 +1,5 @@
-import { invokeFunction, getAuthToken } from "./supabase";
+
+import { invokeFunction } from "./supabase/functions";
 
 export async function searchKeywords(keyword: string, options = {}) {
   try {

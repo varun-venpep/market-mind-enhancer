@@ -4,6 +4,9 @@ export async function fetchShopifyProductsFromShopify(store: any, page: number, 
     // Format the store URL correctly for Shopify API
     let storeUrl = store.store_url.trim();
     
+    // Remove any protocol prefix if present
+    storeUrl = storeUrl.replace(/^https?:\/\//i, '');
+    
     // Ensure store_url has myshopify.com domain
     if (!storeUrl.includes('myshopify.com')) {
       storeUrl = `${storeUrl}.myshopify.com`;
