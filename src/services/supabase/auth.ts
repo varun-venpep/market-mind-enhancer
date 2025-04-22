@@ -68,9 +68,12 @@ export async function getAuthToken(): Promise<string | null> {
     }
     
     // Store session data for backup
-    localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-    lastSuccessfulRefresh = Date.now();
-    return data.session.access_token || null;
+    if (data.session) {
+      localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+      lastSuccessfulRefresh = Date.now();
+    }
+    
+    return data.session?.access_token || null;
   } catch (error) {
     console.error('Exception in getAuthToken:', error);
     return null;
@@ -173,7 +176,5 @@ export async function refreshSession(): Promise<boolean> {
     console.error('Exception in refreshSession:', error);
     isRefreshingSession = false;
     return false;
-  } finally {
-    isRefreshingSession = false;
   }
 }

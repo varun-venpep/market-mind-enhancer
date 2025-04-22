@@ -1,8 +1,18 @@
 
 export async function fetchShopifyProductsFromShopify(store: any, page: number, limit: number) {
   try {
-    // Fetch from Shopify API directly
-    const apiUrl = `https://${store.store_url}/admin/api/2023-07/products.json`;
+    // Format the store URL correctly for Shopify API
+    let storeUrl = store.store_url.trim();
+    
+    // Ensure store_url has myshopify.com domain
+    if (!storeUrl.includes('myshopify.com')) {
+      storeUrl = `${storeUrl}.myshopify.com`;
+    }
+    
+    // Construct the complete Shopify API URL
+    const apiUrl = `https://${storeUrl}/admin/api/2023-07/products.json`;
+    console.log(`Fetching Shopify products from URL: ${apiUrl}`);
+    
     const productsResponse = await fetch(apiUrl, {
       headers: {
         'X-Shopify-Access-Token': store.access_token,
@@ -21,6 +31,8 @@ export async function fetchShopifyProductsFromShopify(store: any, page: number, 
       } catch (e) {
         // Ignore error in getting response text
       }
+      
+      console.error(`Shopify API error: ${status} ${statusText} - ${responseText}`);
       
       return {
         error: `Failed to fetch products from Shopify (Status: ${status} ${statusText})`,

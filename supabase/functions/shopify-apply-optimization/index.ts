@@ -51,54 +51,76 @@ serve(async (req) => {
       });
     }
 
+    // Parse request parameters
     const { storeId, optimization } = body;
-
-    if (!storeId || !optimization) {
+    
+    if (!storeId) {
+      console.error("Missing store ID");
       return new Response(JSON.stringify({
-        error: 'Store ID and optimization details are required'
+        error: 'Store ID is required'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
     }
 
-    console.log('Processing optimization request:', {
-      storeId,
-      optimizationType: optimization.type,
-      entity: optimization.entity,
-      field: optimization.field
-    });
+    if (!optimization) {
+      console.error("Missing optimization data");
+      return new Response(JSON.stringify({
+        error: 'Optimization details are required'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
 
-    // Create Supabase client
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get the user ID from the authorization header
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      console.error("Failed to authenticate user:", userError);
+    // Authenticate user
+    console.log("Authenticating user...");
+    try {
+      // Extract token from Authorization header
+      const token = authHeader.replace('Bearer ', '');
+      
+      // Verify the user's session
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError || !user) {
+        console.error("Authentication failed:", authError);
+        return new Response(JSON.stringify({
+          error: 'Authentication failed: ' + (authError?.message || 'Invalid token')
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        });
+      }
+      
+      console.log("User authenticated successfully:", user.id);
+    } catch (authError) {
+      console.error("Exception during authentication:", authError);
       return new Response(JSON.stringify({
-        error: 'Failed to authenticate user'
+        error: 'Authentication error: ' + (authError.message || 'Unknown error')
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
     }
 
-    // Get the store details
+    // Get store details
+    console.log("Fetching store details...");
     const { data: store, error: storeError } = await supabase
       .from('shopify_stores')
       .select('*')
       .eq('id', storeId)
       .single();
 
-    if (storeError) {
-      console.error("Store not found:", storeError);
+    if (storeError || !store) {
+      console.error("Error retrieving store:", storeError);
       return new Response(JSON.stringify({
-        error: 'Store not found'
+        error: 'Store not found or access denied'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404,
@@ -107,88 +129,61 @@ serve(async (req) => {
 
     // Validate store credentials
     if (!store.store_url || !store.access_token) {
-      console.error("Store missing required credentials");
+      console.error("Invalid store credentials");
       return new Response(JSON.stringify({
-        error: 'Store missing required credentials'
+        error: 'Store credentials are invalid or incomplete'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
     }
 
-    console.log('Found store:', { url: store.store_url });
-
-    // Apply the optimization based on the entity type
+    // Process the optimization based on entity type
+    console.log(`Processing optimization for entity type: ${optimization.entity}`);
     let result: OptimizeResult;
 
     try {
-      switch (optimization.entity) {
-        case 'product':
-          result = await optimizeProduct(store, optimization);
-          break;
-        case 'shop':
-          result = await optimizeShop(store, optimization);
-          break;
-        case 'blog':
-          result = await optimizeBlog(store, optimization);
-          break;
-        case 'page':
-          result = await optimizePage(store, optimization);
-          break;
-        case 'theme':
-          result = await optimizeTheme(store, optimization);
-          break;
-        default:
-          throw new Error(`Unsupported entity type: ${optimization.entity}`);
+      if (optimization.entity === 'product') {
+        result = await optimizeProduct(store, optimization);
+      } else if (optimization.entity === 'shop') {
+        result = await optimizeShop(store, optimization);
+      } else if (optimization.entity === 'blog') {
+        result = await optimizeBlog(store, optimization);
+      } else if (optimization.entity === 'page') {
+        result = await optimizePage(store, optimization);
+      } else if (optimization.entity === 'theme') {
+        result = await optimizeTheme(store, optimization);
+      } else {
+        return new Response(JSON.stringify({
+          error: `Unsupported entity type: ${optimization.entity}`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
       }
+      
+      // Record the optimization history if successful
+      if (result.success) {
+        await recordOptimizationHistory(supabase, storeId, optimization, result);
+        console.log("Optimization applied and recorded successfully");
+      }
+      
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     } catch (error) {
-      console.error('Error in optimization process:', error);
+      console.error("Error applying optimization:", error);
       return new Response(JSON.stringify({
-        error: error.message || 'Failed to apply optimization'
+        error: `Failed to apply optimization: ${error.message || 'Unknown error'}`
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
-
-    if (!result.success) {
-      return new Response(JSON.stringify({
-        error: result.error || 'Failed to apply optimization'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
-    }
-
-    // Record the optimization in the history
-    let optimizationHistoryId;
-    try {
-      optimizationHistoryId = await recordOptimizationHistory(
-        supabase,
-        storeId,
-        result.entityId,
-        result.entityType,
-        optimization.field,
-        optimization.original,
-        optimization.suggestion,
-        user.id
-      );
-    } catch (error) {
-      console.error('Error recording optimization history:', error);
-    }
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: "Optimization successfully applied",
-      optimizationHistoryId,
-      ...result
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
-    console.error('Error applying optimization:', error);
+    console.error("Unhandled exception:", error);
     return new Response(JSON.stringify({
-      error: error.message || 'Failed to apply optimization'
+      error: `An unexpected error occurred: ${error.message || 'Unknown error'}`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

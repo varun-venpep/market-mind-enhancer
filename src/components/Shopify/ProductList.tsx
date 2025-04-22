@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SEOAnalysisResult, ShopifyProduct } from '@/types/shopify';
 import { ProductCard } from './ProductCard';
@@ -22,6 +23,7 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [authRetried, setAuthRetried] = useState(false);
   
   const refreshProducts = async () => {
     if (!storeId) return;
@@ -31,6 +33,7 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
     setError(null);
     
     try {
+      // Always try to refresh the session first for a guaranteed fresh token
       await refreshSession();
       
       const response = await fetchShopifyProducts(storeId);
@@ -38,40 +41,53 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
       if (response.error) {
         setError(response.error);
         toast.error(`Failed to refresh products: ${response.error}`);
+        
+        // If it seems to be an auth issue, try to refresh auth specifically
+        if (response.error.includes('401') || 
+            response.error.includes('auth') || 
+            response.error.includes('authorization')) {
+          
+          if (!authRetried) {
+            setAuthRetried(true);
+            toast.info("Refreshing authentication session...");
+            
+            // Wait a moment for the refresh to take effect
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            try {
+              const refreshed = await refreshSession();
+              if (refreshed) {
+                toast.success("Session refreshed, retrying...");
+                // Try fetching products again
+                const retryResponse = await fetchShopifyProducts(storeId);
+                
+                if (!retryResponse.error) {
+                  setProducts(retryResponse.products || []);
+                  setError(null);
+                  toast.success(`Successfully loaded ${retryResponse.products?.length || 0} products`);
+                } else {
+                  setError(`Still encountered an error after authentication refresh: ${retryResponse.error}`);
+                }
+              }
+            } catch (refreshError) {
+              console.error("Error during authentication refresh:", refreshError);
+              setError("Failed to refresh authentication session. Please try signing out and back in.");
+            }
+          }
+        }
       } else {
         setProducts(response.products || []);
+        setError(null);
         toast.success(`Successfully refreshed ${response.products?.length || 0} products`);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       setError(errorMessage);
       toast.error(`Failed to refresh products: ${errorMessage}`);
-      
-      if (errorMessage.includes('401') || 
-          errorMessage.includes('auth') || 
-          errorMessage.includes('authorization')) {
-        try {
-          const refreshed = await refreshSession();
-          if (refreshed) {
-            toast.info("Session refreshed, trying again...");
-            try {
-              const retryResponse = await fetchShopifyProducts(storeId);
-              if (!retryResponse.error && retryResponse.products) {
-                setProducts(retryResponse.products);
-                setError(null);
-                toast.success(`Successfully refreshed ${retryResponse.products.length || 0} products after session refresh`);
-              }
-            } catch (retryError) {
-              console.error("Retry error after session refresh:", retryError);
-            }
-          }
-        } catch (refreshError) {
-          console.error("Error refreshing session:", refreshError);
-        }
-      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+      setAuthRetried(false); // Reset for next attempt
     }
   };
   
@@ -103,7 +119,7 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
         <AlertCircle className="h-4 w-4 mr-2" />
         <AlertTitle>Error Loading Products</AlertTitle>
         <AlertDescription className="mt-2">{error}</AlertDescription>
-        <div className="flex gap-2 mt-4">
+        <div className="flex flex-wrap gap-2 mt-4">
           <Button 
             variant="outline" 
             onClick={refreshProducts}
@@ -114,12 +130,19 @@ export function ProductList({ products: initialProducts, storeId, analysisResult
           <Button 
             variant="outline" 
             onClick={async () => {
-              const refreshed = await refreshSession();
-              if (refreshed) {
-                toast.success("Session refreshed successfully");
-                refreshProducts();
-              } else {
-                toast.error("Failed to refresh session");
+              try {
+                toast.info("Refreshing authentication session...");
+                const refreshed = await refreshSession();
+                if (refreshed) {
+                  toast.success("Session refreshed successfully");
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  refreshProducts();
+                } else {
+                  toast.error("Failed to refresh session");
+                }
+              } catch (error) {
+                console.error("Error refreshing session:", error);
+                toast.error("Error refreshing session");
               }
             }}
             disabled={isLoading}

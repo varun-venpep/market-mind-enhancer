@@ -20,11 +20,12 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
   const token = authHeader.replace('Bearer ', '');
   
   try {
+    console.log("Attempting to authenticate user with token");
     // First try with the access token directly
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
-      console.error("User authentication error or no user found:", userError);
+      console.error("User authentication error or no user found:", userError?.message);
       
       // Try to refresh the session
       try {
@@ -52,7 +53,7 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
             console.log("Successfully refreshed session using refresh token");
           }
         } catch (e) {
-          console.log("Error using token as refresh token:", e);
+          console.log("Error using token as refresh token:", e?.message);
         }
         
         // If that fails, try accessing the session directly
@@ -66,8 +67,12 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
         }
         
         if (refreshError || !refreshData?.session) {
-          console.error("Failed to refresh or retrieve session:", refreshError);
-          return { user: null, error: "Authentication failed: " + (refreshError?.message || "Invalid token"), supabase: null };
+          console.error("Failed to refresh or retrieve session:", refreshError?.message);
+          return { 
+            user: null, 
+            error: "Authentication failed: " + (refreshError?.message || "Invalid token"), 
+            supabase: null 
+          };
         }
         
         console.log("Session refreshed or retrieved successfully");
@@ -77,15 +82,23 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
           supabase: tempClient 
         };
       } catch (refreshException) {
-        console.error("Exception during session refresh:", refreshException);
-        return { user: null, error: "Authentication error during refresh: " + (refreshException.message || "Unknown error"), supabase: null };
+        console.error("Exception during session refresh:", refreshException?.message);
+        return { 
+          user: null, 
+          error: "Authentication error during refresh: " + (refreshException.message || "Unknown error"), 
+          supabase: null 
+        };
       }
     }
     
     console.log("User authenticated successfully:", user.id);
     return { user, error: null, supabase };
   } catch (error) {
-    console.error("Exception in authenticate function:", error);
-    return { user: null, error: "Authentication error: " + (error.message || "Unknown error"), supabase: null };
+    console.error("Exception in authenticate function:", error?.message);
+    return { 
+      user: null, 
+      error: "Authentication error: " + (error.message || "Unknown error"), 
+      supabase: null 
+    };
   }
 }

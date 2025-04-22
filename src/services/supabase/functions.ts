@@ -5,87 +5,84 @@ import { getAuthToken, refreshSession } from "./auth";
 
 export async function invokeFunction(functionName: string, payload: any): Promise<any> {
   try {
-    let token = await getAuthToken();
+    // Get a fresh token first
+    const token = await getAuthToken();
+    
     if (!token) {
-      console.error('Authentication required. Please sign in.');
-      toast.error('Authentication required. Please sign in.');
+      console.error('Authentication required for invoking function:', functionName);
       
-      // Attempt to refresh the session one more time
-      if (await refreshSession()) {
-        token = await getAuthToken();
-        if (!token) {
-          throw new Error('Authentication required');
-        }
-      } else {
+      // Try to refresh the session
+      const refreshed = await refreshSession();
+      if (!refreshed) {
+        toast.error('Authentication required. Please sign in again.');
         throw new Error('Authentication required');
       }
-    }
-
-    console.log(`Invoking function ${functionName}`);
-    
-    // Add a retry mechanism for token refresh issues
-    let retries = 0;
-    const maxRetries = 3;
-    
-    while (retries <= maxRetries) {
-      try {
-        const currentToken = await getAuthToken();
-        if (!currentToken) {
-          if (retries < maxRetries) {
-            console.log(`No token available, refreshing session and trying again (${retries + 1}/${maxRetries})`);
-            await refreshSession();
-            retries++;
-            continue;
-          } else {
-            throw new Error('Authentication required after multiple refresh attempts');
-          }
-        }
-        
-        const { data, error } = await supabase.functions.invoke(functionName, {
-          headers: {
-            Authorization: `Bearer ${currentToken}`
-          },
-          body: payload
-        });
-
-        if (error) {
-          // Check if it's an auth error
-          if (isAuthError(error)) {
-            if (retries < maxRetries) {
-              console.log(`Auth issue detected, refreshing session and trying again (${retries + 1}/${maxRetries})`);
-              await refreshSession();
-              retries++;
-              continue;
-            }
-          }
-          
-          console.error(`Error invoking function ${functionName}:`, error);
-          throw error;
-        }
-
-        return data;
-      } catch (invokeError) {
-        if (isAuthError(invokeError) && retries < maxRetries) {
-          console.log(`Auth issue detected in catch block, refreshing session and trying again (${retries + 1}/${maxRetries})`);
-          await refreshSession();
-          retries++;
-          continue;
-        }
-        throw invokeError;
+      
+      // Get a new token after refresh
+      const newToken = await getAuthToken();
+      if (!newToken) {
+        toast.error('Authentication failed. Please sign in again.');
+        throw new Error('Authentication required after refresh attempt');
       }
+      
+      console.log(`Successfully refreshed token for function: ${functionName}`);
     }
     
-    throw new Error(`Failed to invoke function ${functionName} after ${maxRetries} attempts`);
+    // Always get the latest token right before the request
+    const currentToken = await getAuthToken();
+    console.log(`Invoking function ${functionName} with auth token: ${currentToken ? 'present' : 'missing'}`);
+    
+    if (!currentToken) {
+      toast.error('Session expired. Please sign in again.');
+      throw new Error('Missing authentication token');
+    }
+    
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      headers: {
+        Authorization: `Bearer ${currentToken}`
+      },
+      body: payload
+    });
+
+    if (error) {
+      console.error(`Error invoking function ${functionName}:`, error);
+      
+      // If it looks like an auth error, try to refresh and retry once
+      if (error.message && (error.message.includes('401') || 
+                            error.message.includes('auth') || 
+                            error.message.includes('authorization'))) {
+        console.log('Auth issue detected, attempting refresh and retry...');
+        
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          const retryToken = await getAuthToken();
+          
+          if (retryToken) {
+            console.log('Session refreshed, retrying function call...');
+            
+            const { data: retryData, error: retryError } = await supabase.functions.invoke(functionName, {
+              headers: {
+                Authorization: `Bearer ${retryToken}`
+              },
+              body: payload
+            });
+            
+            if (retryError) {
+              console.error(`Error in retry of function ${functionName}:`, retryError);
+              throw retryError;
+            }
+            
+            return retryData;
+          }
+        }
+      }
+      
+      throw error;
+    }
+
+    return data;
   } catch (error) {
     console.error(`Exception in invokeFunction ${functionName}:`, error);
     throw error;
   }
-}
-
-function isAuthError(error: any): boolean {
-  return error.message && (
-    error.message.includes('401') || 
-    error.message.includes('auth') || 
-    error.message.includes('Missing authorization')
-  );
 }
