@@ -116,8 +116,16 @@ serve(async (req) => {
 
     console.log(`Processing SERP request for query: "${searchQuery}"`);
 
-    // Use the correct SERPAPI key
-    const serpApiKey = "0e5b83cf0574604a9bc8016d699aba8d243a313f8978f8ec6f7ae188c7a9d962";
+    // Get the SERP API key from environment variables
+    const serpApiKey = Deno.env.get("SERP_API_KEY") || "0e5b83cf0574604a9bc8016d699aba8d243a313f8978f8ec6f7ae188c7a9d962";
+    
+    if (!serpApiKey) {
+      console.error("SERP API key is not configured");
+      return new Response(JSON.stringify({ error: "SERP API key is not configured" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
     
     // Call SERPAPI
     const params = new URLSearchParams({

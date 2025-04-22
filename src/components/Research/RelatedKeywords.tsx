@@ -49,7 +49,7 @@ export function RelatedKeywords({ mainKeyword, keywords = [] }: RelatedKeywordsP
   // Fix cpc values to ensure they're numbers
   const processedKeywords = keywords.map(kw => ({
     ...kw,
-    cpc: typeof kw.cpc === 'number' ? kw.cpc : parseFloat(kw.cpc) || 0
+    cpc: typeof kw.cpc === 'number' ? kw.cpc : parseFloat(String(kw.cpc)) || 0
   }));
 
   // Sort and filter keywords
@@ -113,7 +113,9 @@ export function RelatedKeywords({ mainKeyword, keywords = [] }: RelatedKeywordsP
                           Difficulty: {keyword.difficulty}%
                         </Badge>
                         <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200">
-                          CPC: ${typeof keyword.cpc === 'number' ? keyword.cpc.toFixed(2) : parseFloat(keyword.cpc as string).toFixed(2) || '0.00'}
+                          CPC: ${typeof keyword.cpc === 'number' 
+                            ? keyword.cpc.toFixed(2) 
+                            : (parseFloat(String(keyword.cpc)) || 0).toFixed(2)}
                         </Badge>
                       </div>
                     </div>

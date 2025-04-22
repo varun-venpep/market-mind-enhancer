@@ -52,28 +52,36 @@ export async function invokeFunction(functionName: string, payload: any): Promis
         console.log('Auth issue detected, attempting refresh and retry...');
         
         // Force session refresh
-        await refreshSession();
+        const refreshResult = await refreshSession();
+        if (!refreshResult) {
+          console.error('Session refresh failed');
+          throw error;
+        }
+        
         const retryToken = await getAuthToken();
         
-        if (retryToken) {
-          console.log('Session refreshed, retrying function call with fresh token...');
-          
-          const retryHeaders = {
-            Authorization: `Bearer ${retryToken}`
-          };
-          
-          const { data: retryData, error: retryError } = await supabase.functions.invoke(functionName, {
-            headers: retryHeaders,
-            body: payload
-          });
-          
-          if (retryError) {
-            console.error(`Error in retry of function ${functionName}:`, retryError);
-            throw retryError;
-          }
-          
-          return retryData;
+        if (!retryToken) {
+          console.error('Failed to get token after refresh');
+          throw error;
         }
+        
+        console.log('Session refreshed, retrying function call with fresh token...');
+        
+        const retryHeaders = {
+          Authorization: `Bearer ${retryToken}`
+        };
+        
+        const { data: retryData, error: retryError } = await supabase.functions.invoke(functionName, {
+          headers: retryHeaders,
+          body: payload
+        });
+        
+        if (retryError) {
+          console.error(`Error in retry of function ${functionName}:`, retryError);
+          throw retryError;
+        }
+        
+        return retryData;
       }
       
       throw error;
