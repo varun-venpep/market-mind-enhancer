@@ -10,20 +10,22 @@ import {
   ArrowRight, 
   LayoutGrid,
   FileEdit,
-  ListChecks
+  ListChecks,
+  Lightbulb
 } from "lucide-react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { ContentBrief } from "@/types";
+import { ContentBrief, Article } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ContentBriefCard } from "@/components/Dashboard/ContentBriefCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspace();
-  const [briefs, setBriefs] = useState<ContentBrief[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasContent, setHasContent] = useState(false);
 
@@ -32,16 +34,16 @@ const Dashboard = () => {
       try {
         setIsLoading(true);
         
-        // This would be replaced with actual data fetching from your database
+        // Fetch articles instead of content_briefs since that table doesn't exist
         const { data, error } = await supabase
-          .from('content_briefs')
+          .from('articles')
           .select('*')
-          .eq('workspace_id', currentWorkspace?.id || '')
+          .eq('user_id', currentWorkspace?.id || '')
           .limit(10);
           
         if (error) throw error;
         
-        setBriefs(data || []);
+        setArticles(data || []);
         // Determine if user has any content
         setHasContent(data && data.length > 0);
       } catch (error: any) {
@@ -58,6 +60,22 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   }, [currentWorkspace]);
+
+  // Transform Article to ContentBrief for display purposes if needed
+  // This is for ContentBriefCard compatibility
+  const mapArticlesToBriefs = (articles: Article[]): ContentBrief[] => {
+    return articles.map(article => ({
+      id: article.id,
+      title: article.title,
+      keywords: article.keywords || [],
+      status: article.status as any,
+      createdAt: article.created_at || new Date().toISOString(),
+      updatedAt: article.updated_at || new Date().toISOString(),
+      score: article.score,
+      wordCount: article.word_count,
+      thumbnailUrl: article.thumbnail_url
+    }));
+  };
 
   const quickActions = [
     {
@@ -107,114 +125,152 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="p-6 max-w-7xl mx-auto w-full">
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Welcome to {currentWorkspace?.name || 'Your Workspace'}! 👋
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Create, optimize, and manage content that ranks for both traditional search and AI platforms
-            </p>
-          </div>
-
-          <Card className="border-2 border-primary/20">
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl">Get Started with Market Mind</CardTitle>
-              <CardDescription className="text-base">Choose an action to begin your content optimization journey</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {quickActions.map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={action.action}
-                    className="relative group rounded-lg p-6 text-left transition-all hover:bg-accent"
-                  >
-                    <div className={`absolute inset-0 rounded-lg bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        <action.icon className="h-5 w-5 text-primary" />
+        {!isLoading && (
+          <div className="space-y-8">
+            {/* Welcome message */}
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">
+                Welcome to {currentWorkspace?.name || 'Your Workspace'}! 👋
+              </h1>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Create, optimize, and manage content that ranks for both traditional search and AI platforms
+              </p>
+            </div>
+            
+            {!hasContent ? (
+              /* New user experience */
+              <div className="space-y-8">
+                <Card className="border-2 border-primary/10 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-background/0 pointer-events-none" />
+                  <CardHeader className="text-center">
+                    <CardTitle className="text-2xl">Get Started with Market Mind</CardTitle>
+                    <CardDescription className="text-base">
+                      Welcome! Let's create your first piece of content
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                      <div className="bg-primary/10 p-4 rounded-full">
+                        <Lightbulb className="h-10 w-10 text-primary" />
                       </div>
-                      <h3 className="text-lg font-semibold">{action.title}</h3>
+                      <h3 className="text-xl font-semibold text-center">
+                        Your content journey starts here
+                      </h3>
+                      <p className="text-center max-w-md text-muted-foreground">
+                        Create AI-powered content that's optimized for both traditional search engines and AI platforms
+                      </p>
+                      <Button
+                        size="lg"
+                        className="gradient-button mt-4"
+                        onClick={() => navigate('/dashboard/article-generator')}
+                      >
+                        <Plus className="mr-2 h-5 w-5" />
+                        Create Your First Article
+                      </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {action.description}
-                    </p>
-                    <div className="flex items-center text-sm text-primary">
-                      Get Started <ArrowRight className="h-4 w-4 ml-1" />
+                    
+                    <div className="pt-6 border-t">
+                      <h4 className="font-medium mb-4 text-center">Or explore other ways to get started</h4>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        {quickActions.slice(0, 3).map((action, index) => (
+                          <button
+                            key={index}
+                            onClick={action.action}
+                            className="relative group rounded-lg p-4 text-left transition-all hover:bg-accent"
+                          >
+                            <div className={`absolute inset-0 rounded-lg bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="p-1.5 rounded-full bg-primary/10">
+                                <action.icon className="h-4 w-4 text-primary" />
+                              </div>
+                              <h3 className="font-medium">{action.title}</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {action.description}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </button>
-                ))}
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              /* Returning user experience */
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold tracking-tight">Recent Content</h2>
+                  <Button 
+                    onClick={() => navigate('/dashboard/article-generator')}
+                    className="gradient-button"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create New
+                  </Button>
+                </div>
 
-          <div className="flex flex-col items-center justify-center gap-4">
-            <p className="text-center text-muted-foreground max-w-xl">
-              Ready to create your first AI-powered article? Our article generator creates SEO-optimized 
-              content that ranks well in traditional search and performs well in AI search platforms.
-            </p>
-            <Button 
-              onClick={() => navigate('/dashboard/article-generator')}
-              size="lg"
-              className="gradient-button"
-            >
-              <Rocket className="mr-2 h-5 w-5" />
-              Generate Your First Article
-            </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Map articles to ContentBrief format for display */}
+                  {mapArticlesToBriefs(articles).map((brief) => (
+                    <ContentBriefCard
+                      key={brief.id}
+                      brief={brief}
+                      onClick={() => navigate(`/dashboard/articles/${brief.id}`)}
+                    />
+                  ))}
+                </div>
+                
+                {/* Quick Actions Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                    <CardDescription>Common tasks to help optimize your content</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {quickActions.map((action, index) => (
+                        <button
+                          key={index}
+                          onClick={action.action}
+                          className="relative group rounded-lg p-4 text-left transition-all hover:bg-accent"
+                        >
+                          <div className={`absolute inset-0 rounded-lg bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="p-1.5 rounded-full bg-primary/10">
+                              <action.icon className="h-4 w-4 text-primary" />
+                            </div>
+                            <h3 className="font-medium">{action.title}</h3>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {action.description}
+                          </p>
+                          <div className="flex items-center text-xs text-primary">
+                            Get Started <ArrowRight className="h-3 w-3 ml-1" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
-
-          <div className="text-center space-y-4 pt-8">
-            <h2 className="text-2xl font-semibold">Need Help Getting Started?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Research Keywords</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Discover high-value keywords for your content strategy</p>
-                  <Button 
-                    variant="link" 
-                    className="mt-2 p-0" 
-                    onClick={() => navigate('/dashboard/research')}
-                  >
-                    Start Researching <ArrowRight className="ml-1 h-3 w-3" />
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Connect Your Site</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Integrate your website for AI-driven optimization</p>
-                  <Button 
-                    variant="link" 
-                    className="mt-2 p-0" 
-                    onClick={() => navigate('/dashboard/integrations')}
-                  >
-                    View Integrations <ArrowRight className="ml-1 h-3 w-3" />
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Create a Campaign</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Organize your content production at scale</p>
-                  <Button 
-                    variant="link" 
-                    className="mt-2 p-0" 
-                    onClick={() => navigate('/dashboard/campaigns')}
-                  >
-                    Start Campaign <ArrowRight className="ml-1 h-3 w-3" />
-                  </Button>
-                </CardContent>
-              </Card>
+        )}
+        
+        {isLoading && (
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="animate-pulse space-y-8 w-full max-w-4xl">
+              <div className="h-8 bg-muted rounded w-2/3 mx-auto"></div>
+              <div className="h-4 bg-muted rounded w-1/2 mx-auto"></div>
+              <div className="h-64 bg-muted rounded-lg"></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="h-32 bg-muted rounded-lg"></div>
+                <div className="h-32 bg-muted rounded-lg"></div>
+                <div className="h-32 bg-muted rounded-lg"></div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </DashboardLayout>
   );
