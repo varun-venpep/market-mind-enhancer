@@ -32,13 +32,11 @@ export async function invokeFunction(functionName: string, payload: any): Promis
     
     console.log(`Invoking function ${functionName} with auth token: ${token ? 'present' : 'missing'}`);
     
-    // Log full headers and token for debugging
+    // Make the request with the token
     const headers = {
       Authorization: `Bearer ${token}`
     };
-    console.log('Request headers:', headers);
     
-    // Make the request with the token
     const { data, error } = await supabase.functions.invoke(functionName, {
       headers,
       body: payload
@@ -59,7 +57,6 @@ export async function invokeFunction(functionName: string, payload: any): Promis
         
         if (retryToken) {
           console.log('Session refreshed, retrying function call with fresh token...');
-          console.log(`Retry token: ${retryToken.substring(0, 10)}...`);
           
           const retryHeaders = {
             Authorization: `Bearer ${retryToken}`

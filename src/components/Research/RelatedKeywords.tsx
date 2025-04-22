@@ -4,10 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, TrendingUp, ArrowUpRight, Star, BarChart, DollarSign, Filter } from "lucide-react";
+import { Search, TrendingUp, ArrowUpRight, Star, BarChart, DollarSign, Filter, Info } from "lucide-react";
 import { useState } from "react";
 import { Keyword } from "@/types";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface RelatedKeywordsProps {
   mainKeyword: string;
@@ -103,6 +104,16 @@ export const RelatedKeywords = ({ mainKeyword, keywords }: RelatedKeywordsProps)
     return { label: "High", color: "bg-green-500" };
   };
 
+  // Helper to safely format CPC values
+  const formatCPC = (cpc: any): string => {
+    if (typeof cpc === 'number') {
+      return cpc.toFixed(2);
+    } else if (typeof cpc === 'string' && !isNaN(parseFloat(cpc))) {
+      return parseFloat(cpc).toFixed(2);
+    }
+    return "0.00"; // Default fallback
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -186,7 +197,7 @@ export const RelatedKeywords = ({ mainKeyword, keywords }: RelatedKeywordsProps)
                             {difficulty.label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell">${kw.cpc.toFixed(2)}</TableCell>
+                        <TableCell className="hidden lg:table-cell">${formatCPC(kw.cpc)}</TableCell>
                         <TableCell>
                           <Badge className={`${aiPotential.color} hover:${aiPotential.color}`}>
                             {aiPotential.label}

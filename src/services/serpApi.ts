@@ -1,5 +1,6 @@
 
 import { invokeFunction } from "./supabase/functions";
+import { toast } from "sonner";
 
 export async function searchKeywords(keyword: string, options = {}) {
   try {
@@ -10,6 +11,7 @@ export async function searchKeywords(keyword: string, options = {}) {
     });
     
     if (!result || result.error) {
+      console.error("SERP API error:", result?.error || "Unknown error");
       throw new Error(result?.error || 'Failed to get SERP results');
     }
     
@@ -17,6 +19,7 @@ export async function searchKeywords(keyword: string, options = {}) {
     return result;
   } catch (error) {
     console.error('Error searching keywords:', error);
+    toast.error('Error fetching search data. Using mock data as fallback.');
     
     // If the API fails, use mock data as fallback
     const mockData = getMockSerpData(keyword);
@@ -37,15 +40,21 @@ export async function fetchSerpResults(keyword: string, options = {}) {
 
 export function extractSerpData(data: any) {
   try {
+    // Parse the keywords and add required properties
+    const relatedKeywords = data.related_searches?.map((item: any, index: number) => ({
+      id: `kw-${index}`,
+      keyword: item.query || item,
+      searchVolume: Math.floor(Math.random() * 10000), // Mock data for search volume
+      difficulty: Math.floor(Math.random() * 100), // Mock data for difficulty
+      cpc: parseFloat((Math.random() * 5).toFixed(2)), // Mock data for CPC
+      aiPotential: Math.floor(Math.random() * 25) + 75, // High potential for all keywords
+    })) || [];
+
     return {
       organicResults: data.organic_results || [],
-      relatedKeywords: data.related_searches?.map((item: any) => ({
-        keyword: item.query,
-        searchVolume: Math.floor(Math.random() * 10000), // Mock data
-        difficulty: Math.floor(Math.random() * 100), // Mock data
-        cpc: (Math.random() * 5).toFixed(2), // Mock data
-      })) || [],
-      relatedQuestions: data.related_questions || [],
+      relatedKeywords: relatedKeywords,
+      relatedQuestions: data.related_questions?.map((q: any) => q.question) || 
+                       data.people_also_ask?.map((q: any) => q.question) || [],
       peopleAlsoAsk: data.people_also_ask || [],
       searchMetadata: data.search_metadata || {},
       localPack: data.local_pack || null,
@@ -76,10 +85,10 @@ function getMockSerpData(keyword: string) {
       displayed_link: `example.com/result-${i + 1}`
     })),
     related_questions: [
-      { question: `What is the best ${keyword}?`, answer: "The best approach depends on your specific needs and goals." },
-      { question: `How to learn ${keyword} for beginners?`, answer: "Beginners should start with the fundamentals and practice regularly." },
-      { question: `Why is ${keyword} important?`, answer: "It's important because it helps achieve better results and efficiency." },
-      { question: `How much does ${keyword} cost?`, answer: "Costs vary widely depending on scope and requirements." }
+      { question: `What is the best ${keyword}?` },
+      { question: `How to learn ${keyword} for beginners?` },
+      { question: `Why is ${keyword} important?` },
+      { question: `How much does ${keyword} cost?` }
     ],
     related_searches: [
       { query: `${keyword} best practices` },

@@ -31,48 +31,39 @@ export async function authenticate(req: Request, supabaseUrl: string, supabaseKe
       try {
         console.log("Attempting session refresh...");
         
-        // Try both as access token and refresh token
-        let refreshData;
-        let refreshError;
+        // Try as an access token
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
-        try {
-          console.log("Trying token as refresh token");
-          // First try as a refresh token
-          ({ data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+        if (sessionError || !sessionData?.session) {
+          console.log("Failed to get session, trying as refresh token...");
+          
+          // Try as a refresh token
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
             refresh_token: token,
-          }));
+          });
           
-          if (refreshData?.session) {
-            console.log("Successfully refreshed session using refresh token");
+          if (refreshError || !refreshData?.session) {
+            console.error("Failed to refresh session:", refreshError?.message);
+            return { 
+              user: null, 
+              error: "Authentication failed: " + (refreshError?.message || "Invalid token"), 
+              supabase: null 
+            };
           }
-        } catch (e) {
-          console.log("Error using token as refresh token:", e?.message);
-        }
-        
-        // If that fails, try accessing the session directly
-        if (refreshError || !refreshData?.session) {
-          console.log("Trying alternative authentication method");
-          ({ data: refreshData, error: refreshError } = await supabase.auth.getSession());
           
-          if (refreshData?.session) {
-            console.log("Successfully got session using getSession");
-          }
-        }
-        
-        if (refreshError || !refreshData?.session) {
-          console.error("Failed to refresh or retrieve session:", refreshError?.message);
+          console.log("Successfully refreshed session using refresh token");
           return { 
-            user: null, 
-            error: "Authentication failed: " + (refreshError?.message || "Invalid token"), 
-            supabase: null 
+            user: refreshData.session.user, 
+            error: null, 
+            supabase 
           };
         }
         
-        console.log("Session refreshed or retrieved successfully");
+        console.log("Successfully retrieved session");
         return { 
-          user: refreshData.session.user, 
+          user: sessionData.session.user, 
           error: null, 
-          supabase: supabase 
+          supabase 
         };
       } catch (refreshException: any) {
         console.error("Exception during session refresh:", refreshException?.message);

@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { authenticate } from "../shopify-products/utils/authenticate.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -10,38 +11,22 @@ serve(async (req) => {
   }
 
   try {
-    // Check auth
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.error("Missing authorization header in SERP API function");
+    // Get Supabase configuration
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    // Authenticate the request
+    const { user, error, supabase } = await authenticate(req, supabaseUrl, supabaseKey);
+    
+    if (error || !user) {
+      console.error("Authentication error:", error);
       return new Response(JSON.stringify({ 
-        error: "Authentication required",
+        error: "Authentication failed",
+        details: error || "User not found",
         debug: {
           headers: Object.fromEntries([...req.headers]),
           method: req.method
         }
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
-
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Verify the token
-    const token = authHeader.replace("Bearer ", "");
-    console.log("Verifying token:", token.substring(0, 10) + "...");
-    
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      console.error("Error verifying token:", userError);
-      return new Response(JSON.stringify({ 
-        error: "Invalid token", 
-        details: userError?.message || "User not found" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
@@ -74,7 +59,7 @@ serve(async (req) => {
 
     console.log(`Processing SERP request for query: "${searchQuery}"`);
 
-    // Use the corrected SERPAPI key
+    // Use the correct SERPAPI key
     const serpApiKey = "0e5b83cf0574604a9bc8016d699aba8d243a313f8978f8ec6f7ae188c7a9d962";
     
     // Call SERPAPI
