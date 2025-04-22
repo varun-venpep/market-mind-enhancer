@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { getConnectedShopifyStores, disconnectShopifyStore } from '@/services/sh
 import { fetchSerpResults, extractSerpData } from '@/services/serpApi';
 import type { ShopifyStore } from '@/types/shopify';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-// Refactored components:
 import ShopifySerpStatsCards from '@/components/Shopify/ShopifySerpStatsCards';
 import ShopifyStoreList from '@/components/Shopify/ShopifyStoreList';
 import ShopifyNoStores from '@/components/Shopify/ShopifyNoStores';
@@ -36,10 +34,14 @@ export default function ShopifyStores() {
   const { user, session, refreshSession: authRefresh } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // First check if we need to refresh the session
+  const authCheckedRef = useRef(false);
+  const [uiStable, setUiStable] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
+      if (authCheckedRef.current) return;
+      
+      authCheckedRef.current = true;
       setIsRefreshing(true);
       setAuthError(null);
       console.log("Checking authentication status...");
@@ -47,27 +49,21 @@ export default function ShopifyStores() {
       try {
         if (!user || !session) {
           console.log("No active session found, attempting refresh");
-          // Try to refresh with the auth context's refresh method first
-          const authRefreshed = await authRefresh();
+          // Try to refresh the session
+          const refreshed = await refreshSession();
           
-          if (!authRefreshed) {
-            console.log("Auth context refresh failed, trying utility function");
-            // Then try with the utility function as backup
-            const utilRefreshed = await refreshSession();
+          if (!refreshed) {
+            console.error("Session refresh failed");
+            setAuthError("Authentication required. Please sign in to continue.");
+            toast({
+              title: "Authentication required",
+              description: "Please sign in to access this feature",
+              variant: "destructive"
+            });
             
-            if (!utilRefreshed) {
-              console.error("All session refresh attempts failed");
-              setAuthError("Authentication required. Please sign in to continue.");
-              toast({
-                title: "Authentication required",
-                description: "Please sign in to access this feature",
-                variant: "destructive"
-              });
-              
-              // Redirect to login after a short delay
-              setTimeout(() => navigate('/login'), 2000);
-              return;
-            }
+            // Redirect to login after a short delay
+            setTimeout(() => navigate('/login', { replace: true }), 2000);
+            return;
           }
         }
         
@@ -84,26 +80,40 @@ export default function ShopifyStores() {
     checkAuth();
   }, [user, session, navigate, toast, authRefresh]);
   
+  useEffect(() => {
+    if (authChecked && !isRefreshing) {
+      // Delay UI updates to prevent flickering
+      const timer = setTimeout(() => {
+        setUiStable(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [authChecked, isRefreshing]);
+  
   const fetchStores = useCallback(async () => {
     try {
       setIsLoading(true);
       setLoadError(null);
       
       // Ensure fresh session first
-      console.log("Refreshing session before fetching stores");
-      const refreshed = await refreshSession();
+      console.log("Ensuring valid session before fetching stores");
+      const { data } = await supabase.auth.getSession();
       
-      if (!refreshed) {
-        console.error("Session refresh failed before fetch");
-        setLoadError("Could not refresh authentication. Please sign in again.");
-        setIsLoading(false);
-        return;
+      if (!data.session) {
+        console.log("No session found, attempting refresh");
+        const refreshed = await refreshSession();
+        
+        if (!refreshed) {
+          setLoadError("Authentication required. Please sign in to view your stores.");
+          setIsLoading(false);
+          return;
+        }
       }
       
       console.log("Fetching connected Shopify stores");
-      const data = await getConnectedShopifyStores();
-      console.log(`Fetched ${data?.length || 0} stores`);
-      setStores(data || []);
+      const storeData = await getConnectedShopifyStores();
+      console.log(`Fetched ${storeData?.length || 0} stores`);
+      setStores(storeData || []);
     } catch (error) {
       console.error("Error fetching stores:", error);
       setLoadError("Failed to load connected Shopify stores. Please try again.");
@@ -137,18 +147,20 @@ export default function ShopifyStores() {
     }
   }, [user, fetchStores, authChecked, session]);
   
-  // Add periodic session refresh to prevent auth issues
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
-      console.log("Periodic session refresh");
-      await refreshSession();
-    }, 3 * 60 * 1000); // Every 3 minutes
+      try {
+        console.log("Periodic session refresh");
+        await refreshSession();
+      } catch (error) {
+        console.error("Error in periodic refresh:", error);
+      }
+    }, 4 * 60 * 1000); // Every 4 minutes
     
     return () => clearInterval(refreshInterval);
   }, []);
   
   useEffect(() => {
-    // Set up auth state change listeners
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
       
@@ -270,7 +282,6 @@ export default function ShopifyStores() {
     }
   };
   
-  // Show a loading indicator until auth is checked
   if (!authChecked || isRefreshing) {
     return (
       <DashboardLayout>
@@ -285,7 +296,6 @@ export default function ShopifyStores() {
     );
   }
 
-  // Show auth error if any
   if (authError) {
     return (
       <DashboardLayout>

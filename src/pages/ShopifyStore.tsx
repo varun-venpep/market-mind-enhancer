@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { ShopifyProtected } from "@/components/ShopifyProtected";
 import { useParams, useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ import ShopifyStoreLoading from '@/components/Shopify/ShopifyStoreLoading';
 import ShopifyStoreError from '@/components/Shopify/ShopifyStoreError';
 import { supabase } from '@/integrations/supabase/client';
 import { refreshSession } from '@/services/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ShopifyStore = () => {
   const { storeId } = useParams<{ storeId: string }>();
@@ -23,83 +25,99 @@ const ShopifyStore = () => {
   const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const { session, user, refreshSession: authRefresh } = useAuth();
+  const [dataReady, setDataReady] = useState(false);
   
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setIsRefreshing(true);
-        
-        await refreshSession();
-        
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session check error:", error);
-          setAuthError("Authentication error: " + error.message);
-          toast({
-            title: "Authentication Error",
-            description: error.message,
-            variant: "destructive"
-          });
-          setTimeout(() => navigate('/login'), 2000);
-          return;
-        }
-        
-        if (!data.session) {
-          const refreshed = await refreshSession();
-          if (!refreshed) {
-            setAuthError("Please sign in to access your Shopify store");
-            toast({
-              title: "Authentication Required",
-              description: "Please sign in to access your Shopify store",
-              variant: "destructive"
-            });
-            setTimeout(() => navigate('/login'), 2000);
-            return;
-          }
-        }
-        
-        if (!storeId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId)) {
-          setAuthError("Invalid store ID format");
-          toast({
-            title: "Error",
-            description: "Invalid store ID format",
-            variant: "destructive"
-          });
-          setTimeout(() => navigate('/dashboard/shopify'), 2000);
-          return;
-        }
-        
-        localStorage.setItem('lastVisitedStoreId', storeId);
+  // Check authentication once and avoid multiple checks that could cause flickering
+  const checkAuth = useCallback(async () => {
+    if (!isCheckingAuth) return;
+    
+    try {
+      setIsRefreshing(true);
+      console.log("Checking authentication status...");
+      
+      // First check if we already have a valid session in auth context
+      if (session && user) {
+        console.log("Valid session found in auth context");
         setIsCheckingAuth(false);
-      } catch (err) {
-        console.error("Error checking authentication:", err);
-        setAuthError("Error checking authentication");
-        toast({
-          title: "Authentication Error",
-          description: "Failed to check authentication status",
-          variant: "destructive"
-        });
-        setTimeout(() => navigate('/login'), 2000);
-      } finally {
-        setIsRefreshing(false);
+        return true;
       }
-    };
+      
+      // Try to refresh the session
+      const refreshed = await refreshSession();
+      
+      if (refreshed) {
+        console.log("Session refreshed successfully");
+        setIsCheckingAuth(false);
+        return true;
+      }
+      
+      console.log("No valid session found after refresh");
+      setAuthError("Please sign in to access your Shopify store");
+      setTimeout(() => navigate('/login', { replace: true }), 2000);
+      return false;
+    } catch (err) {
+      console.error("Error checking authentication:", err);
+      setAuthError("Error checking authentication");
+      return false;
+    } finally {
+      setIsRefreshing(false);
+      setIsCheckingAuth(false);
+    }
+  }, [isCheckingAuth, navigate, session, user]);
+  
+  // Validate store ID format only once on initial load
+  useEffect(() => {
+    // Validate storeId format
+    if (storeId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId)) {
+      setAuthError("Invalid store ID format");
+      toast({
+        title: "Error",
+        description: "Invalid store ID format",
+        variant: "destructive"
+      });
+      setTimeout(() => navigate('/dashboard/shopify', { replace: true }), 2000);
+    }
     
+    // Save last visited store ID
+    if (storeId) {
+      localStorage.setItem('lastVisitedStoreId', storeId);
+    }
+  }, [storeId, navigate, toast]);
+  
+  // Initial auth check
+  useEffect(() => {
     checkAuth();
-    
+  }, [checkAuth]);
+  
+  // Set up auth state change listener only once
+  useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event);
+      console.log("Auth state changed in ShopifyStore:", event);
       
       if (event === 'SIGNED_OUT') {
-        navigate('/login');
+        navigate('/login', { replace: true });
       }
     });
     
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, toast, storeId]);
+  }, [navigate]);
+  
+  // Set up periodic session refresh without causing re-renders
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      console.log("Periodic silent session refresh");
+      try {
+        await refreshSession();
+      } catch (error) {
+        console.error("Error in periodic refresh:", error);
+      }
+    }, 5 * 60 * 1000); // Every 5 minutes
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
   
   const {
     store, products, analysisResults, isLoading, isOptimizing, serpData, serpLoading, siteAudit,
@@ -108,6 +126,17 @@ const ShopifyStore = () => {
     handleAnalysisComplete, handleBulkOptimize, handleBlogGenerate, handleRunSiteAudit,
   } = useShopifyStoreData({ storeId });
 
+  // Manage data loading state with debounce to prevent flickering
+  useEffect(() => {
+    if (!isLoading && !isCheckingAuth && !error) {
+      // Use a timeout to ensure the UI doesn't flicker with rapid state changes
+      const timer = setTimeout(() => {
+        setDataReady(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isCheckingAuth, error]);
+
   useEffect(() => {
     if (error) {
       toast({
@@ -115,18 +144,44 @@ const ShopifyStore = () => {
         description: error,
         variant: "destructive"
       });
-      const timer = setTimeout(() => navigate('/dashboard/shopify'), 3000);
+      const timer = setTimeout(() => navigate('/dashboard/shopify', { replace: true }), 3000);
       return () => clearTimeout(timer);
     }
-  }, [error, navigate, toast, storeId]);
+  }, [error, navigate, toast]);
 
-  useEffect(() => {
-    const refreshInterval = setInterval(async () => {
-      await refreshSession();
-    }, 60000);
-    
-    return () => clearInterval(refreshInterval);
-  }, []);
+  const handleRefreshSession = async () => {
+    setIsRefreshing(true);
+    try {
+      // Try both refresh methods
+      const authSuccess = await authRefresh();
+      const utilSuccess = await refreshSession();
+      
+      if (authSuccess || utilSuccess) {
+        toast({
+          title: "Session Refreshed",
+          description: "Authentication session has been refreshed",
+        });
+        setAuthError(null);
+        window.location.reload(); // Clean reload after successful refresh
+      } else {
+        toast({
+          title: "Session Refresh Failed",
+          description: "Please try signing in again",
+          variant: "destructive"
+        });
+        setTimeout(() => navigate('/login', { replace: true }), 2000);
+      }
+    } catch (error) {
+      console.error("Error refreshing session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh session",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   if (isCheckingAuth || isRefreshing) {
     return (
@@ -155,14 +210,7 @@ const ShopifyStore = () => {
                 Go to Login
               </Button>
               <Button 
-                onClick={async () => {
-                  setIsRefreshing(true);
-                  const success = await refreshSession();
-                  setIsRefreshing(false);
-                  if (success) {
-                    window.location.reload();
-                  }
-                }} 
+                onClick={handleRefreshSession} 
                 variant="outline" 
                 className="gap-2"
                 disabled={isRefreshing}
@@ -181,7 +229,7 @@ const ShopifyStore = () => {
     );
   }
   
-  if (isLoading) {
+  if (isLoading || !dataReady) {
     return (
       <DashboardLayout>
         <ShopifyStoreLoading />

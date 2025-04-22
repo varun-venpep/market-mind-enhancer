@@ -6,13 +6,34 @@ import { toast } from "sonner";
 const MAX_REFRESH_RETRIES = 3;
 // Flag to track ongoing refresh operations to prevent duplication
 let isRefreshingSession = false;
+// Timestamp of last successful refresh to prevent too frequent refreshes
+let lastSuccessfulRefresh = 0;
 
 export async function getAuthToken(): Promise<string | null> {
   try {
+    // Prevent excessive token refreshes
+    const now = Date.now();
+    if (now - lastSuccessfulRefresh < 10000) { // Don't refresh more than once every 10 seconds
+      console.log('Token was refreshed recently, using cached session');
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.access_token) {
+        return data.session.access_token;
+      }
+    }
+    
     // First check if we're already refreshing to avoid infinite loops
     if (isRefreshingSession) {
       console.log('Session refresh already in progress, waiting...');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      let waitAttempts = 0;
+      while (isRefreshingSession && waitAttempts < 5) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        waitAttempts++;
+      }
+      // After waiting, try to get the session directly
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.access_token) {
+        return data.session.access_token;
+      }
     }
     
     // First check the existing session
@@ -20,7 +41,7 @@ export async function getAuthToken(): Promise<string | null> {
     
     if (error) {
       console.error('Error getting auth session:', error);
-      return null;
+      return await refreshSessionFromLocalStorage();
     }
     
     if (!data.session) {
@@ -28,8 +49,27 @@ export async function getAuthToken(): Promise<string | null> {
       return await refreshSessionFromLocalStorage();
     }
     
+    // Check token expiration to see if we need to refresh
+    const expiresAt = data.session.expires_at;
+    if (expiresAt) {
+      const expiresAtDate = new Date(expiresAt * 1000);
+      const now = new Date();
+      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+      
+      if (expiresAtDate < fiveMinutesFromNow) {
+        console.log('Token expires soon, refreshing...');
+        await refreshSession();
+        // Get the refreshed session
+        const { data: refreshedData } = await supabase.auth.getSession();
+        if (refreshedData.session?.access_token) {
+          return refreshedData.session.access_token;
+        }
+      }
+    }
+    
     // Store session data for backup
     localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+    lastSuccessfulRefresh = Date.now();
     return data.session.access_token || null;
   } catch (error) {
     console.error('Exception in getAuthToken:', error);
@@ -57,6 +97,7 @@ async function refreshSessionFromLocalStorage(): Promise<string | null> {
           if (refreshData.session) {
             console.log('Session refreshed successfully');
             localStorage.setItem('supabase.auth.token', JSON.stringify(refreshData.session));
+            lastSuccessfulRefresh = Date.now();
             return refreshData.session.access_token;
           }
         }
@@ -73,11 +114,25 @@ async function refreshSessionFromLocalStorage(): Promise<string | null> {
 }
 
 export async function refreshSession(): Promise<boolean> {
+  // If we refreshed successfully recently, avoid doing it again
+  const now = Date.now();
+  if (now - lastSuccessfulRefresh < 10000) { // Don't refresh more than once every 10 seconds
+    console.log('Session was refreshed recently, skipping');
+    return true;
+  }
+  
   // Don't attempt refresh if one is already in progress
   if (isRefreshingSession) {
     console.log('Session refresh already in progress, waiting...');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return true;
+    let waitAttempts = 0;
+    while (isRefreshingSession && waitAttempts < 5) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      waitAttempts++;
+    }
+    // If we waited and it's still refreshing, just return true to avoid blocking
+    if (isRefreshingSession) {
+      return true;
+    }
   }
   
   isRefreshingSession = true;
@@ -88,8 +143,9 @@ export async function refreshSession(): Promise<boolean> {
     // Try with exponential backoff for reliability
     for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
       if (attempt > 0) {
-        console.log(`Refresh attempt ${attempt + 1}/${MAX_REFRESH_RETRIES}`);
-        await new Promise(resolve => setTimeout(resolve, attempt * 500));
+        const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+        console.log(`Refresh attempt ${attempt + 1}/${MAX_REFRESH_RETRIES}, delay: ${backoffDelay}ms`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
       }
       
       const { data, error } = await supabase.auth.refreshSession();
@@ -97,6 +153,7 @@ export async function refreshSession(): Promise<boolean> {
       if (!error && data.session) {
         console.log('Session refreshed successfully');
         localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
+        lastSuccessfulRefresh = Date.now();
         isRefreshingSession = false;
         return true;
       }
@@ -116,5 +173,7 @@ export async function refreshSession(): Promise<boolean> {
     console.error('Exception in refreshSession:', error);
     isRefreshingSession = false;
     return false;
+  } finally {
+    isRefreshingSession = false;
   }
 }
