@@ -14,21 +14,32 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     
-    // Check for authentication header
+    // Check for authentication header - supporting both Authorization header and query param for flexibility
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error("Missing authorization header in SERP API function");
+    const url = new URL(req.url);
+    const tokenParam = url.searchParams.get('token');
+    
+    let token = null;
+    if (authHeader) {
+      token = authHeader.replace('Bearer ', '');
+      console.log("Using token from Authorization header");
+    } else if (tokenParam) {
+      token = tokenParam;
+      console.log("Using token from URL parameter");
+    }
+    
+    if (!token) {
+      console.error("Missing authentication credentials in SERP API function");
       return new Response(JSON.stringify({ 
         error: 'Authentication required',
-        details: 'Missing authorization header' 
+        details: 'Missing authentication credentials' 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
     
-    const token = authHeader.replace('Bearer ', '');
-    console.log("Attempting to authenticate with token:", token.substring(0, 10) + "...");
+    console.log(`Attempting to authenticate with token: ${token.substring(0, 10)}...`);
     
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -45,7 +56,8 @@ serve(async (req) => {
     if (userError || !user) {
       console.error("User authentication failed:", userError?.message);
       return new Response(JSON.stringify({ 
-        error: "Authentication failed: " + (userError?.message || "Invalid token")
+        error: "Authentication failed: " + (userError?.message || "Invalid token"),
+        details: "Please ensure you are logged in and try again."
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
@@ -78,8 +90,8 @@ serve(async (req) => {
 
     console.log(`Processing SERP request for query: "${searchQuery}"`);
 
-    // Get the SERP API key from environment variables
-    const serpApiKey = Deno.env.get("SERP_API_KEY");
+    // Get the SERP API key - using the one provided by the user
+    const serpApiKey = "0e5b83cf0574604a9bc8016d699aba8d243a313f8978f8ec6f7ae188c7a9d962";
     
     if (!serpApiKey) {
       console.error("SERP API key is not configured");

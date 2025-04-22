@@ -37,57 +37,71 @@ export async function invokeFunction(functionName: string, payload: any): Promis
       Authorization: `Bearer ${token}`
     };
     
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      headers,
-      body: payload
-    });
-
-    if (error) {
-      console.error(`Error invoking function ${functionName}:`, error);
+    // Add a timeout for the function call
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    try {
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        headers,
+        body: payload,
+        signal: controller.signal
+      });
       
-      // If it looks like an auth error, try to refresh and retry once
-      if (error.message && (error.message.includes('401') || 
-                            error.message.includes('auth') || 
-                            error.message.includes('authorization'))) {
-        console.log('Auth issue detected, attempting refresh and retry...');
+      clearTimeout(timeoutId);
+
+      if (error) {
+        console.error(`Error invoking function ${functionName}:`, error);
         
-        // Force session refresh
-        const refreshResult = await refreshSession();
-        if (!refreshResult) {
-          console.error('Session refresh failed');
-          throw error;
+        // If it looks like an auth error, try to refresh and retry once
+        if (error.message && (
+            error.message.includes('401') || 
+            error.message.includes('auth') || 
+            error.message.includes('authorization') ||
+            error.message.includes('Authentication')
+        )) {
+          console.log('Auth issue detected, attempting refresh and retry...');
+          
+          // Force session refresh
+          const refreshResult = await refreshSession();
+          if (!refreshResult) {
+            console.error('Session refresh failed');
+            throw error;
+          }
+          
+          const retryToken = await getAuthToken();
+          
+          if (!retryToken) {
+            console.error('Failed to get token after refresh');
+            throw error;
+          }
+          
+          console.log('Session refreshed, retrying function call with fresh token...');
+          
+          const retryHeaders = {
+            Authorization: `Bearer ${retryToken}`
+          };
+          
+          const { data: retryData, error: retryError } = await supabase.functions.invoke(functionName, {
+            headers: retryHeaders,
+            body: payload
+          });
+          
+          if (retryError) {
+            console.error(`Error in retry of function ${functionName}:`, retryError);
+            throw retryError;
+          }
+          
+          return retryData;
         }
         
-        const retryToken = await getAuthToken();
-        
-        if (!retryToken) {
-          console.error('Failed to get token after refresh');
-          throw error;
-        }
-        
-        console.log('Session refreshed, retrying function call with fresh token...');
-        
-        const retryHeaders = {
-          Authorization: `Bearer ${retryToken}`
-        };
-        
-        const { data: retryData, error: retryError } = await supabase.functions.invoke(functionName, {
-          headers: retryHeaders,
-          body: payload
-        });
-        
-        if (retryError) {
-          console.error(`Error in retry of function ${functionName}:`, retryError);
-          throw retryError;
-        }
-        
-        return retryData;
+        throw error;
       }
-      
-      throw error;
-    }
 
-    return data;
+      return data;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch (error) {
     console.error(`Exception in invokeFunction ${functionName}:`, error);
     throw error;

@@ -12,7 +12,7 @@ interface Keyword {
   keyword: string;
   searchVolume: number;
   difficulty: number;
-  cpc: number | string;
+  cpc: number;
   aiPotential: number;
 }
 
@@ -32,7 +32,7 @@ export function RelatedKeywords({ mainKeyword, keywords = [] }: RelatedKeywordsP
     keyword: kw.keyword || "",
     searchVolume: typeof kw.searchVolume === 'number' ? kw.searchVolume : 0,
     difficulty: typeof kw.difficulty === 'number' ? kw.difficulty : 0,
-    cpc: typeof kw.cpc === 'number' ? kw.cpc : parseFloat(String(kw.cpc || 0)),
+    cpc: typeof kw.cpc === 'number' ? kw.cpc : 0,
     aiPotential: typeof kw.aiPotential === 'number' ? kw.aiPotential : 0
   })) : [];
   
@@ -149,7 +149,7 @@ export function RelatedKeywords({ mainKeyword, keywords = [] }: RelatedKeywordsP
                     <TableCell className="text-right">{kw.searchVolume.toLocaleString()}</TableCell>
                     <TableCell className="text-center">{renderDifficultyBadge(kw.difficulty)}</TableCell>
                     <TableCell className="text-right">
-                      ${typeof kw.cpc === 'number' ? kw.cpc.toFixed(2) : parseFloat(String(kw.cpc)).toFixed(2)}
+                      ${kw.cpc.toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Badge 
