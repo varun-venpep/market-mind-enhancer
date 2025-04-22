@@ -37,18 +37,25 @@ export async function invokeFunction(functionName: string, payload: any): Promis
       Authorization: `Bearer ${token}`
     };
     
-    // Add a timeout for the function call
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    // Set a timeout for the function call (using a Promise with timeout instead of AbortController)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Function call timed out after 30 seconds')), 30000);
+    });
     
     try {
-      const { data, error } = await supabase.functions.invoke(functionName, {
+      // Create the main function call promise
+      const functionCallPromise = supabase.functions.invoke(functionName, {
         headers,
-        body: payload,
-        signal: controller.signal
+        body: payload
       });
       
-      clearTimeout(timeoutId);
+      // Race the function call against the timeout
+      const { data, error } = await Promise.race([
+        functionCallPromise,
+        timeoutPromise.then(() => {
+          throw new Error('Function call timed out after 30 seconds');
+        })
+      ]) as any;
 
       if (error) {
         console.error(`Error invoking function ${functionName}:`, error);
@@ -99,8 +106,12 @@ export async function invokeFunction(functionName: string, payload: any): Promis
       }
 
       return data;
-    } finally {
-      clearTimeout(timeoutId);
+    } catch (error) {
+      if (error.message?.includes('timed out')) {
+        console.error(`Function ${functionName} timed out after 30 seconds`);
+        throw new Error(`The request to ${functionName} took too long to respond. Please try again later.`);
+      }
+      throw error;
     }
   } catch (error) {
     console.error(`Exception in invokeFunction ${functionName}:`, error);

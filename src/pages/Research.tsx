@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
@@ -272,15 +271,15 @@ const Research = () => {
                     { icon: BookOpen, title: "Content Analysis", desc: "SERP insights and content briefs" }
                   ].map((item, i) => (
                     <motion.div key={i} variants={itemVariants}>
-                      <CardComponent className="bg-muted/30 hover:bg-muted/50 transition-colors">
-                        <CardContentComponent className="p-4 flex flex-col items-center text-center">
+                      <Card className="bg-muted/30 hover:bg-muted/50 transition-colors">
+                        <CardContent className="p-4 flex flex-col items-center text-center">
                           <div className="bg-primary/10 p-2 rounded-full mb-2">
                             <item.icon className="h-5 w-5 text-primary" />
                           </div>
                           <h4 className="text-sm font-medium">{item.title}</h4>
                           <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        </CardContentComponent>
-                      </CardComponent>
+                        </CardContent>
+                      </Card>
                     </motion.div>
                   ))}
                 </motion.div>
