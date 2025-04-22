@@ -3,6 +3,7 @@ import { invokeFunction } from "./supabase/functions";
 
 export async function searchKeywords(keyword: string, options = {}) {
   try {
+    console.log('Searching keywords with SERP API:', keyword);
     return await invokeFunction('serpapi', { keyword, ...options });
   } catch (error) {
     console.error('Error searching keywords:', error);
@@ -16,6 +17,7 @@ export async function searchKeywords(keyword: string, options = {}) {
 
 export async function fetchSerpResults(keyword: string, options = {}) {
   try {
+    console.log('Fetching SERP results for:', keyword);
     return await searchKeywords(keyword, options);
   } catch (error) {
     console.error('Error fetching SERP results:', error);

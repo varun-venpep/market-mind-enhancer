@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -13,6 +12,9 @@ serve(async (req) => {
   }
 
   try {
+    // Log all headers for debugging
+    console.log("Headers received:", JSON.stringify(Object.fromEntries([...req.headers])));
+    
     const { storeId, productId, optimizations } = await req.json();
     
     if (!storeId || !productId || !optimizations) {
@@ -27,6 +29,7 @@ serve(async (req) => {
     // Get authorization header to validate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error("Missing authorization header in shopify-optimize function");
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
@@ -38,19 +41,24 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // Log authentication info
+    console.log("Authenticating with token:", authHeader.substring(0, 15) + "...");
+    
     // Verify the token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
+      console.error("Authentication failed:", userError);
       return new Response(JSON.stringify({ 
-        error: 'Failed to authenticate user' 
+        error: 'Failed to authenticate user: ' + (userError?.message || 'Invalid token')
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 401,
       });
     }
+    
+    console.log("User authenticated successfully:", user.id);
     
     // Get the store details
     const { data: store, error: storeError } = await supabase
@@ -60,6 +68,7 @@ serve(async (req) => {
       .single();
     
     if (storeError) {
+      console.error("Store not found:", storeError);
       return new Response(JSON.stringify({ 
         error: 'Store not found' 
       }), {
@@ -68,9 +77,22 @@ serve(async (req) => {
       });
     }
     
+    // Format the store URL correctly
+    let storeUrl = store.store_url.trim();
+    // Remove protocol if present
+    storeUrl = storeUrl.replace(/^https?:\/\//i, '');
+    // Ensure myshopify.com domain
+    if (!storeUrl.includes('myshopify.com')) {
+      storeUrl = `${storeUrl}.myshopify.com`;
+    }
+    
+    console.log("Using store URL for API calls:", storeUrl);
+    
     try {
       // Fetch product details from Shopify
-      const getUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+      const getUrl = `https://${storeUrl}/admin/api/2023-07/products/${productId}.json`;
+      console.log("Fetching product from Shopify:", getUrl);
+      
       const productResponse = await fetch(getUrl, {
         headers: {
           'X-Shopify-Access-Token': store.access_token,
@@ -79,12 +101,15 @@ serve(async (req) => {
       });
       
       if (!productResponse.ok) {
-        console.error(`Shopify API error: ${productResponse.status} ${productResponse.statusText}`);
+        const errorText = await productResponse.text();
+        console.error(`Shopify API error: ${productResponse.status} ${productResponse.statusText} - ${errorText}`);
         throw new Error(`Failed to fetch product from Shopify: ${productResponse.statusText}`);
       }
       
       const productData = await productResponse.json();
       const product = productData.product;
+      
+      console.log("Successfully fetched product:", { id: product.id, title: product.title });
       
       // Apply optimizations
       const updatedProduct = { ...product };
@@ -138,7 +163,9 @@ serve(async (req) => {
       
       // Update the product in Shopify
       if (appliedChanges.length > 0) {
-        const updateUrl = `https://${store.store_url}/admin/api/2023-07/products/${productId}.json`;
+        const updateUrl = `https://${storeUrl}/admin/api/2023-07/products/${productId}.json`;
+        console.log("Updating product in Shopify:", updateUrl);
+        
         const updateResponse = await fetch(updateUrl, {
           method: 'PUT',
           headers: {
