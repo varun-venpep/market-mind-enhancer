@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { toast } from "sonner";
+import { invokeFunction } from '@/services/supabase/functions';
 
 export function useArticleKeywords(title: string) {
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
@@ -14,19 +15,20 @@ export function useArticleKeywords(title: string) {
     
     setIsLoadingSuggestions(true);
     try {
-      // This is a placeholder for the actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const suggestions = [
-        "SEO optimization", 
-        "content marketing", 
-        "digital strategy", 
-        "keyword research", 
-        "online presence"
-      ];
-      setKeywordSuggestions(suggestions);
+      const result = await invokeFunction('get-keyword-suggestions', {
+        query: title,
+        language: 'en'
+      });
+      
+      if (result?.keywords && Array.isArray(result.keywords)) {
+        setKeywordSuggestions(result.keywords);
+      } else {
+        console.error('Invalid response format:', result);
+        setKeywordSuggestions([]);
+      }
     } catch (error) {
       console.error("Error getting suggestions:", error);
-      toast.error("Failed to get keyword suggestions");
+      setKeywordSuggestions([]);
     } finally {
       setIsLoadingSuggestions(false);
     }
