@@ -30,7 +30,7 @@ export async function invokeFunction(functionName: string, payload: any): Promis
       console.log(`Successfully refreshed token for function: ${functionName}`);
     }
     
-    console.log(`Invoking function ${functionName} with auth token: ${token ? 'present' : 'missing'}`);
+    console.log(`Invoking function ${functionName} with auth token: ${token.substring(0, 10)}...`);
     
     // Make the request with the token
     const headers = {

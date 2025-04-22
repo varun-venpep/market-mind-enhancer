@@ -1,223 +1,170 @@
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, TrendingUp, ArrowUpRight, Star, BarChart, DollarSign, Filter, Info } from "lucide-react";
-import { useState } from "react";
-import { Keyword } from "@/types";
-import { motion } from "framer-motion";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { 
+  TrendingUp, 
+  ArrowRight, 
+  Lightbulb, 
+  ArrowUpRight,
+  Copy,
+  BarChart3,
+  Download
+} from "lucide-react";
+import { toast } from "sonner";
+
+interface KeywordItem {
+  id: string;
+  keyword: string;
+  searchVolume: number;
+  difficulty: number;
+  cpc: number | string; // Can be a number or a string
+  aiPotential: number;
+}
 
 interface RelatedKeywordsProps {
   mainKeyword: string;
-  keywords?: Keyword[]; // Add keywords prop to interface
+  keywords: KeywordItem[];
 }
 
-export const RelatedKeywords = ({ mainKeyword, keywords }: RelatedKeywordsProps) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  // Use provided keywords or fall back to mock data
-  const mockKeywords = [
-    {
-      id: "mock-1",
-      keyword: "AI search engine optimization",
-      searchVolume: 2800,
-      difficulty: 56,
-      cpc: 3.42,
-      aiPotential: 92
-    },
-    {
-      id: "mock-2",
-      keyword: "How to optimize for AI search",
-      searchVolume: 1900,
-      difficulty: 42,
-      cpc: 4.10,
-      aiPotential: 88
-    },
-    {
-      id: "mock-3",
-      keyword: "AI content optimization tools",
-      searchVolume: 3400,
-      difficulty: 61,
-      cpc: 5.25,
-      aiPotential: 85
-    },
-    {
-      id: "mock-4",
-      keyword: "AI SEO best practices",
-      searchVolume: 2200,
-      difficulty: 52,
-      cpc: 4.75,
-      aiPotential: 90
-    },
-    {
-      id: "mock-5",
-      keyword: "Content optimization for chatbots",
-      searchVolume: 1500,
-      difficulty: 47,
-      cpc: 3.80,
-      aiPotential: 87
-    },
-    {
-      id: "mock-6",
-      keyword: "AI search vs traditional search",
-      searchVolume: 2600,
-      difficulty: 45,
-      cpc: 2.90,
-      aiPotential: 89
-    },
-    {
-      id: "mock-7",
-      keyword: "AI search ranking factors",
-      searchVolume: 3100,
-      difficulty: 59,
-      cpc: 4.50,
-      aiPotential: 93
-    },
-    {
-      id: "mock-8",
-      keyword: "Optimizing content for Claude AI",
-      searchVolume: 1800,
-      difficulty: 38,
-      cpc: 3.20,
-      aiPotential: 95
+export function RelatedKeywords({ mainKeyword, keywords = [] }: RelatedKeywordsProps) {
+  const [activeTab, setActiveTab] = React.useState('all');
+
+  if (!keywords || keywords.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Related Keywords</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No related keywords found for "{mainKeyword}". Try another keyword.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Fix cpc values to ensure they're numbers
+  const processedKeywords = keywords.map(kw => ({
+    ...kw,
+    cpc: typeof kw.cpc === 'number' ? kw.cpc : parseFloat(kw.cpc) || 0
+  }));
+
+  // Sort and filter keywords
+  const sortedKeywords = React.useMemo(() => {
+    if (activeTab === 'volume') {
+      return [...processedKeywords].sort((a, b) => b.searchVolume - a.searchVolume);
+    } else if (activeTab === 'difficulty') {
+      return [...processedKeywords].sort((a, b) => a.difficulty - b.difficulty);
+    } else if (activeTab === 'potential') {
+      return [...processedKeywords].sort((a, b) => b.aiPotential - a.aiPotential);
     }
-  ];
+    return processedKeywords;
+  }, [processedKeywords, activeTab]);
 
-  const keywordsToUse = keywords && keywords.length > 0 ? keywords : mockKeywords;
-  
-  const filteredKeywords = keywordsToUse.filter(k => 
-    k.keyword.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const getDifficultyLabel = (score: number) => {
-    if (score < 40) return { label: "Easy", color: "bg-green-500" };
-    if (score < 60) return { label: "Medium", color: "bg-amber-500" };
-    return { label: "Hard", color: "bg-red-500" };
-  };
-
-  const getAIPotentialLabel = (score: number) => {
-    if (score < 75) return { label: "Low", color: "bg-muted" };
-    if (score < 85) return { label: "Medium", color: "bg-blue-500" };
-    return { label: "High", color: "bg-green-500" };
-  };
-
-  // Helper to safely format CPC values
-  const formatCPC = (cpc: any): string => {
-    if (typeof cpc === 'number') {
-      return cpc.toFixed(2);
-    } else if (typeof cpc === 'string' && !isNaN(parseFloat(cpc))) {
-      return parseFloat(cpc).toFixed(2);
-    }
-    return "0.00"; // Default fallback
+  const handleCopyKeyword = (keyword: string) => {
+    navigator.clipboard.writeText(keyword);
+    toast.success(`Copied "${keyword}" to clipboard`);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <TrendingUp className="mr-2 h-5 w-5 text-muted-foreground" />
-            Related Keywords for "{mainKeyword}"
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Filter keywords..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </motion.div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-semibold flex items-center">
+          <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+          Related Keywords for "{mainKeyword}"
+        </h3>
+        <Badge variant="outline" className="px-3 py-1 text-sm">
+          {keywords.length} keywords
+        </Badge>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">All Keywords</TabsTrigger>
+          <TabsTrigger value="volume">By Volume</TabsTrigger>
+          <TabsTrigger value="difficulty">By Difficulty</TabsTrigger>
+          <TabsTrigger value="potential">By AI Potential</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
+      <ScrollArea className="max-h-[600px]">
+        <div className="space-y-4 pr-4">
+          <div className="grid grid-cols-1 gap-4">
+            {sortedKeywords.map((keyword) => (
+              <Card key={keyword.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-lg">{keyword.keyword}</h4>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200">
+                          <BarChart3 className="h-3 w-3 mr-1" />
+                          {keyword.searchVolume.toLocaleString()} searches
+                        </Badge>
+                        <Badge className={`
+                          ${keyword.difficulty < 30 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 
+                            keyword.difficulty < 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : 
+                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}
+                          hover:opacity-80
+                        `}>
+                          Difficulty: {keyword.difficulty}%
+                        </Badge>
+                        <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200">
+                          CPC: ${typeof keyword.cpc === 'number' ? keyword.cpc.toFixed(2) : parseFloat(keyword.cpc as string).toFixed(2) || '0.00'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-row md:flex-col items-center gap-2 md:items-end md:min-w-28">
+                      <div className="flex-1 w-full md:w-auto">
+                        <div className="text-xs text-muted-foreground mb-1 text-center">AI Potential</div>
+                        <div className="bg-gray-100 dark:bg-gray-800 rounded-full h-4 w-full overflow-hidden">
+                          <div 
+                            className={`h-full ${
+                              keyword.aiPotential > 80 ? 'bg-green-500' : 
+                              keyword.aiPotential > 60 ? 'bg-yellow-500' : 
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${keyword.aiPotential}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-center mt-1">{keyword.aiPotential}%</div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => handleCopyKeyword(keyword.keyword)}
+                          className="h-8 w-8"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="h-8"
+                        >
+                          Explore
+                          <ArrowRight className="ml-1 h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Keyword</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    <div className="flex items-center">
-                      <BarChart className="mr-1 h-4 w-4" />
-                      Volume
-                    </div>
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    <div className="flex items-center">
-                      <Star className="mr-1 h-4 w-4" />
-                      Difficulty
-                    </div>
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">
-                    <div className="flex items-center">
-                      <DollarSign className="mr-1 h-4 w-4" />
-                      CPC
-                    </div>
-                  </TableHead>
-                  <TableHead>
-                    <div className="flex items-center">
-                      <ArrowUpRight className="mr-1 h-4 w-4" />
-                      AI Potential
-                    </div>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredKeywords.length > 0 ? (
-                  filteredKeywords.map((kw, i) => {
-                    const difficulty = getDifficultyLabel(kw.difficulty);
-                    const aiPotential = getAIPotentialLabel(kw.aiPotential);
-                    
-                    return (
-                      <motion.tr
-                        key={kw.id || i}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: i * 0.05 }}
-                        className="hover:bg-muted/50 cursor-pointer"
-                      >
-                        <TableCell className="font-medium">{kw.keyword}</TableCell>
-                        <TableCell className="hidden sm:table-cell">{kw.searchVolume.toLocaleString()}</TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Badge className={`${difficulty.color} hover:${difficulty.color}`}>
-                            {difficulty.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">${formatCPC(kw.cpc)}</TableCell>
-                        <TableCell>
-                          <Badge className={`${aiPotential.color} hover:${aiPotential.color}`}>
-                            {aiPotential.label}
-                          </Badge>
-                        </TableCell>
-                      </motion.tr>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                      No keywords found matching your filter
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+        </div>
+      </ScrollArea>
+      
+      <div className="flex justify-end">
+        <Button variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Export Keywords
+        </Button>
+      </div>
+    </div>
   );
-};
+}
