@@ -10,7 +10,11 @@ serve(async (req) => {
   }
 
   try {
-    // Check for authentication header first
+    // Get Supabase configuration
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    // Check for authentication header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error("Missing authorization header in SERP API function");
@@ -22,10 +26,11 @@ serve(async (req) => {
         status: 401,
       });
     }
-
-    // Get Supabase configuration
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    const token = authHeader.replace('Bearer ', '');
+    console.log("Attempting to authenticate with token:", token.substring(0, 10) + "...");
+    
+    // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: true,
@@ -34,63 +39,20 @@ serve(async (req) => {
       },
     });
     
-    // Authenticate user with token
-    const token = authHeader.replace('Bearer ', '');
-    console.log("Attempting to authenticate with token:", token.substring(0, 10) + "...");
+    // Verify the user's token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
-    try {
-      // First try with the access token directly
-      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-      if (userError || !user) {
-        console.error("User authentication error or no user found:", userError?.message);
-        
-        // Try to refresh the session
-        try {
-          console.log("Attempting session refresh...");
-          
-          // Try as an access token
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          
-          if (sessionError || !sessionData?.session) {
-            console.log("Failed to get session, trying as refresh token...");
-            
-            // Try as a refresh token
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
-              refresh_token: token,
-            });
-            
-            if (refreshError || !refreshData?.session) {
-              console.error("Failed to refresh session:", refreshError?.message);
-              return new Response(JSON.stringify({ 
-                error: "Authentication failed: " + (refreshError?.message || "Invalid token")
-              }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
-                status: 401,
-              });
-            }
-            
-            console.log("Successfully refreshed session using refresh token");
-          }
-        } catch (refreshException) {
-          console.error("Exception during session refresh:", refreshException?.message);
-          return new Response(JSON.stringify({ 
-            error: "Authentication error during refresh: " + (refreshException.message || "Unknown error")
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 401,
-          });
-        }
-      }
-    } catch (authError) {
-      console.error("Error authenticating user:", authError);
+    if (userError || !user) {
+      console.error("User authentication failed:", userError?.message);
       return new Response(JSON.stringify({ 
-        error: "Authentication error: " + (authError.message || "Unknown error")
+        error: "Authentication failed: " + (userError?.message || "Invalid token")
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
+    
+    console.log("User authenticated successfully:", user.id);
 
     // Parse request body
     let requestData;
@@ -117,7 +79,7 @@ serve(async (req) => {
     console.log(`Processing SERP request for query: "${searchQuery}"`);
 
     // Get the SERP API key from environment variables
-    const serpApiKey = Deno.env.get("SERP_API_KEY") || "0e5b83cf0574604a9bc8016d699aba8d243a313f8978f8ec6f7ae188c7a9d962";
+    const serpApiKey = Deno.env.get("SERP_API_KEY");
     
     if (!serpApiKey) {
       console.error("SERP API key is not configured");

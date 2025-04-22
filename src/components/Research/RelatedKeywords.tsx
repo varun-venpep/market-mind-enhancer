@@ -1,172 +1,179 @@
 
-import React from 'react';
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Search, SortAsc, SortDesc, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { 
-  TrendingUp, 
-  ArrowRight, 
-  Lightbulb, 
-  ArrowUpRight,
-  Copy,
-  BarChart3,
-  Download
-} from "lucide-react";
-import { toast } from "sonner";
 
-interface KeywordItem {
+interface Keyword {
   id: string;
   keyword: string;
   searchVolume: number;
   difficulty: number;
-  cpc: number | string; // Can be a number or a string
+  cpc: number | string;
   aiPotential: number;
 }
 
 interface RelatedKeywordsProps {
   mainKeyword: string;
-  keywords: KeywordItem[];
+  keywords: Keyword[];
 }
 
 export function RelatedKeywords({ mainKeyword, keywords = [] }: RelatedKeywordsProps) {
-  const [activeTab, setActiveTab] = React.useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<keyof Keyword>("searchVolume");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  if (!keywords || keywords.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No Related Keywords</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No related keywords found for "{mainKeyword}". Try another keyword.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Ensure keywords array is valid and normalize data types
+  const normalizedKeywords: Keyword[] = Array.isArray(keywords) ? keywords.map(kw => ({
+    id: kw.id || `kw-${Math.random().toString(36).substr(2, 9)}`,
+    keyword: kw.keyword || "",
+    searchVolume: typeof kw.searchVolume === 'number' ? kw.searchVolume : 0,
+    difficulty: typeof kw.difficulty === 'number' ? kw.difficulty : 0,
+    cpc: typeof kw.cpc === 'number' ? kw.cpc : parseFloat(String(kw.cpc || 0)),
+    aiPotential: typeof kw.aiPotential === 'number' ? kw.aiPotential : 0
+  })) : [];
+  
+  const filteredKeywords = normalizedKeywords.filter(
+    (kw) => kw.keyword.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Fix cpc values to ensure they're numbers
-  const processedKeywords = keywords.map(kw => ({
-    ...kw,
-    cpc: typeof kw.cpc === 'number' ? kw.cpc : parseFloat(String(kw.cpc)) || 0
-  }));
-
-  // Sort and filter keywords
-  const sortedKeywords = React.useMemo(() => {
-    if (activeTab === 'volume') {
-      return [...processedKeywords].sort((a, b) => b.searchVolume - a.searchVolume);
-    } else if (activeTab === 'difficulty') {
-      return [...processedKeywords].sort((a, b) => a.difficulty - b.difficulty);
-    } else if (activeTab === 'potential') {
-      return [...processedKeywords].sort((a, b) => b.aiPotential - a.aiPotential);
+  const sortedKeywords = [...filteredKeywords].sort((a, b) => {
+    if (sortField === "keyword") {
+      return sortDirection === "asc"
+        ? a.keyword.localeCompare(b.keyword)
+        : b.keyword.localeCompare(a.keyword);
     }
-    return processedKeywords;
-  }, [processedKeywords, activeTab]);
+    
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+    
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+    }
+    
+    return 0;
+  });
 
-  const handleCopyKeyword = (keyword: string) => {
-    navigator.clipboard.writeText(keyword);
-    toast.success(`Copied "${keyword}" to clipboard`);
+  const handleSort = (field: keyof Keyword) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  // Render difficulty badge with appropriate color
+  const renderDifficultyBadge = (difficulty: number) => {
+    let color = "";
+    if (difficulty < 30) color = "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+    else if (difficulty < 60) color = "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+    else color = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+    
+    return <Badge className={`${color} font-medium`}>{difficulty}</Badge>;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold flex items-center">
-          <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl flex items-center gap-2">
+          <Lightbulb className="h-5 w-5 text-primary" />
           Related Keywords for "{mainKeyword}"
-        </h3>
-        <Badge variant="outline" className="px-3 py-1 text-sm">
-          {keywords.length} keywords
-        </Badge>
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="all">All Keywords</TabsTrigger>
-          <TabsTrigger value="volume">By Volume</TabsTrigger>
-          <TabsTrigger value="difficulty">By Difficulty</TabsTrigger>
-          <TabsTrigger value="potential">By AI Potential</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
-      <ScrollArea className="max-h-[600px]">
-        <div className="space-y-4 pr-4">
-          <div className="grid grid-cols-1 gap-4">
-            {sortedKeywords.map((keyword) => (
-              <Card key={keyword.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-lg">{keyword.keyword}</h4>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200">
-                          <BarChart3 className="h-3 w-3 mr-1" />
-                          {keyword.searchVolume.toLocaleString()} searches
-                        </Badge>
-                        <Badge className={`
-                          ${keyword.difficulty < 30 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 
-                            keyword.difficulty < 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : 
-                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'}
-                          hover:opacity-80
-                        `}>
-                          Difficulty: {keyword.difficulty}%
-                        </Badge>
-                        <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200">
-                          CPC: ${typeof keyword.cpc === 'number' 
-                            ? keyword.cpc.toFixed(2) 
-                            : (parseFloat(String(keyword.cpc)) || 0).toFixed(2)}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex flex-row md:flex-col items-center gap-2 md:items-end md:min-w-28">
-                      <div className="flex-1 w-full md:w-auto">
-                        <div className="text-xs text-muted-foreground mb-1 text-center">AI Potential</div>
-                        <div className="bg-gray-100 dark:bg-gray-800 rounded-full h-4 w-full overflow-hidden">
-                          <div 
-                            className={`h-full ${
-                              keyword.aiPotential > 80 ? 'bg-green-500' : 
-                              keyword.aiPotential > 60 ? 'bg-yellow-500' : 
-                              'bg-red-500'
-                            }`}
-                            style={{ width: `${keyword.aiPotential}%` }}
-                          />
-                        </div>
-                        <div className="text-xs text-center mt-1">{keyword.aiPotential}%</div>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          onClick={() => handleCopyKeyword(keyword.keyword)}
-                          className="h-8 w-8"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="h-8"
-                        >
-                          Explore
-                          <ArrowRight className="ml-1 h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        </CardTitle>
+        <div className="relative mt-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Filter keywords..."
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      </ScrollArea>
-      
-      <div className="flex justify-end">
-        <Button variant="outline">
-          <Download className="h-4 w-4 mr-2" />
-          Export Keywords
-        </Button>
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent>
+        {sortedKeywords.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead onClick={() => handleSort("keyword")} className="cursor-pointer hover:bg-muted/30">
+                    <div className="flex items-center gap-1">
+                      Keyword
+                      {sortField === "keyword" && (
+                        sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("searchVolume")} className="cursor-pointer hover:bg-muted/30 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      Search Volume
+                      {sortField === "searchVolume" && (
+                        sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("difficulty")} className="cursor-pointer hover:bg-muted/30 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      Difficulty
+                      {sortField === "difficulty" && (
+                        sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("cpc")} className="cursor-pointer hover:bg-muted/30 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      CPC ($)
+                      {sortField === "cpc" && (
+                        sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead onClick={() => handleSort("aiPotential")} className="cursor-pointer hover:bg-muted/30 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      AI Potential
+                      {sortField === "aiPotential" && (
+                        sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedKeywords.map((kw) => (
+                  <TableRow key={kw.id}>
+                    <TableCell className="font-medium">{kw.keyword}</TableCell>
+                    <TableCell className="text-right">{kw.searchVolume.toLocaleString()}</TableCell>
+                    <TableCell className="text-center">{renderDifficultyBadge(kw.difficulty)}</TableCell>
+                    <TableCell className="text-right">
+                      ${typeof kw.cpc === 'number' ? kw.cpc.toFixed(2) : parseFloat(String(kw.cpc)).toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge 
+                        className="bg-primary/20 text-primary hover:bg-primary/30"
+                      >
+                        {kw.aiPotential}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm">Analyze</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-6 text-muted-foreground">
+            {keywords.length === 0 ? 
+              "No keyword data available. Try running a search first." : 
+              "No keywords match your filter. Try another search term."}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

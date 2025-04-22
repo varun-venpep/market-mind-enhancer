@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card as CardComponent, CardContent as CardContentComponent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Search, 
   Lightbulb, 
@@ -272,15 +272,15 @@ const Research = () => {
                     { icon: BookOpen, title: "Content Analysis", desc: "SERP insights and content briefs" }
                   ].map((item, i) => (
                     <motion.div key={i} variants={itemVariants}>
-                      <Card className="bg-muted/30 hover:bg-muted/50 transition-colors">
-                        <CardContent className="p-4 flex flex-col items-center text-center">
+                      <CardComponent className="bg-muted/30 hover:bg-muted/50 transition-colors">
+                        <CardContentComponent className="p-4 flex flex-col items-center text-center">
                           <div className="bg-primary/10 p-2 rounded-full mb-2">
                             <item.icon className="h-5 w-5 text-primary" />
                           </div>
                           <h4 className="text-sm font-medium">{item.title}</h4>
                           <p className="text-xs text-muted-foreground">{item.desc}</p>
-                        </CardContent>
-                      </Card>
+                        </CardContentComponent>
+                      </CardComponent>
                     </motion.div>
                   ))}
                 </motion.div>

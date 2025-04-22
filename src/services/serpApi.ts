@@ -19,12 +19,7 @@ export async function searchKeywords(keyword: string, options = {}) {
     return result;
   } catch (error) {
     console.error('Error searching keywords:', error);
-    toast.error('Error fetching search data. Using mock data as fallback.');
-    
-    // If the API fails, use mock data as fallback
-    const mockData = getMockSerpData(keyword);
-    console.warn('Using mock SERP data due to API error:', error);
-    return mockData;
+    throw error;
   }
 }
 
@@ -34,21 +29,35 @@ export async function fetchSerpResults(keyword: string, options = {}) {
     return await searchKeywords(keyword, options);
   } catch (error) {
     console.error('Error fetching SERP results:', error);
+    toast.error(`Error fetching search data: ${error.message || 'Unknown error'}`);
     throw error;
   }
 }
 
 export function extractSerpData(data: any) {
   try {
+    if (!data) {
+      throw new Error('No SERP data received');
+    }
+    
     // Parse the keywords and add required properties
-    const relatedKeywords = data.related_searches?.map((item: any, index: number) => ({
-      id: `kw-${index}`,
-      keyword: item.query || item,
-      searchVolume: Math.floor(Math.random() * 10000), // Mock data for search volume
-      difficulty: Math.floor(Math.random() * 100), // Mock data for difficulty
-      cpc: parseFloat((Math.random() * 5).toFixed(2)), // Mock data for CPC
-      aiPotential: Math.floor(Math.random() * 25) + 75, // High potential for all keywords
-    })) || [];
+    const relatedKeywords = data.related_searches?.map((item: any, index: number) => {
+      const query = typeof item === 'string' ? item : (item.query || '');
+      // Generate random but consistent data for search metrics
+      const seed = query.length + index;
+      const volume = Math.floor((seed * 100) % 10000 + 500);
+      const difficulty = Math.floor((seed * 7) % 100);
+      const cpc = Number(((seed * 0.05) % 5).toFixed(2));
+      
+      return {
+        id: `kw-${index}`,
+        keyword: query,
+        searchVolume: volume,
+        difficulty: difficulty,
+        cpc: cpc,
+        aiPotential: Math.floor((seed * 3) % 25) + 75,
+      };
+    }) || [];
 
     return {
       organicResults: data.organic_results || [],
@@ -62,49 +71,8 @@ export function extractSerpData(data: any) {
     };
   } catch (error) {
     console.error('Error extracting SERP data:', error);
-    return {
-      organicResults: [],
-      relatedKeywords: [],
-      relatedQuestions: [],
-      peopleAlsoAsk: [],
-      searchMetadata: {},
-      localPack: null,
-      knowledgeGraph: null,
-    };
+    throw error;
   }
-}
-
-// Helper function to generate mock data when the API call fails
-function getMockSerpData(keyword: string) {
-  return {
-    organic_results: Array(10).fill(0).map((_, i) => ({
-      position: i + 1,
-      title: `${i + 1}. Top Result for ${keyword} - Example Website ${i + 1}`,
-      link: `https://example.com/result-${i + 1}`,
-      snippet: `This is a sample snippet for result ${i + 1}. It includes information about ${keyword} and helps users understand what the page contains.`,
-      displayed_link: `example.com/result-${i + 1}`
-    })),
-    related_questions: [
-      { question: `What is the best ${keyword}?` },
-      { question: `How to learn ${keyword} for beginners?` },
-      { question: `Why is ${keyword} important?` },
-      { question: `How much does ${keyword} cost?` }
-    ],
-    related_searches: [
-      { query: `${keyword} best practices` },
-      { query: `${keyword} for beginners` },
-      { query: `${keyword} examples` },
-      { query: `${keyword} tools` },
-      { query: `how to improve ${keyword}` },
-      { query: `${keyword} vs alternative` },
-      { query: `${keyword} tutorial` },
-      { query: `${keyword} 2025` }
-    ],
-    search_information: {
-      total_results: 845000,
-      time_taken_displayed: 0.53
-    }
-  };
 }
 
 export default { searchKeywords, fetchSerpResults, extractSerpData };
