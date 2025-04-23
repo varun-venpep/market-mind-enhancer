@@ -36,11 +36,12 @@ export async function generateContent(
 
     return content;
   } catch (error) {
-    return `# Generated Content\n\nWe're experiencing some technical difficulties. Here's some placeholder content related to your request.\n\n## Key Points\n\n* This is an automatically generated fallback due to a service disruption\n* Your original request was about: "${prompt.substring(0, 50)}..."\n* Please try again later or contact support if the issue persists`;
+    console.error("Gemini content generation error:", error);
+    throw error;
   }
 }
 
-// -- Only use gemini-image function, do not fallback to picsum/unsplash --
+// Exclusively use gemini-image function, no fallbacks
 export async function generateImage(
   prompt: string
 ): Promise<string> {
@@ -49,21 +50,35 @@ export async function generateImage(
     const token = sessionData.session?.access_token;
     if (!token) throw new Error("Authentication required to use image generation");
 
-    // Call gemini-image only – do NOT use fallback
+    // Call gemini-image only
     const response = await supabase.functions.invoke("gemini-image", {
       body: { prompt },
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    if (response.error) throw new Error(response.error.message || "Failed to generate image");
-    if (!response.data) throw new Error("Image Generation API returned unexpected response.");
+    if (response.error) {
+      console.error("Error from gemini-image function:", response.error);
+      throw new Error(response.error.message || "Failed to generate image");
+    }
+    
+    if (!response.data) {
+      throw new Error("Image Generation API returned unexpected response.");
+    }
 
     const { success, error, imageUrl } = response.data;
-    if (!success) throw new Error(error || "Failed to generate image");
-    if (!imageUrl || typeof imageUrl !== 'string') throw new Error("Received empty or invalid image URL from image generation API");
+    
+    if (!success) {
+      console.error("Gemini image generation failed:", error);
+      throw new Error(error || "Failed to generate image");
+    }
+    
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      throw new Error("Received empty or invalid image URL from Gemini image generation API");
+    }
 
     return imageUrl;
   } catch (error) {
+    console.error("Image generation error:", error);
     throw error;
   }
 }
