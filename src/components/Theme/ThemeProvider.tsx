@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "dark"; // Only dark for now
+type Theme = "light" | "dark";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -13,25 +13,30 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: "dark",
+  theme: "light",
   setTheme: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  // Always use dark theme throughout
-  const [theme] = useState<Theme>("dark");
+  // Use light theme by default for dashboard/app
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     const root = window.document.documentElement;
+    
+    // Remove both classes first
+    root.classList.remove("dark");
     root.classList.remove("light");
-    root.classList.add("dark");
-  }, []);
+    
+    // Add the current theme class
+    root.classList.add(theme);
+  }, [theme]);
 
   const value = {
     theme,
-    setTheme: () => {}, // no-op for now
+    setTheme,
   };
 
   return (

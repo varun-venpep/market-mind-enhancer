@@ -5,26 +5,50 @@
 
 @layer base {
   :root {
-    --background: 258 24% 11%; /* Soft dark purple-black (#1A1F2C) */
-    --foreground: 0 0% 100%; /* White text */
-    --card: 258 21% 16%; /* Slightly lighter purple-black (#222537) */
-    --card-foreground: 0 0% 100%; /* White text on cards */
-    --popover: 258 21% 18%; /* Slightly lighter than background */
-    --popover-foreground: 0 0% 100%;
-    --primary: 257 84% 76%; /* Primary Purple (#9b87f5) */
-    --primary-foreground: 258 24% 11%; /* text on primary: purple-black */
-    --secondary: 259 26% 38%; /* Secondary Purple (#7E69AB) */
+    /* Light theme variables - for dashboard/app */
+    --background: 0 0% 100%;
+    --foreground: 258 24% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 258 24% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 258 24% 11%;
+    --primary: 257 84% 76%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 259 26% 38%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 240 3.7% 15.9%; /* Muted dark */
-    --muted-foreground: 257 31% 82%; /* Muted purple text */
-    --accent: 258 14% 28%; /* Accent dark purple */
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 258 24% 40%;
+    --accent: 258 14% 80%;
+    --accent-foreground: 258 24% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 258 8% 90%;
+    --input: 258 5% 96%;
+    --ring: 257 84% 76%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark theme variables - for marketing/landing pages */
+    --background: 258 24% 11%;
+    --foreground: 0 0% 100%;
+    --card: 258 21% 16%;
+    --card-foreground: 0 0% 100%;
+    --popover: 258 21% 18%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 257 84% 76%;
+    --primary-foreground: 258 24% 11%;
+    --secondary: 259 26% 38%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 257 31% 82%;
+    --accent: 258 14% 28%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 257 16% 24%; /* Deep border */
-    --input: 258 21% 18%; /* input background */
-    --ring: 257 84% 76%; /* Purple ring */
-    --radius: 0.5rem;
+    --border: 257 16% 24%;
+    --input: 258 21% 18%;
+    --ring: 257 84% 76%;
   }
 
   body {
@@ -60,7 +84,7 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--card));
+  @apply bg-card;
 }
 ::-webkit-scrollbar-thumb {
   background: #6E59A5;

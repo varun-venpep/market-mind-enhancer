@@ -40,9 +40,18 @@
 .gradient-border {
   @apply relative before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-primary before:to-secondary before:rounded-lg before:-z-10 before:content-[''];
 }
+
+/* Apply based on current theme */
 .card-glass {
-  @apply backdrop-blur-md bg-card/90 border border-border shadow-lg;
+  @apply backdrop-blur-sm border shadow-lg;
 }
+:root .card-glass {
+  @apply bg-white/90 border-gray-100;
+}
+.dark .card-glass {
+  @apply bg-card/90 border-white/10;
+}
+
 .hover-card {
   @apply transition-all hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1;
 }
@@ -74,14 +83,18 @@ input, select, textarea {
   @apply transition-colors duration-200 bg-input text-foreground border-border focus:border-primary focus:ring-primary;
 }
 
+/* Glass effect based on theme */
 .glass-card {
-  @apply bg-card/80 backdrop-blur-md border border-border shadow-xl;
+  @apply backdrop-blur-md border shadow-xl;
+}
+:root .glass-card {
+  @apply bg-white/80 border-gray-200;
+}
+.dark .glass-card {
+  @apply bg-card/80 border-border;
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { @apply bg-card; }
-::-webkit-scrollbar-thumb { background: #6E59A5; border-radius: 9999px;}
-::-webkit-scrollbar-thumb:hover { background: #7E69AB; }
+/* Scrollbar styling already in index.css */
 
 :focus-visible {
   @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;

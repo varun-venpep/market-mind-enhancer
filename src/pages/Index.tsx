@@ -6,8 +6,22 @@ import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import { Boxes } from "@/components/ui/background-boxes";
+import { useEffect } from "react";
 
 const Index = () => {
+  // Force dark mode for the landing page
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove("light");
+    root.classList.add("dark");
+    
+    // Restore the original theme when component unmounts
+    return () => {
+      // We don't remove dark here as the app theme provider
+      // will handle it when navigating to the dashboard
+    };
+  }, []);
+  
   return (
     <div className="min-h-screen flex flex-col bg-slate-900 relative overflow-hidden">
       {/* Background with boxes and gradient mask - exact implementation from 21st dev */}

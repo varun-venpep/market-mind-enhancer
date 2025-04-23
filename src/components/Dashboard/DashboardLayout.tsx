@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme } = useTheme(); // Remove setTheme since we're not using it
+  const { theme } = useTheme(); 
   const { currentWorkspace } = useWorkspace();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -46,8 +46,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-10 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="flex min-h-screen flex-col bg-white">
+      <header className="sticky top-0 z-10 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="flex h-14 items-center px-4 md:px-6">
           <div className="flex items-center gap-4">
             <div className="flex gap-1 text-primary font-bold">
@@ -69,16 +69,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <div className="ml-auto flex items-center gap-2">
-            {/* Dark mode indicator - no toggle functionality */}
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled
-            >
-              <Moon className="h-4 w-4" />
-              <span className="sr-only">Dark theme</span>
-            </Button>
-            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
