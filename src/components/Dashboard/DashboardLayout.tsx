@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, ChevronDown, LogOut, Home, Search, ShoppingBag, Settings, FileText, MessagesSquare, LayoutGrid, FileEdit, ListChecks } from 'lucide-react';
+import { Moon, ChevronDown, LogOut, Home, Search, ShoppingBag, Settings, FileText, MessagesSquare, LayoutGrid, FileEdit, ListChecks } from 'lucide-react';
 import { useTheme } from "@/components/Theme/ThemeProvider";
 import { useAuth } from '@/contexts/AuthContext';
 import { WorkspaceSelector } from '@/components/Workspace/WorkspaceSelector';
@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme(); // Remove setTheme since we're not using it
   const { currentWorkspace } = useWorkspace();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -69,17 +69,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <div className="ml-auto flex items-center gap-2">
+            {/* Dark mode indicator - no toggle functionality */}
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              disabled
             >
-              {theme === "dark" ? (
-                <Moon className="h-4 w-4" />
-              ) : (
-                <Sun className="h-4 w-4" />
-              )}
-              <span className="sr-only">Toggle theme</span>
+              <Moon className="h-4 w-4" />
+              <span className="sr-only">Dark theme</span>
             </Button>
             
             <DropdownMenu>
