@@ -27,44 +27,45 @@ export default withMT({
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))'
+          DEFAULT: '#7A1CAC',
+          foreground: '#fff'
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
+          DEFAULT: '#AD49E1',
+          foreground: '#fff'
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))'
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))'
+          DEFAULT: '#F3E8FF',
+          foreground: '#7A1CAC'
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))'
+          DEFAULT: '#AD49E1',
+          foreground: '#fff'
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))'
+          DEFAULT: '#251833',
+          foreground: '#fff'
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))'
+          DEFAULT: '#212121',
+          foreground: '#fff'
         },
+        // "brand" for gradients, overlays, badges, etc.
         brand: {
-          50: '#f4f0ff',
-          100: '#ebe2fd',
-          200: '#d9c5fc',
-          300: '#c1a0f7',
-          400: '#ad88f8',
-          500: '#9b87f5',
-          600: '#7E69AB',
-          700: '#6E59A5',
-          800: '#1A1F2C',
-          900: '#232133'
+          50: '#f7f3fd',
+          100: '#e7d9fa',
+          200: '#d0b4f5',
+          300: '#b58ae9',
+          400: '#a25cd8',
+          500: '#7A1CAC',
+          600: '#7A1CAC',
+          700: '#681590',
+          800: '#3a103d',
+          900: '#212121',
         }
       },
       borderRadius: {
@@ -104,3 +105,4 @@ export default withMT({
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config);
+

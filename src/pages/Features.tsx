@@ -1,23 +1,12 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Helmet } from 'react-helmet';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import FeaturesContent from '@/components/Features';
 
 const Features = () => {
-  // Force dark mode for marketing pages
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove("light");
-    root.classList.add("dark");
-    
-    // Cleanup
-    return () => {
-      // Don't remove dark here, let theme provider handle it
-    };
-  }, []);
-
+  // No forced mode, theme-provider now controls
   return (
     <>
       <Helmet>
@@ -29,7 +18,7 @@ const Features = () => {
         <main className="flex-grow">
           <div className="container mx-auto py-12 px-4">
             <div className="text-center max-w-3xl mx-auto mb-12">
-              <h1 className="text-4xl font-bold mb-4 text-white">MarketMind Features</h1>
+              <h1 className="text-4xl font-bold mb-4 gradient-text">MarketMind Features</h1>
               <p className="text-xl text-muted-foreground">
                 Comprehensive tools to optimize your website for search engines
               </p>
@@ -38,8 +27,8 @@ const Features = () => {
             <FeaturesContent />
             
             <div className="mt-20 bg-card rounded-lg p-8 text-center">
-              <h2 className="text-2xl font-bold mb-4">Ready to optimize your website?</h2>
-              <p className="text-lg mb-6">Start using our powerful SEO tools today and see the difference.</p>
+              <h2 className="text-2xl font-bold mb-4 text-white">Ready to optimize your website?</h2>
+              <p className="text-lg mb-6 text-accent-foreground">Start using our powerful SEO tools today and see the difference.</p>
               <div className="flex justify-center gap-4">
                 <a href="/signup" className="gradient-button px-6 py-3 rounded-lg text-white font-medium">
                   Get Started Free

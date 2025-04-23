@@ -1,12 +1,13 @@
 
+// Theme Provider - forces theme by route
+
 import { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 type Theme = "light" | "dark";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
 };
 
 type ThemeProviderState = {
@@ -24,23 +25,35 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
 }: ThemeProviderProps) {
-  // Use light theme by default for dashboard/app
+  // Determine theme by location: dashboard/app = light, website/landing = dark
+  const location = useLocation();
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
+    // All routes outside /dashboard, /profile, /workspaces, /settings are "dark" (site)
+    let newTheme: Theme = "light";
+    if (
+      location.pathname === "/" ||
+      location.pathname.startsWith("/features") ||
+      location.pathname.startsWith("/pricing") ||
+      location.pathname.startsWith("/login") ||
+      location.pathname.startsWith("/signup") ||
+      location.pathname.startsWith("/terms") ||
+      location.pathname.startsWith("/privacy")
+    ) {
+      newTheme = "dark";
+    }
+    setTheme(newTheme);
+
     const root = window.document.documentElement;
-    
-    // Remove both classes first
     root.classList.remove("dark");
     root.classList.remove("light");
-    
-    // Add the current theme class
-    root.classList.add(theme);
-  }, [theme]);
+    root.classList.add(newTheme);
+  }, [location.pathname]);
 
   const value = {
     theme,
-    setTheme,
+    setTheme: () => {}, // No manual switching for now
   };
 
   return (
