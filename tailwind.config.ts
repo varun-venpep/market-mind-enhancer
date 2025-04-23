@@ -55,26 +55,16 @@ export default withMT({
           foreground: 'hsl(var(--card-foreground))'
         },
         brand: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-        },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))'
+          50: '#f4f0ff',
+          100: '#ebe2fd',
+          200: '#d9c5fc',
+          300: '#c1a0f7',
+          400: '#ad88f8',
+          500: '#9b87f5',
+          600: '#7E69AB',
+          700: '#6E59A5',
+          800: '#1A1F2C',
+          900: '#232133'
         }
       },
       borderRadius: {

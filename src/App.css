@@ -13,8 +13,6 @@
   margin-right: auto;
   margin-left: auto;
 }
-
-/* Add responsive container classes */
 .container {
   width: 100%;
   padding-right: 15px;
@@ -22,135 +20,69 @@
   margin-right: auto;
   margin-left: auto;
 }
-
-@media (min-width: 576px) {
-  .container {
-    max-width: 540px;
-  }
-}
-
-@media (min-width: 768px) {
-  .container {
-    max-width: 720px;
-  }
-}
-
-@media (min-width: 992px) {
-  .container {
-    max-width: 960px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .container {
-    max-width: 1140px;
-  }
-}
-
-@media (min-width: 1400px) {
-  .container {
-    max-width: 1320px;
-  }
-}
+@media (min-width: 576px) { .container { max-width: 540px; } }
+@media (min-width: 768px) { .container { max-width: 720px; } }
+@media (min-width: 992px) { .container { max-width: 960px; } }
+@media (min-width: 1200px) { .container { max-width: 1140px; } }
+@media (min-width: 1400px) { .container { max-width: 1320px; } }
 
 .full-height {
   min-height: 100vh;
 }
-
 .full-width {
   width: 100%;
 }
 
-/* Enhanced gradient text, buttons, and visual elements */
+/* Purple-black glass and gradient cards */
 .gradient-text {
-  @apply bg-gradient-to-r from-blue-600 to-blue-500 text-transparent bg-clip-text;
+  @apply bg-gradient-to-r from-primary to-secondary text-transparent bg-clip-text;
 }
-
 .gradient-border {
-  @apply relative before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-blue-500 before:to-purple-500 before:rounded-lg before:-z-10 before:content-[''];
+  @apply relative before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-primary before:to-secondary before:rounded-lg before:-z-10 before:content-[''];
 }
-
 .card-glass {
-  @apply backdrop-blur-sm bg-white/90 dark:bg-gray-900/80 border border-white/20 dark:border-gray-800/50 shadow-lg;
+  @apply backdrop-blur-md bg-card/90 border border-border shadow-lg;
 }
-
 .hover-card {
-  @apply transition-all hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-1;
+  @apply transition-all hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1;
 }
-
 .gradient-button {
-  @apply bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 transition-all;
+  @apply bg-gradient-to-r from-primary to-secondary text-white hover:from-primary/90 hover:to-secondary/90 transition-all;
 }
-
-/* Animation utilities */
 .fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
-
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px);}
+  to   { opacity: 1; transform: translateY(0);}
 }
-
 .scale-in {
   animation: scaleIn 0.3s ease-out forwards;
 }
-
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.95);}
+  to   { opacity: 1; transform: scale(1);}
 }
-
-/* Interactive elements */
 .interactive-card {
-  @apply transition-all duration-300 hover:shadow-lg hover:shadow-blue-300/20 dark:hover:shadow-blue-500/10 hover:-translate-y-1 cursor-pointer;
+  @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer;
 }
-
 .subtle-focus {
-  @apply focus:ring-2 focus:ring-blue-500/30 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900 focus:outline-none;
+  @apply focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background focus:outline-none;
 }
 
-/* Form styling */
 input, select, textarea {
-  @apply transition-colors duration-200;
+  @apply transition-colors duration-200 bg-input text-foreground border-border focus:border-primary focus:ring-primary;
 }
 
-/* Enhanced glassmorphism */
 .glass-card {
-  @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border border-white/20 dark:border-gray-800/30 shadow-xl;
+  @apply bg-card/80 backdrop-blur-md border border-border shadow-xl;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { @apply bg-card; }
+::-webkit-scrollbar-thumb { background: #6E59A5; border-radius: 9999px;}
+::-webkit-scrollbar-thumb:hover { background: #7E69AB; }
 
-::-webkit-scrollbar-track {
-  @apply bg-gray-100 dark:bg-gray-800;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-500;
-}
-
-/* Enhanced accessible focus styles */
 :focus-visible {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
 }
