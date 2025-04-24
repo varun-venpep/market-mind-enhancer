@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Settings, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { WorkspaceSelector } from '@/components/Workspace/WorkspaceSelector';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -32,6 +32,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar collapsed={sidebarCollapsed} />
@@ -39,6 +43,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-full items-center px-4 gap-4">
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="lg:hidden">
+              {sidebarCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+            </Button>
+            
             <WorkspaceSelector />
             
             <div className="ml-auto flex items-center gap-4">

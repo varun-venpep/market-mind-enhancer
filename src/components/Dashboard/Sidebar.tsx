@@ -12,7 +12,8 @@ import {
   Shield,
   Star,
   Megaphone,
-  Gauge
+  Gauge,
+  Rss
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -68,6 +69,12 @@ const menuItems = [
     title: "Lead Magnets",
     icon: Megaphone,
     path: "/dashboard/lead-magnets",
+  },
+  {
+    title: "Blog Publishing",
+    icon: Rss,
+    path: "/dashboard/blog-integrations",
+    badge: "New"
   },
   {
     title: "AI SEO Tracker",

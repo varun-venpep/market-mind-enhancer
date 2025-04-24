@@ -143,7 +143,7 @@ export function PublishScheduler({ articleId, title }: PublishSchedulerProps) {
             <Button 
               variant="outline" 
               className="mt-4" 
-              onClick={() => window.location.href = "/dashboard/integrations"}
+              onClick={() => window.location.href = "/dashboard/blog-integrations"}
             >
               Set Up Integrations
             </Button>
