@@ -27,45 +27,52 @@ export default withMT({
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#7A1CAC',
-          foreground: '#fff'
+          DEFAULT: '#4F46E5', // Indigo 600 - More balanced primary color
+          foreground: '#ffffff',
+          50: '#EEF2FF',
+          100: '#E0E7FF',
+          200: '#C7D2FE',
+          300: '#A5B4FC',
+          400: '#818CF8',
+          500: '#6366F1',
+          600: '#4F46E5',
+          700: '#4338CA',
+          800: '#3730A3',
+          900: '#312E81'
         },
         secondary: {
-          DEFAULT: '#AD49E1',
-          foreground: '#fff'
+          DEFAULT: '#EC4899', // Pink 600 - Vibrant complementary color
+          foreground: '#ffffff',
+          50: '#FDF2F8',
+          100: '#FCE7F3',
+          200: '#FBCFE8',
+          300: '#F9A8D4',
+          400: '#F472B6',
+          500: '#EC4899',
+          600: '#DB2777',
+          700: '#BE185D',
+          800: '#9D174D',
+          900: '#831843'
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))'
+          DEFAULT: '#EF4444', // Red 500 - Clear warning/error color
+          foreground: '#ffffff'
         },
         muted: {
-          DEFAULT: '#F3E8FF',
-          foreground: '#7A1CAC'
+          DEFAULT: '#F3F4F6', // Gray 100 - Subtle background
+          foreground: '#6B7280' // Gray 500 - Accessible muted text
         },
         accent: {
-          DEFAULT: '#AD49E1',
-          foreground: '#fff'
+          DEFAULT: '#8B5CF6', // Violet 500 - Distinct accent color
+          foreground: '#ffffff'
         },
         popover: {
-          DEFAULT: '#251833',
-          foreground: '#fff'
+          DEFAULT: '#ffffff',
+          foreground: '#111827' // Gray 900 - Dark text on light background
         },
         card: {
-          DEFAULT: '#212121',
-          foreground: '#fff'
-        },
-        // "brand" for gradients, overlays, badges, etc.
-        brand: {
-          50: '#f7f3fd',
-          100: '#e7d9fa',
-          200: '#d0b4f5',
-          300: '#b58ae9',
-          400: '#a25cd8',
-          500: '#7A1CAC',
-          600: '#7A1CAC',
-          700: '#681590',
-          800: '#3a103d',
-          900: '#212121',
+          DEFAULT: '#ffffff',
+          foreground: '#111827'
         }
       },
       borderRadius: {
@@ -105,4 +112,3 @@ export default withMT({
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config);
-
