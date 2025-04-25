@@ -6,14 +6,14 @@ import SignUp from './pages/SignUp';
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
 import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
+import { Profile } from './pages/Profile';
 import Features from './pages/Features';
 import Pricing from './pages/Pricing';
 import Research from './pages/Research';
 import Workspaces from './pages/Workspaces';
 import Campaigns from './pages/Campaigns';
 import CampaignDetail from './pages/CampaignDetail';
-import Analytics from './pages/Analytics';
+import { Analytics } from './pages/Analytics';
 import ContentBriefs from './pages/ContentBriefs';
 import Briefs from './pages/Briefs';
 import BriefDetail from './pages/BriefDetail';
@@ -30,7 +30,7 @@ import ContentGenerator from './pages/ContentGenerator';
 import Integrations from './pages/Integrations';
 import BlogIntegrations from './pages/BlogIntegrations';
 import ArticlePublisher from './pages/ArticlePublisher';
-import Settings from './pages/Settings';
+import { Settings } from './pages/Settings';
 
 const routes = [
   {
