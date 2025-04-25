@@ -27,52 +27,54 @@ export default withMT({
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#4F46E5', // Indigo 600 - More balanced primary color
-          foreground: '#ffffff',
-          50: '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          300: '#A5B4FC',
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          700: '#4338CA',
-          800: '#3730A3',
-          900: '#312E81'
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))'
         },
         secondary: {
-          DEFAULT: '#EC4899', // Pink 600 - Vibrant complementary color
-          foreground: '#ffffff',
-          50: '#FDF2F8',
-          100: '#FCE7F3',
-          200: '#FBCFE8',
-          300: '#F9A8D4',
-          400: '#F472B6',
-          500: '#EC4899',
-          600: '#DB2777',
-          700: '#BE185D',
-          800: '#9D174D',
-          900: '#831843'
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))'
         },
         destructive: {
-          DEFAULT: '#EF4444', // Red 500 - Clear warning/error color
-          foreground: '#ffffff'
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))'
         },
         muted: {
-          DEFAULT: '#F3F4F6', // Gray 100 - Subtle background
-          foreground: '#6B7280' // Gray 500 - Accessible muted text
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))'
         },
         accent: {
-          DEFAULT: '#8B5CF6', // Violet 500 - Distinct accent color
-          foreground: '#ffffff'
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))'
         },
         popover: {
-          DEFAULT: '#ffffff',
-          foreground: '#111827' // Gray 900 - Dark text on light background
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))'
         },
         card: {
-          DEFAULT: '#ffffff',
-          foreground: '#111827'
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))'
+        },
+        brand: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+        },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar-background))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+          accent: 'hsl(var(--sidebar-accent))',
+          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))'
         }
       },
       borderRadius: {

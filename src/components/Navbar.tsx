@@ -45,7 +45,7 @@ const Navbar = () => {
   }, [location.pathname]);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-background/90 backdrop-blur-md border-b border-gray-800 px-4 py-2.5">
+    <nav className="sticky top-0 z-50 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-2.5">
       <div className="container mx-auto flex flex-wrap items-center justify-between">
         <Link to="/" className="flex items-center flex-shrink-0 pr-14">
           <span className="self-center text-xl font-bold whitespace-nowrap gradient-text">MarketMind</span>
@@ -76,7 +76,7 @@ const Navbar = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-900">
                   <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>Dashboard</DropdownMenuItem>
@@ -91,7 +91,7 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="hidden md:flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild className="text-white">
+              <Button variant="ghost" size="sm" asChild>
                 <Link to="/login"><LogIn className="h-4 w-4 mr-2" /> Log in</Link>
               </Button>
               <Button asChild className="gradient-button">
@@ -103,7 +103,7 @@ const Navbar = () => {
           <button
             onClick={() => setIsOpen(!isOpen)}
             type="button"
-            className="inline-flex items-center p-2 ml-3 text-sm text-white rounded-lg md:hidden hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            className="inline-flex items-center p-2 ml-3 text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
             aria-controls="mobile-menu"
             aria-expanded={isOpen}
           >
@@ -121,8 +121,8 @@ const Navbar = () => {
               <Link to="/" className={cn(
                 "block py-2 px-3 rounded md:p-0",
                 location.pathname === '/' 
-                  ? 'text-brand-400 md:bg-transparent md:font-semibold' 
-                  : 'text-gray-300 hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-400'
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
               )}>
                 <Home className="h-4 w-4 mr-2 inline md:hidden" /> Home
               </Link>
@@ -131,8 +131,8 @@ const Navbar = () => {
               <Link to="/features" className={cn(
                 "block py-2 px-3 rounded md:p-0",
                 location.pathname === '/features' 
-                  ? 'text-brand-400 md:bg-transparent md:font-semibold' 
-                  : 'text-gray-300 hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-400'
+                  ? 'text-brand-600 dark:text-brand-400 md:bg-transparent md:font-semibold' 
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 md:hover:bg-transparent md:hover:text-brand-600'
               )}>
                 <Star className="h-4 w-4 mr-2 inline md:hidden" /> Features
               </Link>

@@ -20,7 +20,7 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({
       {isGeneratingImage && (
         <div className="flex items-center justify-center p-4 bg-muted rounded-md mb-4">
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          <span className="text-sm">Generating featured image with Gemini AI...</span>
+          <span className="text-sm">Generating featured image...</span>
         </div>
       )}
       {generatedImageUrl && (

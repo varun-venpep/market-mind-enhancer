@@ -35,10 +35,10 @@ supabase.auth.onAuthStateChange((event, session) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <ThemeProvider>
-          <AuthProvider>
-            <WorkspaceProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <WorkspaceProvider>
+            <Router>
               <div className="app-container full-width full-height">
                 <Routes>
                   {routes.map((route) => {
@@ -82,10 +82,10 @@ function App() {
                 </Routes>
                 <Toaster richColors closeButton position="top-right" />
               </div>
-            </WorkspaceProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </Router>
+            </Router>
+          </WorkspaceProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

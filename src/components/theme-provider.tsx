@@ -1,13 +1,12 @@
 
-// Theme Provider - forces theme by route
-
 import { createContext, useContext, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 
-type Theme = "light" | "dark";
+type Theme = "dark" | "light" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
 };
 
 type ThemeProviderState = {
@@ -16,7 +15,7 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: "light",
+  theme: "system",
   setTheme: () => null,
 };
 
@@ -24,40 +23,42 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
+  defaultTheme = "system",
+  storageKey = "seo-wizard-ui-theme",
+  ...props
 }: ThemeProviderProps) {
-  // Determine theme by location: dashboard/app = light, website/landing = dark
-  const location = useLocation();
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  );
 
   useEffect(() => {
-    // All routes outside /dashboard, /profile, /workspaces, /settings are "dark" (site)
-    let newTheme: Theme = "light";
-    if (
-      location.pathname === "/" ||
-      location.pathname.startsWith("/features") ||
-      location.pathname.startsWith("/pricing") ||
-      location.pathname.startsWith("/login") ||
-      location.pathname.startsWith("/signup") ||
-      location.pathname.startsWith("/terms") ||
-      location.pathname.startsWith("/privacy")
-    ) {
-      newTheme = "dark";
-    }
-    setTheme(newTheme);
-
     const root = window.document.documentElement;
-    root.classList.remove("dark");
-    root.classList.remove("light");
-    root.classList.add(newTheme);
-  }, [location.pathname]);
+    
+    root.classList.remove("light", "dark");
+    
+    if (theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+      
+      root.classList.add(systemTheme);
+      return;
+    }
+    
+    root.classList.add(theme);
+  }, [theme]);
 
   const value = {
     theme,
-    setTheme: () => {}, // No manual switching for now
+    setTheme: (theme: Theme) => {
+      localStorage.setItem(storageKey, theme);
+      setTheme(theme);
+    },
   };
 
   return (
-    <ThemeProviderContext.Provider value={value}>
+    <ThemeProviderContext.Provider {...props} value={value}>
       {children}
     </ThemeProviderContext.Provider>
   );
@@ -65,7 +66,9 @@ export function ThemeProvider({
 
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext);
+  
   if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider");
+  
   return context;
 };

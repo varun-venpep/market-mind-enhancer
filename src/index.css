@@ -5,115 +5,134 @@
 
 @layer base {
   :root {
-    /* Light theme - Default for dashboard/app */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 336 84% 67%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 271 91% 65%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 262.1 83.3% 57.8%;
+    --background: 0 0% 100%; /* White background */
+    --foreground: 240 10% 3.9%; /* Dark text */
+    --card: 0 0% 100%; /* White card background */
+    --card-foreground: 240 10% 3.9%; /* Dark card text */
+    --popover: 0 0% 100%; /* White popover background */
+    --popover-foreground: 240 10% 3.9%; /* Dark popover text */
+    --primary: 220 80% 20%; /* Deep blue primary color */
+    --primary-foreground: 0 0% 98%; /* Light text on primary */
+    --secondary: 220 15% 92%; /* Light gray secondary */
+    --secondary-foreground: 220 45% 16%; /* Dark secondary text */
+    --muted: 220 15% 92%; /* Light muted background */
+    --muted-foreground: 220 10% 46%; /* Muted text */
+    --accent: 220 15% 88%; /* Light accent */
+    --accent-foreground: 220 45% 16%; /* Dark accent text */
+    --destructive: 0 84.2% 60.2%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
+    --border: 220 15% 90%; /* Light border */
+    --input: 220 15% 90%; /* Light input border */
+    --ring: 220 80% 20%; /* Ring color matching primary */
     --radius: 0.5rem;
   }
 
-  .dark {
-    /* Dark theme - For marketing/landing pages */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 336 84% 67%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 271 91% 65%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
   }
 }
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-primary via-accent to-secondary text-transparent bg-clip-text;
-  }
-  
-  .gradient-border {
-    @apply relative before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-primary before:via-accent before:to-secondary before:rounded-lg before:-z-10 before:content-[''];
+    @apply bg-gradient-to-r from-blue-600 to-blue-500 text-transparent bg-clip-text;
   }
   
   .card-glass {
-    @apply backdrop-blur-sm bg-card/90 border shadow-lg;
+    @apply backdrop-blur-sm bg-white/5 border border-white/10 shadow-lg;
   }
   
   .hover-card {
-    @apply transition-all hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1;
-  }
-  
-  .gradient-button {
-    @apply bg-gradient-to-r from-primary via-accent to-secondary text-white hover:opacity-90 transition-all;
-  }
-
-  /* Interactive states */
-  .interactive-hover {
-    @apply transition-colors hover:text-primary focus:text-primary;
-  }
-  
-  .interactive-bg {
-    @apply transition-colors hover:bg-primary/10 focus:bg-primary/10;
-  }
-  
-  /* Form elements */
-  .form-input {
-    @apply border rounded-md px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50;
-  }
-  
-  /* Selection styling */
-  ::selection {
-    @apply bg-primary/20 text-foreground;
+    @apply transition-all hover:shadow-md hover:shadow-blue-500/10;
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Fix for TinyMCE dropdown menus in dialogs */
+.tox-tinymce-aux,
+.tox-silver-sink {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 0 !important;
+  pointer-events: none !important;
 }
 
-::-webkit-scrollbar-track {
-  @apply bg-muted;
+.tox-tinymce-aux > *,
+.tox-silver-sink > * {
+  pointer-events: auto !important;
 }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-primary/50 rounded-full hover:bg-primary/70;
+.tox-menu,
+.tox-collection,
+.tox-dialog,
+.tox-dialog__header,
+.tox-dialog__body,
+.tox-dialog__footer {
+  z-index: 9999999 !important;
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Focus styles */
-:focus-visible {
-  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+.tox-collection__item {
+  padding: 8px !important;
 }
 
-/* Smooth transitions */
-* {
-  @apply transition-colors duration-200;
+/* Make sure dialogs have proper z-index */
+.radix-dialog-content {
+  z-index: 9000 !important;
 }
 
+/* Make sure TinyMCE doesn't break the UI */
+.tox-tinymce {
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Fix for alerts and popups */
+.tox-notifications-container {
+  z-index: 9999999 !important;
+}
+
+/* Improved spacing for article generator components */
+.editor-container {
+  margin-bottom: 1.5rem;
+}
+
+.article-content {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+}
+
+/* Dialog content styling improvements */
+.DialogContent {
+  padding: 1.5rem !important;
+}
+
+/* Fix for TinyMCE toolbar visibility */
+.tox-toolbar__primary {
+  background-color: white !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Enhanced article preview styling */
+.prose img {
+  border-radius: 0.375rem;
+  margin: 1.5rem 0;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  color: hsl(var(--foreground));
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}

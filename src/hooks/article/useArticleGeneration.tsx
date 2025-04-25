@@ -1,5 +1,6 @@
 
 // Orchestrate AI content/image gen using form selections (word count, content type, tone)
+// Remove toasts related to fallback/random images
 
 import { useState } from 'react';
 import { generateImage, generateContent as geminiGenerateContent } from '@/services/geminiApi';
@@ -49,7 +50,7 @@ export function useArticleGeneration() {
     }
   };
 
-  // Use Gemini exclusively for image generation
+  // Only use Gemini (never fallback/random image)
   const generateFeaturedImage = async (title: string) => {
     if (!title) {
       toast.error('Please enter a title first');
@@ -59,16 +60,10 @@ export function useArticleGeneration() {
     try {
       const imagePrompt = `Create a professional featured image for a blog post titled: "${title}"`;
       const imageUrl = await generateImage(imagePrompt);
-      
-      if (!imageUrl) {
-        throw new Error('No image was generated');
-      }
-      
       setGeneratedImageUrl(imageUrl);
       toast.success('Featured image generated successfully');
     } catch (error) {
-      console.error('Image generation error:', error);
-      toast.error('Failed to generate image with Gemini API. Please try again later.');
+      toast.error('Failed to generate image');
     } finally {
       setIsGeneratingImage(false);
     }

@@ -32,7 +32,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
           onChange={(e) => setImagePrompt(e.target.value)}
         />
         <p className="text-xs text-muted-foreground">
-          Be specific about style, colors, mood, and subjects for best results with Gemini AI
+          Be specific about style, colors, mood, and subjects for best results
         </p>
       </div>
 
@@ -44,12 +44,12 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         {isGeneratingImage ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Generating with Gemini...
+            Generating...
           </>
         ) : (
           <>
             <ImageIcon className="h-4 w-4" />
-            Generate Image with Gemini
+            Generate Image
           </>
         )}
       </Button>
@@ -58,7 +58,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
         {isGeneratingImage ? (
           <div className="flex flex-col items-center justify-center h-[400px] border rounded-md">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-            <p className="text-muted-foreground">Creating your image with Gemini AI...</p>
+            <p className="text-muted-foreground">Creating your image...</p>
           </div>
         ) : generatedImageUrl ? (
           <div className="flex justify-center h-[400px] border rounded-md p-4">
