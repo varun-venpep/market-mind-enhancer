@@ -151,7 +151,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleLogout = async () => {
-    await auth.signOut();
+    await auth.logout(); // Changed from signOut to logout to match the AuthContextType
     navigate('/login');
   };
 

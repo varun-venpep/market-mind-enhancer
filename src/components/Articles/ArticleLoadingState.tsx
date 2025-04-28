@@ -1,14 +1,16 @@
 
-import { Loader2 } from "lucide-react";
-import DashboardLayout from "@/components/Dashboard/DashboardLayout";
+import React from 'react';
+import { Loader2 } from 'lucide-react';
 
-export const ArticleLoadingState = () => {
+interface ArticleLoadingStateProps {
+  message?: string; // Added optional message prop
+}
+
+export function ArticleLoadingState({ message = "Loading article..." }: ArticleLoadingStateProps) {
   return (
-    <DashboardLayout>
-      <div className="container mx-auto py-8 flex items-center justify-center h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    </DashboardLayout>
+    <div className="flex flex-col items-center justify-center min-h-[50vh] p-8">
+      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+      <p className="text-muted-foreground text-lg">{message}</p>
+    </div>
   );
-};
-
+}

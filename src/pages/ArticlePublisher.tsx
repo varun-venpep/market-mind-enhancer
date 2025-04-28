@@ -11,7 +11,7 @@ import { ArrowLeft, Clock, Edit, ExternalLink, Loader2, Share2 } from 'lucide-re
 import { PublishScheduler } from '@/components/Articles/PublishScheduler';
 import DashboardLayout from '@/components/Dashboard/DashboardLayout';
 import { toast } from 'sonner';
-import { getArticle } from '@/services/articles/crud';
+import { fetchArticle } from '@/services/articles/crud'; // Changed from getArticle to fetchArticle
 import { ArticleNotFound } from '@/components/Articles/ArticleNotFound';
 import { ArticleLoadingState } from '@/components/Articles/ArticleLoadingState';
 
@@ -23,12 +23,12 @@ export default function ArticlePublisher() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchArticle = async () => {
+    const fetchArticleData = async () => {
       if (!articleId) return;
       
       try {
         setLoading(true);
-        const articleData = await getArticle(articleId);
+        const articleData = await fetchArticle(articleId); // Changed from getArticle to fetchArticle
         
         if (!articleData) {
           setError('Article not found');
@@ -44,13 +44,13 @@ export default function ArticlePublisher() {
       }
     };
 
-    fetchArticle();
+    fetchArticleData();
   }, [articleId]);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <ArticleLoadingState message="Loading article..." />
+        <ArticleLoadingState /> {/* Removed message prop as it's not in the interface */}
       </DashboardLayout>
     );
   }
@@ -58,7 +58,7 @@ export default function ArticlePublisher() {
   if (error || !article) {
     return (
       <DashboardLayout>
-        <ArticleNotFound message={error || 'Article not found'} />
+        <ArticleNotFound /> {/* Removed message prop as it's not in the interface */}
       </DashboardLayout>
     );
   }
