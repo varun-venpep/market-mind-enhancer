@@ -31,6 +31,7 @@ import Integrations from './pages/Integrations';
 import BlogIntegrations from './pages/BlogIntegrations';
 import ArticlePublisher from './pages/ArticlePublisher';
 import { Settings } from './pages/Settings';
+import BloggerAuthCallback from './components/Articles/BloggerAuthCallback';
 
 const routes = [
   {
@@ -176,6 +177,11 @@ const routes = [
   {
     path: '/dashboard/blog-integrations',
     component: BlogIntegrations,
+    protected: true,
+  },
+  {
+    path: '/dashboard/blogger-callback',
+    component: BloggerAuthCallback,
     protected: true,
   },
   {

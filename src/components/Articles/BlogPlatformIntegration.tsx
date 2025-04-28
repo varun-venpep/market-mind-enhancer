@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { disconnectIntegration, isIntegrationConnected, saveIntegrationCredentials } from "@/utils/blogIntegrations";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface BlogPlatformIntegrationProps {
   platform: "blogger" | "medium";
@@ -35,6 +36,8 @@ export function BlogPlatformIntegration({
   const [disconnectLoading, setDisconnectLoading] = useState(false);
   const [accessToken, setAccessToken] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (externalIsConnected !== undefined) {
@@ -44,6 +47,75 @@ export function BlogPlatformIntegration({
       checkConnection();
     }
   }, [externalIsConnected]);
+
+  // Handle OAuth callback when returning from Google auth
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+      const error = url.searchParams.get('error');
+      
+      // Clear the URL parameters
+      if (code || error) {
+        window.history.replaceState({}, document.title, location.pathname);
+      }
+
+      // If there's an error in the URL, show it
+      if (error) {
+        setError(`Authorization failed: ${error}`);
+        return;
+      }
+      
+      // Handle Blogger OAuth callback
+      if (code && state === 'blogger') {
+        setConnectLoading(true);
+        try {
+          const { data: user } = await supabase.auth.getUser();
+          
+          if (!user.user) {
+            throw new Error("You must be logged in to connect Blogger");
+          }
+
+          const redirectUri = `${window.location.origin}${location.pathname}`;
+          
+          const { data, error } = await supabase.functions.invoke('blogger-callback', {
+            body: {
+              code,
+              redirectUri,
+              userId: user.user.id
+            }
+          });
+
+          if (error) throw error;
+          
+          if (data.success) {
+            setConnected(true);
+            onConnect();
+            toast.success('Successfully connected to Blogger');
+            
+            if (data.hasBloggerAccount) {
+              if (data.blogsCount > 0) {
+                toast.success(`Found ${data.blogsCount} Blogger ${data.blogsCount === 1 ? 'blog' : 'blogs'}`);
+              } else {
+                toast.info("Connected successfully, but no blogs found. Create a blog on Blogger to start publishing.");
+              }
+            }
+          } else {
+            throw new Error(data.error || "Failed to connect to Blogger");
+          }
+        } catch (err) {
+          console.error('Error processing Blogger callback:', err);
+          setError(`Failed to connect Blogger: ${err.message}`);
+          toast.error('Failed to connect to Blogger');
+        } finally {
+          setConnectLoading(false);
+        }
+      }
+    };
+
+    handleOAuthCallback();
+  }, [location.search, location.pathname]);
 
   const checkConnection = async () => {
     setLoading(true);
@@ -60,19 +132,41 @@ export function BlogPlatformIntegration({
 
   const handleBloggerConnect = async () => {
     setConnectLoading(true);
+    setError(null);
     
     try {
-      const { data: { url }, error } = await supabase.functions.invoke('blogger-auth', {
-        body: {
-          redirectUrl: `${window.location.origin}/dashboard/blog-integrations`
-        }
+      // Ensure user is logged in
+      const { data: user } = await supabase.auth.getUser();
+      
+      if (!user.user) {
+        toast.error('You must be logged in to connect Blogger');
+        return;
+      }
+
+      // Generate the redirect URL that includes the current path
+      const redirectUrl = `${window.location.origin}${location.pathname}`;
+      
+      // Call the edge function to get the auth URL
+      const { data, error } = await supabase.functions.invoke('blogger-auth', {
+        body: { redirectUrl }
       });
 
       if (error) throw error;
-      window.location.href = url;
+
+      if (!data || !data.url) {
+        throw new Error('Invalid response from authentication service');
+      }
+
+      // Add state parameter to identify the platform when returning
+      const authUrlWithState = new URL(data.url);
+      authUrlWithState.searchParams.append('state', 'blogger');
+      
+      // Redirect to Google's OAuth consent screen
+      window.location.href = authUrlWithState.toString();
     } catch (err) {
       console.error('Error starting Blogger auth:', err);
       toast.error('Failed to connect to Blogger');
+      setError(`Failed to connect: ${err.message}`);
       setConnectLoading(false);
     }
   };

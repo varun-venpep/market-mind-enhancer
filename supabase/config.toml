@@ -16,3 +16,7 @@ port = 54323
 # Enable the Blogger auth function
 [functions.blogger-auth]
 verify_jwt = true
+
+# Enable the Blogger callback function
+[functions.blogger-callback]
+verify_jwt = true
