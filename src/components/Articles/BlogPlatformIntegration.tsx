@@ -15,6 +15,7 @@ interface BlogPlatformIntegrationProps {
   authUrl: string;
   onConnect: () => void;
   onDisconnect: () => void;
+  isConnected?: boolean;
 }
 
 export function BlogPlatformIntegration({
@@ -23,7 +24,8 @@ export function BlogPlatformIntegration({
   description,
   authUrl,
   onConnect,
-  onDisconnect
+  onDisconnect,
+  isConnected: externalIsConnected
 }: BlogPlatformIntegrationProps) {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -33,8 +35,13 @@ export function BlogPlatformIntegration({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    checkConnection();
-  }, []);
+    if (externalIsConnected !== undefined) {
+      setConnected(externalIsConnected);
+      setLoading(false);
+    } else {
+      checkConnection();
+    }
+  }, [externalIsConnected]);
 
   const checkConnection = async () => {
     setLoading(true);
@@ -118,7 +125,7 @@ export function BlogPlatformIntegration({
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden transition-all duration-200 hover:shadow-md">
       <CardHeader className={`flex flex-row items-center gap-4 bg-muted/10 ${platform === 'blogger' ? 'border-l-4 border-l-orange-500' : 'border-l-4 border-l-black'}`}>
         <div className={`rounded-full p-2 ${platform === 'blogger' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'}`}>
           {platformIcons[platform]}
@@ -135,8 +142,8 @@ export function BlogPlatformIntegration({
           </div>
         ) : connected ? (
           <div className="flex flex-col items-center space-y-4">
-            <div className="flex items-center">
-              <Check className="mr-2 h-5 w-5 text-green-500" />
+            <div className="flex items-center justify-center bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 w-full py-3 rounded-md">
+              <Check className="mr-2 h-5 w-5" />
               <span className="font-medium">Connected successfully</span>
             </div>
             <Button 
@@ -171,7 +178,7 @@ export function BlogPlatformIntegration({
               </p>
             </div>
             <div className="flex flex-col gap-2">
-              <Button onClick={handleConnect} disabled={connectLoading}>
+              <Button onClick={handleConnect} disabled={connectLoading} className="w-full">
                 {connectLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -184,6 +191,7 @@ export function BlogPlatformIntegration({
               <Button 
                 variant="outline" 
                 onClick={() => window.open(authUrl, '_blank')}
+                className="w-full"
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Get Authentication Token

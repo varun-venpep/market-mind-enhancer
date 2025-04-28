@@ -91,6 +91,7 @@ serve(async (req) => {
     // Publish to Blogger if selected
     if (platforms.blogger && credentialsMap.blogger) {
       try {
+        console.log("Publishing to Blogger:", article.title);
         publishResults.blogger = await publishToBlogger(
           article, 
           credentialsMap.blogger as BloggerCredentials
@@ -104,6 +105,7 @@ serve(async (req) => {
     // Publish to Medium if selected
     if (platforms.medium && credentialsMap.medium) {
       try {
+        console.log("Publishing to Medium:", article.title);
         publishResults.medium = await publishToMedium(
           article, 
           credentialsMap.medium as MediumCredentials
@@ -165,14 +167,32 @@ async function publishToBlogger(
     // In a real implementation, you would refresh the token here
     console.log("Blogger token expired, would refresh in production");
   }
-  
-  // For testing purposes, we're just simulating a successful publish
-  // In a real implementation, you would call the Blogger API
-  
-  console.log(`Publishing to Blogger: ${article.title}`);
-  
-  // Return true to indicate successful publishing
-  return true;
+
+  try {
+    // In a real implementation, we would:
+    // 1. Get the user's blog ID using credentials.access_token
+    // 2. Format the article content for Blogger
+    // 3. Make a POST request to create a new post
+    
+    // Making a simulated API call for demonstration purposes
+    const blogId = "12345"; // This would be retrieved from the actual API
+    const url = `https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts`;
+    
+    console.log(`Would POST to Blogger API: ${url}`);
+    console.log("Article data:", {
+      title: article.title,
+      content: article.content.substring(0, 50) + "...",
+    });
+    
+    // Simulating a successful post creation
+    // In a real implementation, this would be the response from the API call
+    
+    // Return true to indicate successful publishing
+    return true;
+  } catch (error) {
+    console.error("Error in publishToBlogger:", error);
+    throw error;
+  }
 }
 
 // Function to publish to Medium
@@ -187,12 +207,31 @@ async function publishToMedium(
   if (Date.now() > credentials.expires_at) {
     throw new Error("Medium token expired");
   }
-  
-  // For testing purposes, we're just simulating a successful publish
-  // In a real implementation, you would call the Medium API
-  
-  console.log(`Publishing to Medium: ${article.title}`);
-  
-  // Return true to indicate successful publishing
-  return true;
+
+  try {
+    // In a real implementation, we would:
+    // 1. Get the user's Medium ID using credentials.access_token
+    // 2. Format the article content for Medium
+    // 3. Make a POST request to create a new post
+    
+    // Making a simulated API call for demonstration purposes
+    const url = "https://api.medium.com/v1/users/me/posts";
+    
+    console.log(`Would POST to Medium API: ${url}`);
+    console.log("Article data:", {
+      title: article.title,
+      content: article.content.substring(0, 50) + "...",
+      contentFormat: "html",
+      publishStatus: "public",
+    });
+    
+    // Simulating a successful post creation
+    // In a real implementation, this would be the response from the API call
+    
+    // Return true to indicate successful publishing
+    return true;
+  } catch (error) {
+    console.error("Error in publishToMedium:", error);
+    throw error;
+  }
 }

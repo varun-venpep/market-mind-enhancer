@@ -1,27 +1,70 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlogPlatformIntegration } from "@/components/Articles/BlogPlatformIntegration";
 import DashboardLayout from "@/components/Dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, ClipboardCopy, Lightbulb, Monitor, Puzzle, Rss } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ArrowLeft, CheckCircle2, ClipboardCopy, InfoIcon, Lightbulb, Monitor, Puzzle, Rss } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { isIntegrationConnected } from "@/utils/blogIntegrations";
 
 export default function BlogIntegrations() {
   const navigate = useNavigate();
   const [connectionsCount, setConnectionsCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [integrationStatus, setIntegrationStatus] = useState({
+    blogger: false,
+    medium: false
+  });
 
-  const handleConnect = () => {
-    setConnectionsCount(prev => prev + 1);
-    toast.success("Platform connected successfully");
+  useEffect(() => {
+    checkIntegrations();
+  }, []);
+
+  const checkIntegrations = async () => {
+    setIsLoading(true);
+    try {
+      const bloggerConnected = await isIntegrationConnected("blogger");
+      const mediumConnected = await isIntegrationConnected("medium");
+      
+      setIntegrationStatus({
+        blogger: bloggerConnected,
+        medium: mediumConnected
+      });
+      
+      setConnectionsCount(
+        (bloggerConnected ? 1 : 0) + 
+        (mediumConnected ? 1 : 0)
+      );
+    } catch (error) {
+      console.error("Error checking integrations:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDisconnect = () => {
+  const handleConnect = (platform: string) => {
+    setConnectionsCount(prev => prev + 1);
+    setIntegrationStatus(prev => ({
+      ...prev,
+      [platform]: true
+    }));
+    toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} connected successfully`);
+    checkIntegrations();
+  };
+
+  const handleDisconnect = (platform: string) => {
     setConnectionsCount(prev => prev - 1);
-    toast.success("Platform disconnected successfully");
+    setIntegrationStatus(prev => ({
+      ...prev,
+      [platform]: false
+    }));
+    toast.success(`${platform.charAt(0).toUpperCase() + platform.slice(1)} disconnected successfully`);
+    checkIntegrations();
   };
 
   return (
@@ -50,7 +93,25 @@ export default function BlogIntegrations() {
               Connect your blogging platforms to publish and schedule content directly from MarketMind
             </p>
           </div>
+
+          <Button 
+            variant="default" 
+            onClick={() => navigate('/dashboard/article-generator')} 
+            className="gap-2"
+          >
+            Create New Article
+          </Button>
         </div>
+        
+        {!isLoading && connectionsCount > 0 && (
+          <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>Connected Platforms: {connectionsCount}</AlertTitle>
+            <AlertDescription>
+              You can now publish and schedule content to your connected platforms directly from the article editor.
+            </AlertDescription>
+          </Alert>
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 border-muted/40">
@@ -61,7 +122,7 @@ export default function BlogIntegrations() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{connectionsCount}</div>
+              <div className="text-3xl font-bold">{isLoading ? "..." : connectionsCount}</div>
               <p className="text-muted-foreground text-sm">Active publishing integrations</p>
             </CardContent>
           </Card>
@@ -106,8 +167,9 @@ export default function BlogIntegrations() {
                 title="Blogger"
                 description="Publish articles directly to your Blogger blogs"
                 authUrl="https://developers.google.com/blogger/docs/3.0/using#auth"
-                onConnect={handleConnect}
-                onDisconnect={handleDisconnect}
+                onConnect={() => handleConnect("blogger")}
+                onDisconnect={() => handleDisconnect("blogger")}
+                isConnected={integrationStatus.blogger}
               />
               
               <BlogPlatformIntegration
@@ -115,8 +177,9 @@ export default function BlogIntegrations() {
                 title="Medium"
                 description="Share your content with the Medium community"
                 authUrl="https://medium.com/developers/welcome-to-medium-api-3418f956552"
-                onConnect={handleConnect}
-                onDisconnect={handleDisconnect}
+                onConnect={() => handleConnect("medium")}
+                onDisconnect={() => handleDisconnect("medium")}
+                isConnected={integrationStatus.medium}
               />
             </div>
           </TabsContent>
