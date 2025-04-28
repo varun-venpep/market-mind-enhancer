@@ -1,12 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { AlertCircle, Check, ExternalLink, Loader2, Trash } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { saveIntegrationCredentials, disconnectIntegration, isIntegrationConnected } from "@/utils/blogIntegrations";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { disconnectIntegration, isIntegrationConnected } from "@/utils/blogIntegrations";
 
 interface BlogPlatformIntegrationProps {
   platform: "blogger" | "medium";
@@ -56,7 +55,26 @@ export function BlogPlatformIntegration({
     }
   };
 
-  const handleConnect = async () => {
+  const handleBloggerConnect = async () => {
+    setConnectLoading(true);
+    
+    try {
+      const { data: { url }, error } = await supabase.functions.invoke('blogger-auth', {
+        body: {
+          redirectUrl: `${window.location.origin}/dashboard/blog-integrations`
+        }
+      });
+
+      if (error) throw error;
+      window.location.href = url;
+    } catch (err) {
+      console.error('Error starting Blogger auth:', err);
+      toast.error('Failed to connect to Blogger');
+      setConnectLoading(false);
+    }
+  };
+
+  const handleMediumConnect = async () => {
     if (!accessToken) {
       setError("Please enter your access token");
       return;
@@ -72,10 +90,6 @@ export function BlogPlatformIntegration({
         access_token: accessToken,
         expires_at: Date.now() + 3600000 // 1 hour expiry for example
       };
-      
-      if (platform === "blogger") {
-        (credentials as any).refresh_token = "placeholder-refresh-token";
-      }
       
       const success = await saveIntegrationCredentials(platform, credentials);
       
@@ -164,39 +178,58 @@ export function BlogPlatformIntegration({
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <div className="space-y-2">
-              <Label htmlFor={`${platform}-token`}>Access Token</Label>
-              <Input
-                id={`${platform}-token`}
-                type="text"
-                placeholder="Paste your access token here"
-                value={accessToken}
-                onChange={(e) => setAccessToken(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                You can get your access token by authenticating with {platform}.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Button onClick={handleConnect} disabled={connectLoading} className="w-full">
+            {platform === 'blogger' ? (
+              <Button 
+                onClick={handleBloggerConnect} 
+                disabled={connectLoading}
+                className="w-full"
+              >
                 {connectLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Connecting...
                   </>
                 ) : (
-                  <>Connect to {platform.charAt(0).toUpperCase() + platform.slice(1)}</>
+                  <>Connect with Google</>
                 )}
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => window.open(authUrl, '_blank')}
-                className="w-full"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Get Authentication Token
-              </Button>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor={`${platform}-token`}>Access Token</Label>
+                  <Input
+                    id={`${platform}-token`}
+                    type="text"
+                    placeholder="Paste your access token here"
+                    value={accessToken}
+                    onChange={(e) => setAccessToken(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    You can get your access token by authenticating with {platform}.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleMediumConnect} disabled={connectLoading} className="w-full">
+                    {connectLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>Connect to {platform.charAt(0).toUpperCase() + platform.slice(1)}</>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.open(authUrl, '_blank')}
+                    className="w-full"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Get Authentication Token
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
