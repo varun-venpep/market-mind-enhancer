@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from "@/components/Theme/ThemeProvider";
@@ -57,7 +56,6 @@ interface SidebarSubMenuProps {
   children: React.ReactNode;
 }
 
-// Sidebar Link Component
 const SidebarLink: React.FC<SidebarLinkProps> = ({ 
   to, 
   icon, 
@@ -92,7 +90,6 @@ const SidebarLink: React.FC<SidebarLinkProps> = ({
   );
 };
 
-// Sidebar Submenu Component
 const SidebarSubMenu: React.FC<SidebarSubMenuProps> = ({ 
   icon, 
   text, 
@@ -101,7 +98,6 @@ const SidebarSubMenu: React.FC<SidebarSubMenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   
-  // Check if any child route is active
   const childPaths = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
       return child.props.to;
@@ -143,7 +139,6 @@ const SidebarSubMenu: React.FC<SidebarSubMenuProps> = ({
   );
 };
 
-// Main Dashboard Layout Component
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -151,7 +146,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleLogout = async () => {
-    await auth.logout(); // Changed from signOut to logout to match the AuthContextType
+    await auth.logout();
     navigate('/login');
   };
 
@@ -159,7 +154,6 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     setIsSheetOpen(false);
   };
 
-  // Sidebar content component to avoid duplication between desktop and mobile views
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className="px-3 py-2">
@@ -290,25 +284,20 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:w-64 border-r flex-col">
         <SidebarContent />
       </aside>
 
-      {/* Mobile Sidebar */}
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent side="left" className="p-0 w-64">
           <SidebarContent />
         </SheetContent>
       </Sheet>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Navigation Bar */}
         <header className="bg-background border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-4">
-              {/* Mobile Menu Toggle */}
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="lg:hidden">
@@ -317,11 +306,9 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 </SheetTrigger>
               </Sheet>
 
-              {/* Workspace Selector */}
               <WorkspaceSelector />
             </div>
 
-            {/* User Menu */}
             <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -357,7 +344,6 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-muted/10">
           {children}
         </main>

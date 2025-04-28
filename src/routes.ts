@@ -1,9 +1,8 @@
-
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import Research from "@/pages/Research";
 import ShopifyStores from "@/pages/ShopifyStores";
-import ShopifyStore from "@/pages/ShopifyStore"; // Changed from import type to regular import
+import ShopifyStore from "@/pages/ShopifyStore";
 import ShopifyCallback from "@/pages/ShopifyCallback";
 import Integrations from "@/pages/Integrations";
 import ContentBriefs from "@/pages/ContentBriefs";
@@ -14,6 +13,7 @@ import Workspaces from "@/pages/Workspaces";
 import ArticleGenerator from "@/pages/ArticleGenerator";
 import Campaigns from "@/pages/Campaigns";
 import CampaignDetail from "@/pages/CampaignDetail";
+import BlogIntegrations from "@/pages/BlogIntegrations";
 
 const routes = [
   {
@@ -99,6 +99,11 @@ const routes = [
   {
     path: "/dashboard/campaigns/:campaignId",
     component: CampaignDetail,
+    protected: true
+  },
+  {
+    path: "/dashboard/blog-integrations",
+    component: BlogIntegrations,
     protected: true
   }
 ];
