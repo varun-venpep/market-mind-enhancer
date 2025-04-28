@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,9 @@ import { AlertCircle, Check, ExternalLink, Loader2, Trash } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { disconnectIntegration, isIntegrationConnected } from "@/utils/blogIntegrations";
+import { disconnectIntegration, isIntegrationConnected, saveIntegrationCredentials } from "@/utils/blogIntegrations";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface BlogPlatformIntegrationProps {
   platform: "blogger" | "medium";
